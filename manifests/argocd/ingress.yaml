@@ -6,9 +6,11 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/target: "52e0afc0-5fe0-4165-8619-b64bdfdbe202.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    # Fix HTTPS redirect loop with ArgoCD behind Cloudflare
+    # ArgoCD specific annotations for HTTPS backend
     traefik.ingress.kubernetes.io/router.tls: "true"
     ingress.kubernetes.io/ssl-redirect: "false"
+    # Tell Traefik that ArgoCD backend uses HTTPS
+    traefik.ingress.kubernetes.io/backend-protocol: "https"
 spec:
   ingressClassName: traefik
   rules:
@@ -21,4 +23,4 @@ spec:
           service:
             name: argocd-server
             port:
-              number: 80  # Keep at 80, let Traefik handle TLS termination
+              number: 443  # Use HTTPS port since ArgoCD serves HTTPS
