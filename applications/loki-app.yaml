@@ -10,6 +10,36 @@ spec:
     repoURL: 'https://grafana.github.io/helm-charts'
     chart: loki-stack
     targetRevision: '2.14.0'
+    helm:
+      values: |
+        # Add resource limits to prevent evictions
+        loki:
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          persistence:
+            enabled: true
+            size: 2Gi
+        
+        promtail:
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+        
+        # Disable fluent-bit and filebeat to reduce resource usage
+        fluent-bit:
+          enabled: false
+        
+        filebeat:
+          enabled: false
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring

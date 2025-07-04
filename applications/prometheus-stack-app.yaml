@@ -9,10 +9,37 @@ spec:
   source:
     repoURL: 'https://prometheus-community.github.io/helm-charts'
     chart: kube-prometheus-stack
-    targetRevision: '45.28.0' # Locking to a specific version for stability
+    targetRevision: '45.28.0'
     helm:
       values: |
+        # Add resource limits to prevent evictions
+        prometheusOperator:
+          resources:
+            limits:
+              cpu: 200m
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+        
+        prometheus:
+          prometheusSpec:
+            resources:
+              limits:
+                cpu: 500m
+                memory: 1Gi
+              requests:
+                cpu: 200m
+                memory: 512Mi
+        
         grafana:
+          resources:
+            limits:
+              cpu: 200m
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
           additionalDataSources:
             - name: Loki
               type: loki
@@ -28,6 +55,16 @@ spec:
               type: alertmanager
               url: http://prometheus-stack-kube-prom-alertmanager.monitoring.svc.cluster.local:9093
               access: proxy
+        
+        alertmanager:
+          alertmanagerSpec:
+            resources:
+              limits:
+                cpu: 100m
+                memory: 128Mi
+              requests:
+                cpu: 50m
+                memory: 64Mi
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring

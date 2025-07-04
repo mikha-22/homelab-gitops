@@ -59,28 +59,6 @@ manifests/
 <files>
 This section contains the contents of the repository's files.
 
-<file path="applications/argocd-ingress-app.yaml">
-# applications/argocd-ingress-app.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: argocd-ingress
-  namespace: argocd
-  finalizers: [resources-finalizer.argocd.argoproj.io]
-spec:
-  project: default
-  source:
-    repoURL: 'https://github.com/mikha-22/homelab-gitops.git'
-    targetRevision: HEAD
-    # This points to the specific 'argocd' subdirectory
-    path: manifests/argocd
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: argocd
-  syncPolicy:
-    automated: { prune: true, selfHeal: true }
-</file>
-
 <file path="applications/loki-app.yaml">
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -141,29 +119,28 @@ spec:
     syncOptions: [CreateNamespace=true]
 </file>
 
-<file path="manifests/argocd/ingress.yaml">
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+<file path="applications/argocd-ingress-app.yaml">
+# applications/argocd-ingress-app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
 metadata:
-  name: argocd-server-ingress
+  name: argocd-ingress
   namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+  # --- ADD THIS ANNOTATION ---
   annotations:
-    external-dns.alpha.kubernetes.io/target: "2bbf5d90-ccf2-4f7b-b23e-0ddcc80a45b9.cfargotunnel.com"
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    # This annotation is critical for Argo CD's HTTPS service
-    traefik.ingress.kubernetes.io/service.scheme: https
+    argocd.argoproj.io/sync-wave: "1"
 spec:
-  rules:
-  - host: argocd.milenika.dev
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: argocd-server
-            port:
-              number: 443
+  project: default
+  source:
+    repoURL: 'https://github.com/mikha-22/homelab-gitops.git'
+    targetRevision: HEAD
+    path: manifests/argocd
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: argocd
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
 </file>
 
 <file path="manifests/grafana/ingress.yaml">
@@ -176,6 +153,9 @@ metadata:
     external-dns.alpha.kubernetes.io/target: "2bbf5d90-ccf2-4f7b-b23e-0ddcc80a45b9.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
+  # --- ADD THIS LINE ---
+  # This explicitly tells K3s that Traefik should handle this Ingress.
+  ingressClassName: traefik
   rules:
   - host: grafana.milenika.dev
     http:
@@ -184,7 +164,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            # This is the correct service name for the prometheus-stack chart
             name: prometheus-stack-grafana
             port:
               number: 80
@@ -198,23 +177,47 @@ metadata:
   name: grafana-ingress
   namespace: argocd
   finalizers: [resources-finalizer.argocd.argoproj.io]
+  # --- ADD THIS ANNOTATION ---
+  annotations:
+    argocd.argoproj.io/sync-wave: "1" 
 spec:
   project: default
   source:
     repoURL: 'https://github.com/mikha-22/homelab-gitops.git'
     targetRevision: HEAD
-    # CORRECTED: Pointing to the specific 'grafana' subdirectory
     path: manifests/grafana
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
-  # CORRECTED: The syncPolicy is now properly formatted YAML
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+    automated: { prune: true, selfHeal: true }
+</file>
+
+<file path="manifests/argocd/ingress.yaml">
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server-ingress
+  namespace: argocd
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "2bbf5d90-ccf2-4f7b-b23e-0ddcc80a45b9.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  # --- ADD THIS LINE ---
+  # This explicitly tells K3s that Traefik should handle this Ingress.
+  ingressClassName: traefik
+  rules:
+  - host: argocd.milenika.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: argocd-server
+            port:
+              # This confirms we are connecting to the server's plain HTTP port.
+              number: 80
 </file>
 
 </files>
