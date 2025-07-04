@@ -1,0 +1,19 @@
+# applications/argocd-ingress-app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-ingress
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/mikha-22/homelab-gitops.git'
+    targetRevision: HEAD
+    # This points to the specific 'argocd' subdirectory
+    path: manifests/argocd
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: argocd
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
