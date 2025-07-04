@@ -1,2 +1,0 @@
-# homelab-gitopps
-# homela-gitops

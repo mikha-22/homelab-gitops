@@ -4,9 +4,9 @@ metadata:
   name: argocd-server-ingress
   namespace: argocd
   annotations:
-    external-dns.alpha.kubernetes.io/target: "eabb0009-38d6-4998-b247-b687c6a59fae.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/target: "2bbf5d90-ccf2-4f7b-b23e-0ddcc80a45b9.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    # This annotation is critical for Argo CD
+    # This annotation is critical for Argo CD's HTTPS service
     traefik.ingress.kubernetes.io/service.scheme: https
 spec:
   rules:

@@ -44,36 +44,105 @@ The content is organized as follows:
 </file_summary>
 
 <directory_structure>
-06_argocd_install/
-  01_install_argocd.sh
-  argocd-ingress.yaml
-07_gitops_manifests/
-  apps/
-    argocd-ingress-app.yaml
-    grafana-ingress-app.yaml
-    loki-app.yaml
-    prometheus-stack-app.yaml
-  app-of-apps.yaml
-README.md
+applications/
+  grafana-ingress-app.yaml
+  loki-app.yaml
+  prometheus-stack-app.yaml
+manifests/
+  argocd/
+    ingress.yaml
+  grafana/
+    ingress.yaml
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
 
-<file path="06_argocd_install/01_install_argocd.sh">
-$!/bin/bash
-
-      
-kubectl create namespace argocd
-
-
-      
-helm repo add argo https://argoproj.github.io/argo-helm
-helm repo update
-helm install argocd argo/argo-cd -n argocd --wait
+<file path="applications/grafana-ingress-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: grafana-ingress
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/mikha-22/homelab-gitops.git'
+    targetRevision: HEAD
+    path: manifests
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  # This filter ensures this app ONLY manages the Grafana Ingress
+  # and not the Argo CD one, even though they are in the same directory.
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - PruneLast=true
 </file>
 
-<file path="06_argocd_install/argocd-ingress.yaml">
+<file path="applications/loki-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  source:
+    repoURL: 'https://grafana.github.io/helm-charts'
+    chart: loki-stack
+    targetRevision: '2.14.0'
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]
+</file>
+
+<file path="applications/prometheus-stack-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-stack
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  source:
+    repoURL: 'https://prometheus-community.github.io/helm-charts'
+    chart: kube-prometheus-stack
+    targetRevision: '45.28.0' # Locking to a specific version for stability
+    helm:
+      values: |
+        grafana:
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              url: http://loki.monitoring.svc.cluster.local:3100
+              access: proxy
+              isDefault: false
+            - name: Prometheus
+              type: prometheus
+              url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
+              access: proxy
+              isDefault: true
+            - name: Alertmanager
+              type: alertmanager
+              url: http://prometheus-stack-kube-prom-alertmanager.monitoring.svc.cluster.local:9093
+              access: proxy
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]
+</file>
+
+<file path="manifests/argocd/ingress.yaml">
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -82,7 +151,7 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/target: "eabb0009-38d6-4998-b247-b687c6a59fae.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    # This annotation is critical for Argo CD
+    # This annotation is critical for Argo CD's HTTPS service
     traefik.ingress.kubernetes.io/service.scheme: https
 spec:
   rules:
@@ -98,138 +167,28 @@ spec:
               number: 443
 </file>
 
-<file path="07_gitops_manifests/apps/argocd-ingress-app.yaml">
-apiVersion: argoproj.io/v1alpha1
-kind: Application
+<file path="manifests/grafana/ingress.yaml">
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: argocd-ingress
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
+  name: grafana
+  namespace: monitoring
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "eabb0009-38d6-4998-b247-b687c6a59fae.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
-  project: default
-  source:
-    # Pointing to our own Git repository
-    repoURL: 'https://github.com/milenika/homelab.git' # <-- Make sure this is your repo URL
-    targetRevision: HEAD
-    # CORRECTED PATH: This points to the directory where your argocd-ingress.yaml lives.
-    path: 06_argocd_install 
-  destination:
-    server: 'https://kubernetes.default.svc'
-    # The Ingress resource itself will be created in the 'argocd' namespace
-    namespace: argocd
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-</file>
-
-<file path="07_gitops_manifests/apps/grafana-ingress-app.yaml">
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: grafana-ingress
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: 'https://github.com/your-username/homelab.git'
-    targetRevision: HEAD
-    path: 06_plg_observability 
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: monitoring
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-</file>
-
-<file path="07_gitops_manifests/apps/loki-app.yaml">
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: loki
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: 'https://grafana.github.io/helm-charts'
-    chart: loki-stack
-    targetRevision: '2.14.0' # Lock to a specific version for stability
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: monitoring
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-</file>
-
-<file path="07_gitops_manifests/apps/prometheus-stack-app.yaml">
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: prometheus-stack
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: 'https://prometheus-community.github.io/helm-charts'
-    chart: kube-prometheus-stack
-    targetRevision: '45.28.0' # Lock to a specific version for stability
-    helm:
-      values: |
-        # This is our clean, declarative values file embedded directly
-        grafana:
-          additionalDataSources:
-            - name: Loki
-              type: loki
-              url: http://loki.monitoring.svc.cluster.local:3100
-              access: proxy
-              isDefault: false
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: monitoring
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-</file>
-
-<file path="07_gitops_manifests/app-of-apps.yaml">
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: app-of-apps
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: 'https://github.com/your-username/homelab.git' # <-- IMPORTANT: Change this to your repo URL
-    targetRevision: HEAD
-    path: 07_gitops_manifests/apps
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: argocd
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-</file>
-
-<file path="README.md">
-# homelab-gitopps
+  rules:
+  - host: grafana.milenika.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            # This is the correct service name for the prometheus-stack chart
+            name: prometheus-stack-grafana
+            port:
+              number: 80
 </file>
 
 </files>
