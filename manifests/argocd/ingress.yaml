@@ -6,8 +6,10 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/target: "2bbf5d90-ccf2-4f7b-b23e-0ddcc80a45b9.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    # REMOVED: traefik.ingress.kubernetes.io/service.scheme: https
 spec:
+  # --- ADD THIS LINE ---
+  # This explicitly tells K3s that Traefik should handle this Ingress.
+  ingressClassName: traefik
   rules:
   - host: argocd.milenika.dev
     http:
@@ -18,5 +20,5 @@ spec:
           service:
             name: argocd-server
             port:
-              # CORRECTED: Pointing to the plain HTTP port
+              # This confirms we are connecting to the server's plain HTTP port.
               number: 80

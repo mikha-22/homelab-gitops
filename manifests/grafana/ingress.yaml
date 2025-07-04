@@ -7,6 +7,9 @@ metadata:
     external-dns.alpha.kubernetes.io/target: "2bbf5d90-ccf2-4f7b-b23e-0ddcc80a45b9.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
+  # --- ADD THIS LINE ---
+  # This explicitly tells K3s that Traefik should handle this Ingress.
+  ingressClassName: traefik
   rules:
   - host: grafana.milenika.dev
     http:
@@ -15,7 +18,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            # This is the correct service name for the prometheus-stack chart
             name: prometheus-stack-grafana
             port:
               number: 80
