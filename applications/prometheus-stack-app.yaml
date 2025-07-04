@@ -12,7 +12,33 @@ spec:
     targetRevision: '45.28.0'
     helm:
       values: |
-        # Add resource limits to prevent evictions
+        # Conservative resource limits
+        grafana:
+          resources:
+            limits:
+              cpu: 200m
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          # FIXED: Only ONE datasource can be default
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              url: http://loki.monitoring.svc.cluster.local:3100
+              access: proxy
+              isDefault: false  # NOT default
+            - name: Prometheus
+              type: prometheus
+              url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
+              access: proxy
+              isDefault: true   # ONLY this one is default
+            - name: Alertmanager
+              type: alertmanager
+              url: http://prometheus-stack-kube-prom-alertmanager.monitoring.svc.cluster.local:9093
+              access: proxy
+              isDefault: false  # NOT default
+        
         prometheusOperator:
           resources:
             limits:
@@ -32,30 +58,6 @@ spec:
                 cpu: 200m
                 memory: 512Mi
         
-        grafana:
-          resources:
-            limits:
-              cpu: 200m
-              memory: 200Mi
-            requests:
-              cpu: 100m
-              memory: 128Mi
-          additionalDataSources:
-            - name: Loki
-              type: loki
-              url: http://loki.monitoring.svc.cluster.local:3100
-              access: proxy
-              isDefault: false
-            - name: Prometheus
-              type: prometheus
-              url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
-              access: proxy
-              isDefault: true
-            - name: Alertmanager
-              type: alertmanager
-              url: http://prometheus-stack-kube-prom-alertmanager.monitoring.svc.cluster.local:9093
-              access: proxy
-        
         alertmanager:
           alertmanagerSpec:
             resources:
@@ -65,6 +67,24 @@ spec:
               requests:
                 cpu: 50m
                 memory: 64Mi
+        
+        nodeExporter:
+          resources:
+            limits:
+              cpu: 200m
+              memory: 50Mi
+            requests:
+              cpu: 100m
+              memory: 30Mi
+        
+        kubeStateMetrics:
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring

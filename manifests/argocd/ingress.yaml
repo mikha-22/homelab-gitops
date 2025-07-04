@@ -6,9 +6,10 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/target: "52e0afc0-5fe0-4165-8619-b64bdfdbe202.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    # Fix HTTPS redirect loop with ArgoCD behind Cloudflare
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    ingress.kubernetes.io/ssl-redirect: "false"
 spec:
-  # --- ADD THIS LINE ---
-  # This explicitly tells K3s that Traefik should handle this Ingress.
   ingressClassName: traefik
   rules:
   - host: argocd.milenika.dev
@@ -20,5 +21,4 @@ spec:
           service:
             name: argocd-server
             port:
-              # This confirms we are connecting to the server's plain HTTP port.
-              number: 80
+              number: 80  # Keep at 80, let Traefik handle TLS termination
