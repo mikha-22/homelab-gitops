@@ -10,10 +10,10 @@ spec:
   source:
     repoURL: 'https://prometheus-community.github.io/helm-charts'
     chart: kube-prometheus-stack
-    targetRevision: '45.28.0' # Lock to a specific version for stability
+    targetRevision: '45.28.0' 
     helm:
       values: |
-        # This is our clean, declarative values file embedded directly
+        # CORRECTED: This block now correctly defines ALL data sources.
         grafana:
           additionalDataSources:
             - name: Loki
@@ -21,6 +21,15 @@ spec:
               url: http://loki.monitoring.svc.cluster.local:3100
               access: proxy
               isDefault: false
+            - name: Prometheus
+              type: prometheus
+              url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
+              access: proxy
+              isDefault: true
+            - name: Alertmanager
+              type: alertmanager
+              url: http://prometheus-stack-kube-prom-alertmanager.monitoring.svc.cluster.local:9093
+              access: proxy
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring

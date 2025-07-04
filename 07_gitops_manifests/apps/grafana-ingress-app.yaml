@@ -8,9 +8,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/your-username/homelab.git'
+    # CORRECTED: Pointing to your new GitOps repo
+    repoURL: 'https://github.com/milenika/homelab-gitopps.git'
     targetRevision: HEAD
-    path: 06_plg_observability 
+    # CORRECTED: Pointing to the new manifest directory
+    path: 08_k8s_manifests 
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring

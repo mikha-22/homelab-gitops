@@ -3,10 +3,13 @@ kind: Application
 metadata:
   name: app-of-apps
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
-    repoURL: 'https://github.com/your-username/homelab.git' # <-- IMPORTANT: Change this to your repo URL
+    # CORRECTED: Pointing to your new GitOps repo
+    repoURL: 'https://github.com/milenika/homelab-gitopps.git' 
     targetRevision: HEAD
     path: 07_gitops_manifests/apps
   destination:

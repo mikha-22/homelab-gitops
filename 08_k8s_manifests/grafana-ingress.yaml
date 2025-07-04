@@ -1,0 +1,22 @@
+# 08_k8s_manifests/grafana-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: monitoring
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "eabb0009-38d6-4998-b247-b687c6a59fae.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  rules:
+  - host: grafana.milenika.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            # The service created by the prometheus-stack chart
+            name: prometheus-stack-grafana
+            port:
+              number: 80

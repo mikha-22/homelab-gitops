@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: 'https://grafana.github.io/helm-charts'
     chart: loki-stack
-    targetRevision: '2.14.0' # Lock to a specific version for stability
+    targetRevision: '2.14.0'
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring

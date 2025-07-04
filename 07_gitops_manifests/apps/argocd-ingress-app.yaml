@@ -8,14 +8,12 @@ metadata:
 spec:
   project: default
   source:
-    # Pointing to our own Git repository
-    repoURL: 'https://github.com/milenika/homelab.git' # <-- Make sure this is your repo URL
+    # CORRECTED: Pointing to your new GitOps repo
+    repoURL: 'https://github.com/milenika/homelab-gitopps.git'
     targetRevision: HEAD
-    # CORRECTED PATH: This points to the directory where your argocd-ingress.yaml lives.
     path: 06_argocd_install 
   destination:
     server: 'https://kubernetes.default.svc'
-    # The Ingress resource itself will be created in the 'argocd' namespace
     namespace: argocd
   syncPolicy:
     automated:
