@@ -6,8 +6,7 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/target: "2bbf5d90-ccf2-4f7b-b23e-0ddcc80a45b9.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    # This annotation is critical for Argo CD's HTTPS service
-    traefik.ingress.kubernetes.io/service.scheme: https
+    # REMOVED: traefik.ingress.kubernetes.io/service.scheme: https
 spec:
   rules:
   - host: argocd.milenika.dev
@@ -19,4 +18,5 @@ spec:
           service:
             name: argocd-server
             port:
-              number: 443
+              # CORRECTED: Pointing to the plain HTTP port
+              number: 80

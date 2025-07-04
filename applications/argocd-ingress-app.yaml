@@ -5,12 +5,14 @@ metadata:
   name: argocd-ingress
   namespace: argocd
   finalizers: [resources-finalizer.argocd.argoproj.io]
+  # --- ADD THIS ANNOTATION ---
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   source:
     repoURL: 'https://github.com/mikha-22/homelab-gitops.git'
     targetRevision: HEAD
-    # This points to the specific 'argocd' subdirectory
     path: manifests/argocd
   destination:
     server: 'https://kubernetes.default.svc'

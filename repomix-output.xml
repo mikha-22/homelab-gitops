@@ -45,6 +45,7 @@ The content is organized as follows:
 
 <directory_structure>
 applications/
+  argocd-ingress-app.yaml
   grafana-ingress-app.yaml
   loki-app.yaml
   prometheus-stack-app.yaml
@@ -58,11 +59,12 @@ manifests/
 <files>
 This section contains the contents of the repository's files.
 
-<file path="applications/grafana-ingress-app.yaml">
+<file path="applications/argocd-ingress-app.yaml">
+# applications/argocd-ingress-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: grafana-ingress
+  name: argocd-ingress
   namespace: argocd
   finalizers: [resources-finalizer.argocd.argoproj.io]
 spec:
@@ -70,16 +72,13 @@ spec:
   source:
     repoURL: 'https://github.com/mikha-22/homelab-gitops.git'
     targetRevision: HEAD
-    path: manifests
+    # This points to the specific 'argocd' subdirectory
+    path: manifests/argocd
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: monitoring
-  # This filter ensures this app ONLY manages the Grafana Ingress
-  # and not the Argo CD one, even though they are in the same directory.
+    namespace: argocd
   syncPolicy:
     automated: { prune: true, selfHeal: true }
-    syncOptions:
-      - PruneLast=true
 </file>
 
 <file path="applications/loki-app.yaml">
@@ -149,7 +148,7 @@ metadata:
   name: argocd-server-ingress
   namespace: argocd
   annotations:
-    external-dns.alpha.kubernetes.io/target: "eabb0009-38d6-4998-b247-b687c6a59fae.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/target: "2bbf5d90-ccf2-4f7b-b23e-0ddcc80a45b9.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
     # This annotation is critical for Argo CD's HTTPS service
     traefik.ingress.kubernetes.io/service.scheme: https
@@ -174,7 +173,7 @@ metadata:
   name: grafana
   namespace: monitoring
   annotations:
-    external-dns.alpha.kubernetes.io/target: "eabb0009-38d6-4998-b247-b687c6a59fae.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/target: "2bbf5d90-ccf2-4f7b-b23e-0ddcc80a45b9.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   rules:
@@ -189,6 +188,33 @@ spec:
             name: prometheus-stack-grafana
             port:
               number: 80
+</file>
+
+<file path="applications/grafana-ingress-app.yaml">
+# applications/grafana-ingress-app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: grafana-ingress
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/mikha-22/homelab-gitops.git'
+    targetRevision: HEAD
+    # CORRECTED: Pointing to the specific 'grafana' subdirectory
+    path: manifests/grafana
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  # CORRECTED: The syncPolicy is now properly formatted YAML
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
 </file>
 
 </files>

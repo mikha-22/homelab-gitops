@@ -5,20 +5,17 @@ metadata:
   name: grafana-ingress
   namespace: argocd
   finalizers: [resources-finalizer.argocd.argoproj.io]
+  # --- ADD THIS ANNOTATION ---
+  annotations:
+    argocd.argoproj.io/sync-wave: "1" 
 spec:
   project: default
   source:
     repoURL: 'https://github.com/mikha-22/homelab-gitops.git'
     targetRevision: HEAD
-    # CORRECTED: Pointing to the specific 'grafana' subdirectory
     path: manifests/grafana
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
-  # CORRECTED: The syncPolicy is now properly formatted YAML
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+    automated: { prune: true, selfHeal: true }
