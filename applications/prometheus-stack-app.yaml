@@ -12,7 +12,7 @@ spec:
     targetRevision: '45.28.0'
     helm:
       values: |
-        # Very conservative resource limits and minimal config
+        # Conservative resource limits to prevent evictions
         grafana:
           resources:
             limits:
@@ -21,8 +21,8 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
-          # Remove additional datasources for now - let it use defaults
-          # We'll add them back later once basic Grafana is working
+          # Start with default datasources only - add custom ones later
+          adminPassword: "admin"  # Set admin password
           
         prometheusOperator:
           resources:
