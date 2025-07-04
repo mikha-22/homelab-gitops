@@ -12,7 +12,7 @@ spec:
     targetRevision: '45.28.0'
     helm:
       values: |
-        # Conservative resource limits
+        # Very conservative resource limits and minimal config
         grafana:
           resources:
             limits:
@@ -21,24 +21,9 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
-          # FIXED: Only ONE datasource can be default
-          additionalDataSources:
-            - name: Loki
-              type: loki
-              url: http://loki.monitoring.svc.cluster.local:3100
-              access: proxy
-              isDefault: false  # NOT default
-            - name: Prometheus
-              type: prometheus
-              url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
-              access: proxy
-              isDefault: true   # ONLY this one is default
-            - name: Alertmanager
-              type: alertmanager
-              url: http://prometheus-stack-kube-prom-alertmanager.monitoring.svc.cluster.local:9093
-              access: proxy
-              isDefault: false  # NOT default
-        
+          # Remove additional datasources for now - let it use defaults
+          # We'll add them back later once basic Grafana is working
+          
         prometheusOperator:
           resources:
             limits:
