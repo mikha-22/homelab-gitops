@@ -1,75 +1,40 @@
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: loki
-  namespace: argocd
-  finalizers: [resources-finalizer.argocd.argoproj.io]
-spec:
-  project: default
-  source:
-    repoURL: 'https://grafana.github.io/helm-charts'
-    chart: loki  # Changed from loki-stack to loki
-    targetRevision: '6.30.1'  # Latest version
-    helm:
-      values: |
-        # Deploy Loki in SingleBinary mode for homelab simplicity
-        deploymentMode: SingleBinary
-        
-        loki:
-          auth_enabled: false
-          commonConfig:
-            replication_factor: 1
-          storage:
-            type: 'filesystem'
-          schemaConfig:
-            configs:
-              - from: "2024-01-01"
-                store: tsdb
-                object_store: filesystem
-                schema: v13
-                index:
-                  prefix: loki_index_
-                  period: 24h
-        
-        # Single binary configuration
-        singleBinary:
-          replicas: 1
-          resources:
-            limits:
-              cpu: 200m
-              memory: 256Mi
-            requests:
-              cpu: 100m
-              memory: 128Mi
-          persistence:
-            enabled: true
-            size: 2Gi
-        
-        # Gateway configuration (needed for Grafana access)
-        gateway:
-          enabled: true
-          replicas: 1
-          resources:
-            limits:
-              cpu: 100m
-              memory: 128Mi
-            requests:
-              cpu: 50m
-              memory: 64Mi
-        
-        # Monitoring configuration
-        monitoring:
-          selfMonitoring:
-            enabled: false
-          lokiCanary:
-            enabled: false
-        
-        # Test configuration
-        test:
-          enabled: false
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: monitoring
-  syncPolicy:
-    automated: { prune: true, selfHeal: true }
-    syncOptions: [CreateNamespace=true]
+
+mikha@T440p ~/l/homelab-gitops (main)> kubectl describe application loki -n argocd | grep -A 10 -B 5 "Status\|Error\|Message"    (base)
+    Automated:
+      Prune:      true
+      Self Heal:  true
+    Sync Options:
+      CreateNamespace=true
+Status:
+  Conditions:
+    Last Transition Time:  2025-07-05T01:01:39Z
+    Message:               Failed to load target state: failed to generate manifest for source 1 of 1: rpc error: code = Unknown desc = failed to execute helm template command: failed to get command args to log: `helm template . --name-template loki --namespace monitoring --kube-version 1.29 --values /tmp/5b48c667-ac7d-4dc1-85e4-5adf570d30ae <api versions removed> --include-crds` failed exit status 1: Error: execution error at (loki/templates/validate.yaml:31:4): You have more than zero replicas configured for both the single binary and simple scalable targets. If this was intentional change the deploymentMode to the transitional 'SingleBinary<->SimpleScalable' mode
+
+Use --debug flag to render out invalid YAML
+    Type:                ComparisonError
+  Controller Namespace:  argocd
+  Health:
+    Last Transition Time:  2025-07-05T00:57:36Z
+    Status:                Healthy
+  Reconciled At:           2025-07-05T01:01:39Z
+  Resource Health Source:  appTree
+  Sync:
+    Compared To:
+      Destination:
+        Namespace:  monitoring
+        Server:     https://kubernetes.default.svc
+      Source:
+        Chart:  loki
+        Helm:
+--
+test:
+  enabled: false
+
+        Repo URL:         https://grafana.github.io/helm-charts
+        Target Revision:  6.30.1
+    Status:               Unknown
+Events:
+  Type    Reason           Age    From                           Message
+  ----    ------           ----   ----                           -------
+  Normal  ResourceUpdated  5m35s  argocd-application-controller  Updated sync status:  -> Unknown
+  Normal  ResourceUpdated  5m35s  argocd-application-controller  Updated health status:  -> Healthy
