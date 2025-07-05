@@ -6,9 +6,13 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/target: "4ef0531d-02a9-445d-b3da-84cadcd2aabe.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    # ArgoCD serves HTTP on port 8080, not HTTPS
+    # --- CRITICAL FIXES FOR CLOUDFLARE TUNNEL ---
+    # ArgoCD serves HTTP on port 8080, not HTTPS when using server.ssloffload
     traefik.ingress.kubernetes.io/backend-protocol: "http"
+    # Disable SSL redirect since Cloudflare handles TLS termination
     ingress.kubernetes.io/ssl-redirect: "false"
+    # Tell Traefik not to redirect to HTTPS since Cloudflare already handles it
+    traefik.ingress.kubernetes.io/redirect-entry-point: ""
 spec:
   ingressClassName: traefik
   rules:
@@ -21,4 +25,4 @@ spec:
           service:
             name: argocd-server
             port:
-              number: 80  # Use port 80 since both map to HTTP 8080
+              number: 80  # Use port 80 since ArgoCD is configured with ssloffload
