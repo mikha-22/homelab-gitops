@@ -1,3 +1,4 @@
+<file path="applications/argocd-app.yaml">
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -16,8 +17,8 @@ spec:
       values: |
         # ArgoCD configuration
         server:
-          # Enable insecure mode for reverse proxy
-          insecure: true
+          # We will manage this via the configs.cm block below
+          # so we can remove the insecure: true line from here.
           resources:
             limits:
               cpu: 200m
@@ -83,12 +84,14 @@ spec:
         # Global configuration
         global:
           image:
-            tag: "v3.1.0"  # Latest ArgoCD version
+            tag: "v3.0.6" # Using the stable version from our previous steps
         
         # Configuration
         configs:
           cm:
-            server.insecure: "true"
+            # --- THIS IS THE FIX ---
+            # Replace 'server.insecure' with 'server.ssloffload'
+            server.ssloffload: "true"
             url: "https://argocd.milenika.dev"
   destination:
     server: 'https://kubernetes.default.svc'
@@ -96,3 +99,4 @@ spec:
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions: [CreateNamespace=true]
+</file>
