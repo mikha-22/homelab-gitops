@@ -4,7 +4,7 @@ metadata:
   name: argocd-server-ingress
   namespace: argocd
   annotations:
-    external-dns.alpha.kubernetes.io/target: "52e0afc0-5fe0-4165-8619-b64bdfdbe202.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/target: "4ef0531d-02a9-445d-b3da-84cadcd2aabe.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
     # ArgoCD serves HTTP on port 8080, not HTTPS
     traefik.ingress.kubernetes.io/backend-protocol: "http"
