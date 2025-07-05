@@ -1,3 +1,4 @@
+# applications/loki-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -40,8 +41,9 @@ spec:
               cpu: 100m
               memory: 128Mi
           persistence:
-            enabled: true
-            size: 2Gi
+            # --- CHANGE THIS ---
+            enabled: false
+            # size: 2Gi # No longer needed
         
         read:
           replicas: 0
