@@ -41,9 +41,10 @@ spec:
               cpu: 100m
               memory: 128Mi
           persistence:
-            # --- CHANGE THIS ---
-            enabled: false
-            # size: 2Gi # No longer needed
+            # --- FIXED: Enable persistence ---
+            enabled: true
+            size: 2Gi
+            storageClass: "" # Use default storage class
         
         read:
           replicas: 0

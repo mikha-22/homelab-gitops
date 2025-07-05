@@ -82,6 +82,21 @@ spec:
     automated: { prune: true, selfHeal: true }
 </file>
 
+<file path="manifests/argocd/server-config.yaml">
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-server-conf
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-server
+    app.kubernetes.io/part-of: argocd
+data:
+  server.insecure: "true"
+  url: "https://argocd.milenika.dev"
+</file>
+
+<file path="applications/argocd-app.yaml">
 <file path="applications/argocd-app.yaml">
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -101,8 +116,8 @@ spec:
       values: |
         # ArgoCD configuration
         server:
-          # Enable insecure mode for reverse proxy
-          insecure: true
+          # We will manage this via the configs.cm block below
+          # so we can remove the insecure: true line from here.
           resources:
             limits:
               cpu: 200m
@@ -168,12 +183,14 @@ spec:
         # Global configuration
         global:
           image:
-            tag: "v3.0.6"  # Latest ArgoCD version
+            tag: "v3.0.6" # Using the stable version from our previous steps
         
         # Configuration
         configs:
           cm:
-            server.insecure: "true"
+            # --- THIS IS THE FIX ---
+            # Replace 'server.insecure' with 'server.ssloffload'
+            server.ssloffload: "true"
             url: "https://argocd.milenika.dev"
   destination:
     server: 'https://kubernetes.default.svc'
@@ -182,19 +199,6 @@ spec:
     automated: { prune: true, selfHeal: true }
     syncOptions: [CreateNamespace=true]
 </file>
-
-<file path="manifests/argocd/server-config.yaml">
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: argocd-server-conf
-  namespace: argocd
-  labels:
-    app.kubernetes.io/name: argocd-server
-    app.kubernetes.io/part-of: argocd
-data:
-  server.insecure: "true"
-  url: "https://argocd.milenika.dev"
 </file>
 
 <file path="applications/argocd-ingress-app.yaml">
@@ -250,7 +254,7 @@ metadata:
   name: grafana
   namespace: monitoring
   annotations:
-    external-dns.alpha.kubernetes.io/target: "52e0afc0-5fe0-4165-8619-b64bdfdbe202.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/target: "4ef0531d-02a9-445d-b3da-84cadcd2aabe.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   ingressClassName: traefik
@@ -268,6 +272,7 @@ spec:
 </file>
 
 <file path="applications/loki-app.yaml">
+# applications/loki-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -310,8 +315,9 @@ spec:
               cpu: 100m
               memory: 128Mi
           persistence:
-            enabled: true
-            size: 2Gi
+            # --- CHANGE THIS ---
+            enabled: false
+            # size: 2Gi # No longer needed
         
         read:
           replicas: 0
@@ -379,7 +385,7 @@ spec:
           additionalDataSources:
             - name: Loki
               type: loki
-              url: http://loki:3100/loki/api/v1
+              url: http://loki-gateway:80
               access: proxy
               isDefault: false
           
@@ -444,7 +450,7 @@ metadata:
   name: argocd-server-ingress
   namespace: argocd
   annotations:
-    external-dns.alpha.kubernetes.io/target: "52e0afc0-5fe0-4165-8619-b64bdfdbe202.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/target: "4ef0531d-02a9-445d-b3da-84cadcd2aabe.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
     # ArgoCD serves HTTP on port 8080, not HTTPS
     traefik.ingress.kubernetes.io/backend-protocol: "http"

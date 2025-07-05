@@ -21,7 +21,8 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
-          adminPassword: "admin"
+          # --- FIXED: Use secure password ---
+          adminPassword: "HomeLab2024!Secure"
           # Add back Loki datasource (will connect to new Loki chart)
           additionalDataSources:
             - name: Loki
