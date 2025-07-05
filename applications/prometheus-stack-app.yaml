@@ -26,7 +26,7 @@ spec:
           additionalDataSources:
             - name: Loki
               type: loki
-              url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1
+              url: http://loki:3100/loki/api/v1
               access: proxy
               isDefault: false
           

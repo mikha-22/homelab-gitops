@@ -45,6 +45,8 @@ The content is organized as follows:
 
 <directory_structure>
 applications/
+  app-of-apps.yaml
+  argocd-app.yaml
   argocd-ingress-app.yaml
   grafana-ingress-app.yaml
   loki-app.yaml
@@ -52,6 +54,7 @@ applications/
 manifests/
   argocd/
     ingress.yaml
+    server-config.yaml
   grafana/
     ingress.yaml
 </directory_structure>
@@ -59,75 +62,148 @@ manifests/
 <files>
 This section contains the contents of the repository's files.
 
-<file path="applications/loki-app.yaml">
+<file path="applications/app-of-apps.yaml">
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: loki
+  name: app-of-apps
   namespace: argocd
   finalizers: [resources-finalizer.argocd.argoproj.io]
 spec:
   project: default
   source:
-    repoURL: 'https://grafana.github.io/helm-charts'
-    chart: loki-stack
-    targetRevision: '2.14.0'
+    repoURL: 'https://github.com/mikha-22/homelab-gitops.git'
+    targetRevision: HEAD
+    path: applications
   destination:
     server: 'https://kubernetes.default.svc'
-    namespace: monitoring
+    namespace: argocd
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+</file>
+
+<file path="applications/argocd-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-helm
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"  # Deploy before other apps
+spec:
+  project: default
+  source:
+    repoURL: 'https://argoproj.github.io/argo-helm'
+    chart: argo-cd
+    targetRevision: '8.1.2'  # Latest version
+    helm:
+      values: |
+        # ArgoCD configuration
+        server:
+          # Enable insecure mode for reverse proxy
+          insecure: true
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          
+        controller:
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+        
+        repoServer:
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+        
+        applicationSet:
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+        
+        notifications:
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+        
+        dex:
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+        
+        redis:
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+        
+        # Global configuration
+        global:
+          image:
+            tag: "v3.0.6"  # Latest ArgoCD version
+        
+        # Configuration
+        configs:
+          cm:
+            server.insecure: "true"
+            url: "https://argocd.milenika.dev"
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: argocd
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions: [CreateNamespace=true]
 </file>
 
-<file path="applications/prometheus-stack-app.yaml">
-apiVersion: argoproj.io/v1alpha1
-kind: Application
+<file path="manifests/argocd/server-config.yaml">
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: prometheus-stack
+  name: argocd-server-conf
   namespace: argocd
-  finalizers: [resources-finalizer.argocd.argoproj.io]
-spec:
-  project: default
-  source:
-    repoURL: 'https://prometheus-community.github.io/helm-charts'
-    chart: kube-prometheus-stack
-    targetRevision: '45.28.0' # Locking to a specific version for stability
-    helm:
-      values: |
-        grafana:
-          additionalDataSources:
-            - name: Loki
-              type: loki
-              url: http://loki.monitoring.svc.cluster.local:3100
-              access: proxy
-              isDefault: false
-            - name: Prometheus
-              type: prometheus
-              url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
-              access: proxy
-              isDefault: true
-            - name: Alertmanager
-              type: alertmanager
-              url: http://prometheus-stack-kube-prom-alertmanager.monitoring.svc.cluster.local:9093
-              access: proxy
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: monitoring
-  syncPolicy:
-    automated: { prune: true, selfHeal: true }
-    syncOptions: [CreateNamespace=true]
+  labels:
+    app.kubernetes.io/name: argocd-server
+    app.kubernetes.io/part-of: argocd
+data:
+  server.insecure: "true"
+  url: "https://argocd.milenika.dev"
 </file>
 
 <file path="applications/argocd-ingress-app.yaml">
-# applications/argocd-ingress-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: argocd-ingress
   namespace: argocd
   finalizers: [resources-finalizer.argocd.argoproj.io]
-  # --- ADD THIS ANNOTATION ---
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
@@ -141,32 +217,6 @@ spec:
     namespace: argocd
   syncPolicy:
     automated: { prune: true, selfHeal: true }
-</file>
-
-<file path="manifests/grafana/ingress.yaml">
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: grafana
-  namespace: monitoring
-  annotations:
-    external-dns.alpha.kubernetes.io/target: "2bbf5d90-ccf2-4f7b-b23e-0ddcc80a45b9.cfargotunnel.com"
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-spec:
-  # --- ADD THIS LINE ---
-  # This explicitly tells K3s that Traefik should handle this Ingress.
-  ingressClassName: traefik
-  rules:
-  - host: grafana.milenika.dev
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: prometheus-stack-grafana
-            port:
-              number: 80
 </file>
 
 <file path="applications/grafana-ingress-app.yaml">
@@ -193,6 +243,195 @@ spec:
     automated: { prune: true, selfHeal: true }
 </file>
 
+<file path="applications/loki-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  source:
+    repoURL: 'https://grafana.github.io/helm-charts'
+    chart: loki  # Changed from loki-stack to loki
+    targetRevision: '6.30.1'  # Latest version
+    helm:
+      values: |
+        # Deploy Loki in SingleBinary mode for homelab simplicity
+        deploymentMode: SingleBinary
+        
+        loki:
+          auth_enabled: false
+          commonConfig:
+            replication_factor: 1
+          storage:
+            type: 'filesystem'
+          schemaConfig:
+            configs:
+              - from: "2024-01-01"
+                store: tsdb
+                object_store: filesystem
+                schema: v13
+                index:
+                  prefix: loki_index_
+                  period: 24h
+        
+        # Single binary configuration
+        singleBinary:
+          replicas: 1
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          persistence:
+            enabled: true
+            size: 2Gi
+        
+        # Gateway configuration (needed for Grafana access)
+        gateway:
+          enabled: true
+          replicas: 1
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+        
+        # Monitoring configuration
+        monitoring:
+          selfMonitoring:
+            enabled: false
+          lokiCanary:
+            enabled: false
+        
+        # Test configuration
+        test:
+          enabled: false
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]
+</file>
+
+<file path="manifests/grafana/ingress.yaml">
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: monitoring
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "52e0afc0-5fe0-4165-8619-b64bdfdbe202.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: grafana.milenika.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-stack-grafana
+            port:
+              number: 80
+</file>
+
+<file path="applications/prometheus-stack-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-stack
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  source:
+    repoURL: 'https://prometheus-community.github.io/helm-charts'
+    chart: kube-prometheus-stack
+    targetRevision: '75.8.0'  # Updated from 45.28.0 to latest
+    helm:
+      values: |
+        # Conservative resource limits to prevent evictions
+        grafana:
+          resources:
+            limits:
+              cpu: 200m
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          adminPassword: "admin"
+          # Add back Loki datasource (will connect to new Loki chart)
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1
+              access: proxy
+              isDefault: false
+          
+        prometheusOperator:
+          resources:
+            limits:
+              cpu: 200m
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+        
+        prometheus:
+          prometheusSpec:
+            resources:
+              limits:
+                cpu: 500m
+                memory: 1Gi
+              requests:
+                cpu: 200m
+                memory: 512Mi
+        
+        alertmanager:
+          alertmanagerSpec:
+            resources:
+              limits:
+                cpu: 100m
+                memory: 128Mi
+              requests:
+                cpu: 50m
+                memory: 64Mi
+        
+        nodeExporter:
+          resources:
+            limits:
+              cpu: 200m
+              memory: 50Mi
+            requests:
+              cpu: 100m
+              memory: 30Mi
+        
+        kubeStateMetrics:
+          resources:
+            limits:
+              cpu: 100m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: monitoring
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]
+</file>
+
 <file path="manifests/argocd/ingress.yaml">
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -200,11 +439,12 @@ metadata:
   name: argocd-server-ingress
   namespace: argocd
   annotations:
-    external-dns.alpha.kubernetes.io/target: "2bbf5d90-ccf2-4f7b-b23e-0ddcc80a45b9.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/target: "52e0afc0-5fe0-4165-8619-b64bdfdbe202.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    # ArgoCD serves HTTP on port 8080, not HTTPS
+    traefik.ingress.kubernetes.io/backend-protocol: "http"
+    ingress.kubernetes.io/ssl-redirect: "false"
 spec:
-  # --- ADD THIS LINE ---
-  # This explicitly tells K3s that Traefik should handle this Ingress.
   ingressClassName: traefik
   rules:
   - host: argocd.milenika.dev
@@ -216,8 +456,7 @@ spec:
           service:
             name: argocd-server
             port:
-              # This confirms we are connecting to the server's plain HTTP port.
-              number: 80
+              number: 80  # Use port 80 since both map to HTTP 8080
 </file>
 
 </files>
