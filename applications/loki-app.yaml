@@ -8,12 +8,32 @@ spec:
   project: default
   source:
     repoURL: 'https://grafana.github.io/helm-charts'
-    chart: loki-stack
-    targetRevision: '2.14.0'
+    chart: loki  # Changed from loki-stack to loki
+    targetRevision: '6.30.1'  # Latest version
     helm:
       values: |
-        # Add resource limits to prevent evictions
+        # Deploy Loki in SingleBinary mode for homelab simplicity
+        deploymentMode: SingleBinary
+        
         loki:
+          auth_enabled: false
+          commonConfig:
+            replication_factor: 1
+          storage:
+            type: 'filesystem'
+          schemaConfig:
+            configs:
+              - from: "2024-01-01"
+                store: tsdb
+                object_store: filesystem
+                schema: v13
+                index:
+                  prefix: loki_index_
+                  period: 24h
+        
+        # Single binary configuration
+        singleBinary:
+          replicas: 1
           resources:
             limits:
               cpu: 200m
@@ -25,20 +45,27 @@ spec:
             enabled: true
             size: 2Gi
         
-        promtail:
+        # Gateway configuration (needed for Grafana access)
+        gateway:
+          enabled: true
+          replicas: 1
           resources:
             limits:
-              cpu: 200m
-              memory: 128Mi
-            requests:
               cpu: 100m
               memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
         
-        # Disable fluent-bit and filebeat to reduce resource usage
-        fluent-bit:
-          enabled: false
+        # Monitoring configuration
+        monitoring:
+          selfMonitoring:
+            enabled: false
+          lokiCanary:
+            enabled: false
         
-        filebeat:
+        # Test configuration
+        test:
           enabled: false
   destination:
     server: 'https://kubernetes.default.svc'

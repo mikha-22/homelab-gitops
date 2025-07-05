@@ -9,7 +9,7 @@ spec:
   source:
     repoURL: 'https://prometheus-community.github.io/helm-charts'
     chart: kube-prometheus-stack
-    targetRevision: '45.28.0'
+    targetRevision: '75.8.0'  # Updated from 45.28.0 to latest
     helm:
       values: |
         # Conservative resource limits to prevent evictions
@@ -21,8 +21,14 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
-          # Start with default datasources only - add custom ones later
-          adminPassword: "admin"  # Set admin password
+          adminPassword: "admin"
+          # Add back Loki datasource (will connect to new Loki chart)
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1
+              access: proxy
+              isDefault: false
           
         prometheusOperator:
           resources:
