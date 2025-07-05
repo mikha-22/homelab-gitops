@@ -83,7 +83,7 @@ spec:
         # Global configuration
         global:
           image:
-            tag: "v3.0.6"  # Latest ArgoCD version
+            tag: "v3.1.0"  # Latest ArgoCD version
         
         # Configuration
         configs:
