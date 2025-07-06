@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki-stack
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: homelab
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: loki
+    targetRevision: 6.30.1
+    helm:
+      values: |
+        loki:
+          auth_enabled: false # Keep it simple for homelab
+        
+        # Configure Ingress for the Loki service
+        ingress:
+          enabled: true
+          ingressClassName: traefik
+          hosts:
+            - "loki.milenika.dev"
+          annotations:
+            external-dns.alpha.kubernetes.io/target: "e36ab9bf-8074-4886-ad3a-5b1cf5dce20a.cfargotunnel.com"
+            external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
