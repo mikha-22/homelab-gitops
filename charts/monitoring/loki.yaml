@@ -10,20 +10,31 @@ spec:
   source:
     repoURL: https://grafana.github.io/helm-charts
     chart: loki
-    targetRevision: 6.30.1 # Using the correct, up-to-date chart version
+    targetRevision: 6.30.1
     helm:
       values: |
-        # This is the modern way to enable the full stack.
-        # We are enabling the promtail sub-chart from within the loki chart.
         promtail:
           enabled: true
 
         loki:
-          # Disabling authentication for a simple homelab setup.
           auth_enabled: false
-        
-        # Configure Ingress for the Loki service.
-        # Note the path to the ingress config is slightly different in this chart.
+          
+          # ===================================================================
+          #  START: ADDED STORAGE CONFIGURATION
+          #  This block tells Loki to request a 10Gi volume from the
+          #  cluster's default storage provider to store logs.
+          # ===================================================================
+          storage:
+            type: 'filesystem'
+            filesystem:
+              persistentVolumeClaim:
+                enabled: true
+                storageClassName: "local-path" # This is the default in K3s
+                size: 10Gi
+          # ===================================================================
+          #  END: ADDED STORAGE CONFIGURATION
+          # ===================================================================
+
         ingress:
           enabled: true
           ingressClassName: traefik
@@ -33,7 +44,6 @@ spec:
                 - path: /
                   pathType: Prefix
           annotations:
-            # Your critical annotations for the Cloudflare Tunnel
             external-dns.alpha.kubernetes.io/target: "e36ab9bf-8074-4886-ad3a-5b1cf5dce20a.cfargotunnel.com"
             external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 
