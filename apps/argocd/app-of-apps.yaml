@@ -6,51 +6,51 @@ metadata:
 spec:
   generators:
     # Generator 1: Manages cluster-wide configurations (e.g., Namespaces)
-    # It scans the cluster/overlays/ directory and creates an app for each folder it finds.
     - git:
         repoURL: https://github.com/mikha-22/homelab-gitops
         revision: HEAD
         directories:
           - path: cluster/overlays/*
-  template:
-    metadata:
-      name: 'cluster-{{path.basename}}' # App name will be cluster-homelab
-    spec:
-      project: default
-      source:
-        repoURL: https://github.com/mikha-22/homelab-gitops
-        targetRevision: HEAD
-        path: '{{path}}' # Source path will be cluster/overlays/homelab
-      destination:
-        server: https://kubernetes.default.svc
-        # The resources will be created in the namespace defined in the YAML files themselves.
-        # For a Namespace resource, it's a cluster-level object.
-        namespace: '{{path.basename}}' 
-      syncPolicy:
-        automated: {prune: true, selfHeal: true}
-        syncOptions: [CreateNamespace=true]
+      # The template for the cluster generator
+      template:
+        metadata:
+          name: 'cluster-{{path.basename}}'
+        spec:
+          project: default
+          source:
+            repoURL: https://github.com/mikha-22/homelab-gitops
+            targetRevision: HEAD
+            path: '{{path}}'
+            kustomize: {} # Use kustomize to read the directory
+          destination:
+            server: https://kubernetes.default.svc
+            namespace: '{{path.basename}}'
+          syncPolicy:
+            automated: {prune: true, selfHeal: true}
+            syncOptions: [CreateNamespace=true]
 
-  # Generator 2: Manages all deployable applications
-  # It scans the apps/ directory (excluding itself) and creates an app for each folder.
-  - git:
-      repoURL: https://github.com/mikha-22/homelab-gitops
-      revision: HEAD
-      directories:
-        - path: apps/*
-        - exclude: true
-          path: apps/argocd # This prevents a recursive loop!
-  template:
-    metadata:
-      name: '{{path.basename}}' # App name will be 'monitoring'
-    spec:
-      project: '{{path.basename}}' # Will use the 'monitoring' AppProject
-      source:
+    # Generator 2: Manages all deployable applications
+    - git:
         repoURL: https://github.com/mikha-22/homelab-gitops
-        targetRevision: HEAD
-        path: '{{path}}/homelab' # Crucial: Points to the overlay for environment-specific values
-      destination:
-        server: https://kubernetes.default.svc
-        namespace: '{{path.basename}}' # Destination namespace will be 'monitoring'
-      syncPolicy:
-        automated: {prune: true, selfHeal: true}
-        syncOptions: [CreateNamespace=true]
+        revision: HEAD
+        directories:
+          - path: apps/*
+          - exclude: true
+            path: apps/argocd # This prevents a recursive loop!
+      # The template for the applications generator
+      template:
+        metadata:
+          name: '{{path.basename}}'
+        spec:
+          project: '{{path.basename}}' # Dynamically assign project based on folder name
+          source:
+            repoURL: https://github.com/mikha-22/homelab-gitops
+            targetRevision: HEAD
+            path: '{{path}}/homelab' # Crucial: Points to the Kustomize overlay
+            kustomize: {} # Use kustomize to read the directory
+          destination:
+            server: https://kubernetes.default.svc
+            namespace: '{{path.basename}}'
+          syncPolicy:
+            automated: {prune: true, selfHeal: true}
+            syncOptions: [CreateNamespace=true]
