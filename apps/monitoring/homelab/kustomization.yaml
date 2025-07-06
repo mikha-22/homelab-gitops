@@ -1,29 +1,30 @@
+# FILE: apps/monitoring/homelab/kustomization.yaml
+
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # 1. Include the base application definitions from the parent 'base' directory.
-  # This assumes you have Argo CD Application manifests in 'apps/monitoring/base/'.
+  # 1. Include the base application definitions
   - ../base/kube-prometheus-stack
   - ../base/loki
 
 patches:
-  # 2. Patch the kube-prometheus-stack base to use your values file.
+  # 2. Patch the kube-prometheus-stack base to use your values file
   - patch: |-
       - op: replace
         path: /spec/source/helm/valueFiles
         value:
-        # Use a relative path to the values file in this same directory.
+        # This MUST be a relative path
         - ./kube-prometheus-stack-values.yaml
     target:
       kind: Application
       name: kube-prometheus-stack
 
-  # 3. Patch the loki base to use your values file.
+  # 3. Patch the loki base to use your values file
   - patch: |-
       - op: replace
         path: /spec/source/helm/valueFiles
         value:
-        # Use a relative path to the values file in this same directory.
+        # This MUST be a relative path
         - ./loki-values.yaml
     target:
       kind: Application
