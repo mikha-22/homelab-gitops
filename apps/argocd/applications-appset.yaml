@@ -22,7 +22,12 @@ spec:
         repoURL: https://github.com/mikha-22/homelab-gitops
         targetRevision: HEAD
         path: '{{path}}/homelab' # Point to the overlay with the values
-        kustomize: {} # Process the kustomization.yaml in the target directory
+        
+        # THIS IS THE FIX
+        # This tells Argo CD to run 'kustomize build --enable-helm'
+        kustomize:
+          helmEnabled: true
+          
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{path.basename}}'
