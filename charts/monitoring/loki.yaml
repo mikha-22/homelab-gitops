@@ -13,28 +13,77 @@ spec:
     targetRevision: 6.30.1
     helm:
       values: |
-        # Minimal configuration for filesystem storage
-        deploymentMode: SingleBinary
+        # ====================
+        # OFFICIAL LOKI 6.x SINGLE BINARY CONFIGURATION
+        # Based on: https://grafana.com/docs/loki/latest/setup/install/helm/install-monolithic/
+        # ====================
         
         loki:
-          auth_enabled: false
-          storage:
-            type: 'filesystem'
+          commonConfig:
+            replication_factor: 1  # CRITICAL: Must be 1 for single replica
             
+          schemaConfig:
+            configs:
+              - from: "2024-04-01"
+                store: tsdb
+                object_store: s3  # MinIO is S3-compatible
+                schema: v13
+                index:
+                  prefix: loki_index_
+                  period: 24h
+                  
+          # Enable pattern ingester for better log analysis
+          pattern_ingester:
+            enabled: true
+            
+          limits_config:
+            allow_structured_metadata: true
+            volume_enabled: true
+            
+          # Enable ruler for alerting
+          ruler:
+            enable_api: true
+
+        # ====================
+        # MINIO CONFIGURATION (LOCAL S3)
+        # ====================
+        minio:
+          enabled: true  # This provides local S3-compatible storage
+          
+        # ====================
+        # DEPLOYMENT MODE
+        # ====================
+        deploymentMode: SingleBinary
+        
+        # ====================
+        # SINGLE BINARY CONFIGURATION
+        # ====================
         singleBinary:
           replicas: 1
+          
+          # Persistence for Loki data
           persistence:
             enabled: true
             storageClass: "local-path"
-            size: 10Gi
+            size: 20Gi
             
-        # Enable log collection
-        promtail:
-          enabled: true
-          
-        # Simple gateway for ingress
+          # Resource configuration for homelab
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1"
+
+        # ====================
+        # GATEWAY CONFIGURATION
+        # ====================
         gateway:
           enabled: true
+          replicas: 1
+          
+          # Ingress configuration
           ingress:
             enabled: true
             ingressClassName: traefik
@@ -47,6 +96,44 @@ spec:
               external-dns.alpha.kubernetes.io/target: "e36ab9bf-8074-4886-ad3a-5b1cf5dce20a.cfargotunnel.com"
               external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 
+        # ====================
+        # PROMTAIL FOR LOG COLLECTION
+        # ====================
+        promtail:
+          enabled: true
+          config:
+            clients:
+              - url: http://loki-gateway:80/loki/api/v1/push
+
+        # ====================
+        # ZERO OUT ALL OTHER DEPLOYMENT MODES
+        # This is CRITICAL - prevents the validation error
+        # ====================
+        backend:
+          replicas: 0
+        read:
+          replicas: 0
+        write:
+          replicas: 0
+        ingester:
+          replicas: 0
+        querier:
+          replicas: 0
+        queryFrontend:
+          replicas: 0
+        queryScheduler:
+          replicas: 0
+        distributor:
+          replicas: 0
+        compactor:
+          replicas: 0
+        indexGateway:
+          replicas: 0
+        bloomCompactor:
+          replicas: 0
+        bloomGateway:
+          replicas: 0
+
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
@@ -54,3 +141,5 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
