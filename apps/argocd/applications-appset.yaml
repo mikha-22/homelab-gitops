@@ -27,12 +27,10 @@ spec:
         targetRevision: HEAD
         path: '{{path}}/homelab' # This resolves to 'apps/monitoring/homelab'
         
-        # Kustomize configuration with Helm support
+        # CRITICAL FIX: Kustomize configuration with proper Helm support
         kustomize:
-          # Enable Helm chart processing within Kustomize
-          helmEnabled: true
-          # Build options for better compatibility
-          buildOptions: --load-restrictor LoadRestrictionsNone
+          # This is the key fix - enable Helm processing
+          buildOptions: "--enable-helm"
           
       destination:
         server: https://kubernetes.default.svc
@@ -48,7 +46,6 @@ spec:
           - PrunePropagationPolicy=foreground
           - PruneLast=true
           - RespectIgnoreDifferences=true
-          - ApplyOutOfSyncOnly=true
         
         # Retry configuration for better reliability
         retry:
@@ -57,14 +54,3 @@ spec:
             duration: 5s
             factor: 2
             maxDuration: 3m
-            
-      # Health check configuration
-      ignoreDifferences:
-        - group: apps
-          kind: Deployment
-          jsonPointers:
-            - /spec/replicas
-        - group: ""
-          kind: Service
-          jsonPointers:
-            - /spec/clusterIP
