@@ -1,7 +1,21 @@
+# FILE: apps/monitoring/homelab/loki-values.yaml
+
 # Your specific values for the loki chart
 deploymentMode: SingleBinary
 loki:
   auth_enabled: false
+  
+  # This block is REQUIRED by the Loki chart for filesystem persistence.
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+
   commonConfig:
     replication_factor: 1
   storage:
