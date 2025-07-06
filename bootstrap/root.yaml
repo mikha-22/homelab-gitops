@@ -1,22 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring
+  name: root
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: homelab
+  project: default
   source:
-    repoURL: https://github.com/mikha-22/homelab-gitops # Your repo URL
+    repoURL: https://github.com/mikha-22/homelab-gitops
     targetRevision: HEAD
-    path: charts/monitoring
+    path: apps/argocd
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring # Deploy all resources into this namespace
+    namespace: argocd
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-    - CreateNamespace=true
+      - CreateNamespace=true
