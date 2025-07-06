@@ -1,5 +1,4 @@
 # FILE: apps/argocd/applications-appset.yaml
-
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -18,6 +17,9 @@ spec:
     metadata:
       name: '{{path.basename}}'
       namespace: argocd
+      labels:
+        app.kubernetes.io/managed-by: argocd
+        app.kubernetes.io/part-of: homelab-gitops
     spec:
       project: '{{path.basename}}'
       source:
@@ -25,15 +27,44 @@ spec:
         targetRevision: HEAD
         path: '{{path}}/homelab' # This resolves to 'apps/monitoring/homelab'
         
-        # THIS IS THE CRITICAL FIX
-        # This tells Argo CD to run 'kustomize build --enable-helm'
-        # for the 'monitoring' application.
+        # Kustomize configuration with Helm support
         kustomize:
+          # Enable Helm chart processing within Kustomize
           helmEnabled: true
+          # Build options for better compatibility
+          buildOptions: --load-restrictor LoadRestrictionsNone
           
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{path.basename}}'
+        
       syncPolicy:
-        automated: {prune: true, selfHeal: true}
-        syncOptions: [CreateNamespace=true]
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+          - RespectIgnoreDifferences=true
+          - ApplyOutOfSyncOnly=true
+        
+        # Retry configuration for better reliability
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+            
+      # Health check configuration
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+        - group: ""
+          kind: Service
+          jsonPointers:
+            - /spec/clusterIP

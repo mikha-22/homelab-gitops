@@ -1,4 +1,4 @@
-# FILE: apps/argocd/projects/monitoring-project.yaml
+# FILE: apps/argocd/projects/monitoring.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
@@ -11,10 +11,25 @@ spec:
   sourceRepos:
     - '*'
   destinations:
-    # REMOVED the 'argocd' namespace. 
-    # The project should ONLY be allowed to deploy to the 'monitoring' namespace.
+    # Only allow deployment to the monitoring namespace
     - namespace: monitoring
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
+    # More restrictive permissions - only what monitoring stack needs
+    - group: ""
+      kind: ServiceAccount
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+    - group: monitoring.coreos.com
+      kind: '*'
+  namespaceResourceWhitelist:
     - group: '*'
       kind: '*'

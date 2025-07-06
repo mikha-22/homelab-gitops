@@ -1,25 +1,54 @@
-# Your specific values for the kube-prometheus-stack chart
+# FILE: apps/monitoring/homelab/kube-prometheus-stack-values.yaml
+
+# ====================
+# GLOBAL CONFIGURATION
+# ====================
+global:
+  rbac:
+    create: true
+    pspEnabled: false
 
 # ====================
 # GRAFANA CONFIGURATION
 # ====================
 grafana:
+  enabled: true
+  
   # Use a pre-existing secret for admin credentials (BEST PRACTICE)
   admin:
-    existingSecret: grafana-admin-credentials # We will create this secret manually later
+    existingSecret: grafana-admin-credentials
     userKey: admin-user
     passwordKey: admin-password
+  
+  # Persistence configuration
   persistence:
     enabled: true
     storageClassName: "local-path"
     size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+  
+  # Ingress configuration
   ingress:
     enabled: true
     ingressClassName: traefik
-    hosts: ["grafana.milenika.dev"]
+    hosts: 
+      - grafana.milenika.dev
     annotations:
       external-dns.alpha.kubernetes.io/target: "e36ab9bf-8074-4886-ad3a-5b1cf5dce20a.cfargotunnel.com"
       external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+      traefik.ingress.kubernetes.io/router.tls: "true"
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - grafana.milenika.dev
+  
+  # Service Monitor for Prometheus scraping
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: kube-prometheus-stack
+  
   # Add Loki as a datasource declaratively
   additionalDataSources:
     - name: Loki
@@ -27,13 +56,46 @@ grafana:
       url: http://loki-gateway.monitoring.svc.cluster.local
       access: proxy
       isDefault: false
+      jsonData:
+        timeout: 60
+        maxLines: 1000
+    
+    - name: Prometheus
+      type: prometheus
+      url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+      access: proxy
+      isDefault: true
+  
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
 
 # ====================
 # PROMETHEUS CONFIGURATION
 # ====================
 prometheus:
+  enabled: true
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 9090
+  
+  # Service Monitor
+  serviceMonitor:
+    enabled: true
+    
   prometheusSpec:
+    # Retention and storage
     retention: 30d
+    retentionSize: 45GB
+    
+    # Storage configuration
     storageSpec:
       volumeClaimTemplate:
         spec:
@@ -42,7 +104,88 @@ prometheus:
           resources:
             requests:
               storage: 50Gi
+    
+    # Resource limits
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    
+    # Security context
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      fsGroup: 65534
+    
+    # Additional scrape configs for custom metrics
+    additionalScrapeConfigs: []
+    
+    # Rule selector - monitor all PrometheusRule resources
+    ruleSelector: {}
+    ruleNamespaceSelector: {}
+    
+    # ServiceMonitor selector - monitor all ServiceMonitor resources
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    
+    # PodMonitor selector - monitor all PodMonitor resources  
+    podMonitorSelector: {}
+    podMonitorNamespaceSelector: {}
 
-# Disable components we don't need for this setup
+# ====================
+# ALERTMANAGER CONFIGURATION
+# ====================
 alertmanager:
+  enabled: false  # Disabled as specified in original config
+  
+# ====================
+# PROMETHEUS OPERATOR CONFIGURATION
+# ====================
+prometheusOperator:
+  enabled: true
+  
+  # Resource limits for the operator
+  resources:
+    limits:
+      cpu: 200m
+      memory: 200Mi
+    requests:
+      cpu: 100m
+      memory: 100Mi
+  
+  # Admission webhooks
+  admissionWebhooks:
+    enabled: true
+    patch:
+      enabled: true
+
+# ====================
+# KUBE-STATE-METRICS CONFIGURATION
+# ====================
+kube-state-metrics:
+  enabled: true
+  
+# ====================
+# PROMETHEUS NODE EXPORTER CONFIGURATION
+# ====================
+prometheus-node-exporter:
+  enabled: true
+  
+  # Service monitor
+  prometheus:
+    monitor:
+      enabled: true
+      
+# ====================
+# GRAFANA OPERATOR (if needed)
+# ====================
+grafana-operator:
   enabled: false
+
+# ====================
+# CLEANUP CONFIGURATION
+# ====================
+cleanupCustomResourceBeforeInstall: false
