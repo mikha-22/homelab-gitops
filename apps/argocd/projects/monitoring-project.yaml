@@ -10,7 +10,11 @@ spec:
   sourceRepos:
     - '*' # Allow all source repos for flexibility in a homelab
   destinations:
+    # 1. Allow deploying the monitoring stack resources (Prometheus, Grafana) into the 'monitoring' namespace
     - namespace: monitoring
+      server: https://kubernetes.default.svc
+    # 2. (This is the fix) Allow the parent 'monitoring' app to create the child Application resources in the 'argocd' namespace
+    - namespace: argocd
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: '*'
