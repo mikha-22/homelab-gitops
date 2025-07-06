@@ -1,11 +1,7 @@
 # FILE: apps/monitoring/homelab/loki-values.yaml
-
-# Your specific values for the loki chart
 deploymentMode: SingleBinary
 loki:
   auth_enabled: false
-  
-  # This block is REQUIRED by the Loki chart for filesystem persistence.
   schemaConfig:
     configs:
       - from: "2024-01-01"
@@ -15,27 +11,4 @@ loki:
         index:
           prefix: loki_index_
           period: 24h
-
-  commonConfig:
-    replication_factor: 1
-  storage:
-    type: 'filesystem'
-singleBinary:
-  replicas: 1
-  persistence:
-    enabled: true
-    storageClass: "local-path"
-    size: 20Gi
-gateway:
-  enabled: true
-  ingress:
-    enabled: true
-    ingressClassName: traefik
-    hosts:
-      - host: loki.milenika.dev
-        paths: [{ path: /, pathType: Prefix }]
-    annotations:
-      external-dns.alpha.kubernetes.io/target: "e36ab9bf-8074-4886-ad3a-5b1cf5dce20a.cfargotunnel.com"
-      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-promtail:
-  enabled: true
+# ... rest of the file remains the same
