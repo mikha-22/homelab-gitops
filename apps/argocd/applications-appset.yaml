@@ -1,3 +1,5 @@
+# FILE: apps/argocd/applications-appset.yaml
+
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -21,10 +23,11 @@ spec:
       source:
         repoURL: https://github.com/mikha-22/homelab-gitops
         targetRevision: HEAD
-        path: '{{path}}/homelab' # Point to the overlay with the values
+        path: '{{path}}/homelab' # This resolves to 'apps/monitoring/homelab'
         
-        # THIS IS THE FIX
+        # THIS IS THE CRITICAL FIX
         # This tells Argo CD to run 'kustomize build --enable-helm'
+        # for the 'monitoring' application.
         kustomize:
           helmEnabled: true
           
