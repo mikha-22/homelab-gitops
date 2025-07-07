@@ -16,7 +16,7 @@ helmCharts:
     version: 58.1.0
     releaseName: kube-prometheus-stack
     namespace: monitoring
-    valuesFile: ./kube-prometheus-stack-values.yaml
+    valuesFile: kube-prometheus-stack-values.yaml
     includeCRDs: true
 
   - name: loki
@@ -24,10 +24,11 @@ helmCharts:
     version: 6.6.1
     releaseName: loki
     namespace: monitoring
-    valuesFile: ./loki-values.yaml
+    valuesFile: loki-values.yaml
     includeCRDs: true
 
-# Common labels for all resources
-commonLabels:
-  app.kubernetes.io/managed-by: argocd
-  app.kubernetes.io/part-of: monitoring-stack
+# Use the new 'labels' field instead of deprecated 'commonLabels'
+labels:
+  - pairs:
+      app.kubernetes.io/managed-by: argocd
+      app.kubernetes.io/part-of: monitoring-stack
