@@ -1,0 +1,25 @@
+# FILE: apps/monitoring/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# All resources in this Kustomization will be deployed to the 'monitoring' namespace
+namespace: monitoring
+
+helmCharts:
+  - name: kube-prometheus-stack
+    repo: https://prometheus-community.github.io/helm-charts
+    version: "58.1.0" # Pinning the chart version for stable, repeatable builds
+    releaseName: kube-prometheus-stack
+    valuesFile: kube-prometheus-stack-values.yaml
+
+  - name: loki
+    repo: https://grafana.github.io/helm-charts
+    version: "6.6.1" # Pinning the chart version
+    releaseName: loki
+    valuesFile: loki-values.yaml
+
+  - name: promtail
+    repo: https://grafana.github.io/helm-charts
+    version: "6.15.5" # Pinning the chart version
+    releaseName: promtail
+    valuesFile: promtail-values.yaml

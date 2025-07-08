@@ -1,0 +1,22 @@
+# FILE: apps/system/projects/monitoring-project.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  description: Project for the Homelab Monitoring Stack (Prometheus, Grafana, Loki)
+  sourceRepos:
+    - '*' # Allow deploying from any repo, can be locked down for production
+  destinations:
+    # Only allow this project to deploy to the 'monitoring' namespace
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+  # Allow the project to manage CRDs, ClusterRoles, etc., which are needed by the Prometheus stack
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  # Allow the project to manage any namespaced resource
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'

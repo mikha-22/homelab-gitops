@@ -1,7 +1,6 @@
+# FILE: apps/system/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - projects/default.yaml
-  - projects/monitoring.yaml
-  - cluster-addons-appset.yaml
+  - projects/monitoring-project.yaml
   - monitoring-app.yaml

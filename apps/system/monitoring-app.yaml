@@ -1,0 +1,31 @@
+# FILE: apps/system/monitoring-app.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  # Assign this application to our dedicated 'monitoring' project
+  project: monitoring
+  source:
+    # IMPORTANT: Replace this with your actual Git repository URL
+    repoURL: https://github.com/mikha-22/homelab-gitops
+    targetRevision: HEAD
+    path: apps/monitoring
+
+    # This section is critical for ensuring Helm charts are rendered correctly
+    kustomize:
+      version: v5.3.0
+      buildOptions: --enable-helm
+      
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring # Target namespace for all resources
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
