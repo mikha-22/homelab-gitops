@@ -1,25 +1,46 @@
-# FILE: apps/monitoring/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# All resources in this Kustomization will be deployed to the 'monitoring' namespace
 namespace: monitoring
 
+resources:
+  - namespace.yaml
+
 helmCharts:
+  # Prometheus Stack - Metrics collection and alerting
   - name: kube-prometheus-stack
     repo: https://prometheus-community.github.io/helm-charts
-    version: "58.1.0" # Pinning the chart version for stable, repeatable builds
-    releaseName: kube-prometheus-stack
-    valuesFile: kube-prometheus-stack-values.yaml
+    version: "75.9.0"
+    releaseName: prometheus-stack
+    valuesFile: prometheus-stack-values.yaml
+    namespace: monitoring
 
+  # Loki - Log aggregation
   - name: loki
     repo: https://grafana.github.io/helm-charts
-    version: "6.6.1" # Pinning the chart version
+    version: "6.30.1"
     releaseName: loki
     valuesFile: loki-values.yaml
+    namespace: monitoring
 
+  # Tempo - Distributed tracing
+  - name: tempo
+    repo: https://grafana.github.io/helm-charts
+    version: "1.17.3"
+    releaseName: tempo
+    valuesFile: tempo-values.yaml
+    namespace: monitoring
+
+  # Promtail - Log collection (connects to both Loki and Tempo)
   - name: promtail
     repo: https://grafana.github.io/helm-charts
-    version: "6.15.5" # Pinning the chart version
+    version: "6.17.0"
     releaseName: promtail
     valuesFile: promtail-values.yaml
+    namespace: monitoring
+
+# Common labels for all monitoring components
+commonLabels:
+  app.kubernetes.io/part-of: lgtm-stack
+  environment: homelab
+  managed-by: argocd

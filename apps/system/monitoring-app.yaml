@@ -1,27 +1,24 @@
-# FILE: apps/system/monitoring-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: monitoring
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
-  # Assign this application to our dedicated 'monitoring' project
   project: monitoring
   source:
-    # IMPORTANT: Replace this with your actual Git repository URL
     repoURL: https://github.com/mikha-22/homelab-gitops
     targetRevision: HEAD
     path: apps/monitoring
-
-    # This section is critical for ensuring Helm charts are rendered correctly
     kustomize:
-      version: v5.3.0
-      buildOptions: --enable-helm
-      
+      version: v5.4.0
+      buildOptions: "--enable-helm --load-restrictor=LoadRestrictionsNone"
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring # Target namespace for all resources
-    
+    namespace: monitoring
   syncPolicy:
     automated:
       prune: true
@@ -29,3 +26,22 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - Validate=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 5m
+  # Health checks for monitoring components
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+      jsonPointers:
+        - /spec/endpoints/0/interval

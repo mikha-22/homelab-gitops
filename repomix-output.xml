@@ -1,0 +1,1624 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+apps/
+  monitoring/
+    kustomization.yaml
+    loki-values.yaml
+    namespace.yaml
+    prometheus-stack-values.yaml
+    promtail-values.yaml
+    tempo-values.yaml
+  system/
+    projects/
+      monitoring-project.yaml
+    alloy-app.yaml
+    kustomization.yaml
+    monitoring-app.yaml
+bootstrap/
+  root.yaml
+.gitignore
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="apps/monitoring/namespace.yaml">
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/name: monitoring
+    app.kubernetes.io/part-of: homelab-gitops
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+</file>
+
+<file path="apps/monitoring/prometheus-stack-values.yaml">
+# Prometheus Stack Configuration - LGTM Stack
+# Chart Version: 75.9.0
+# Loki + Grafana + Tempo + ProMetheus
+
+# Global settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# CRDs configuration
+crds:
+  enabled: true
+
+# Disable AlertManager for simplified homelab setup
+alertmanager:
+  enabled: false
+
+# Grafana Configuration
+grafana:
+  enabled: true
+  
+  # Admin credentials (use secrets in production)
+  adminUser: admin
+  adminPassword: homelab-admin-2025
+  
+  # Persistence
+  persistence:
+    enabled: true
+    type: pvc
+    storageClassName: local-path
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+  
+  # Resource management
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 472
+    runAsGroup: 472
+    fsGroup: 472
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+  
+  # Ingress with Cloudflare tunnel
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - grafana.milenika.dev
+    annotations:
+      # Cloudflare tunnel configuration
+      external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+      # Security headers
+      traefik.ingress.kubernetes.io/router.tls: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - grafana.milenika.dev
+  
+  # Data sources configuration - The complete LGTM stack
+  additionalDataSources:
+    - name: Prometheus
+      type: prometheus
+      url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
+      access: proxy
+      isDefault: true
+      jsonData:
+        timeInterval: 30s
+        queryTimeout: 60s
+        httpMethod: POST
+        exemplarTraceIdDestinations:
+          - name: trace_id
+            datasourceUid: tempo
+    
+    - name: Loki
+      type: loki
+      url: http://loki-gateway.monitoring.svc.cluster.local
+      access: proxy
+      isDefault: false
+      jsonData:
+        maxLines: 1000
+        timeout: 60s
+        derivedFields:
+          - name: TraceID
+            matcherRegex: "trace_id=(\\w+)"
+            url: "$${__value.raw}"
+            datasourceUid: tempo
+    
+    - name: Tempo
+      type: tempo
+      uid: tempo
+      url: http://tempo.monitoring.svc.cluster.local:3200
+      access: proxy
+      isDefault: false
+      jsonData:
+        httpMethod: GET
+        serviceMap:
+          datasourceUid: prometheus
+        search:
+          hide: false
+        nodeGraph:
+          enabled: true
+        traceQuery:
+          timeShiftEnabled: true
+          spanStartTimeShift: '1h'
+          spanEndTimeShift: '-1h'
+        tracesToLogs:
+          datasourceUid: loki
+          tags: ['job', 'instance', 'pod', 'namespace']
+          mappedTags: [{ key: 'service.name', value: 'service' }]
+          mapTagNamesEnabled: false
+          spanStartTimeShift: '-1h'
+          spanEndTimeShift: '1h'
+          filterByTraceID: false
+          filterBySpanID: false
+        tracesToMetrics:
+          datasourceUid: prometheus
+          tags: [{ key: 'service.name', value: 'service' }, { key: 'job' }]
+          queries:
+            - name: 'Sample query'
+              query: 'sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[5m]))'
+  
+  # Dashboard providers
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+        - name: 'kubernetes'
+          orgId: 1
+          folder: 'Kubernetes'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/kubernetes
+        - name: 'tempo'
+          orgId: 1
+          folder: 'Tempo'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/tempo
+  
+  # Grafana configuration
+  grafana.ini:
+    server:
+      root_url: https://grafana.milenika.dev
+      serve_from_sub_path: false
+    security:
+      disable_gravatar: true
+      cookie_secure: true
+      cookie_samesite: strict
+      strict_transport_security: true
+      x_content_type_options: true
+      x_xss_protection: true
+    auth:
+      disable_login_form: false
+      disable_signout_menu: false
+    auth.anonymous:
+      enabled: false
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+    log:
+      mode: console
+      level: info
+    panels:
+      disable_sanitize_html: false
+    # Feature toggles for tracing
+    feature_toggles:
+      enable: tracing tempo
+
+# Prometheus Configuration
+prometheus:
+  enabled: true
+  
+  prometheusSpec:
+    # Data retention
+    retention: 15d
+    retentionSize: 20GB
+    
+    # Resource management
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+    
+    # Security context
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 3000
+      fsGroup: 2000
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+    
+    # Storage
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 30Gi
+    
+    # Service discovery and monitoring
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
+    podMonitorNamespaceSelector: {}
+    ruleNamespaceSelector: {}
+    
+    # Scrape configuration
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+    
+    # Additional scrape configs for the full LGTM stack
+    additionalScrapeConfigs:
+      - job_name: 'promtail'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - monitoring
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+            action: keep
+            regex: promtail
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+      
+      - job_name: 'tempo'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - monitoring
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+            action: keep
+            regex: tempo
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+
+# Prometheus Operator
+prometheusOperator:
+  enabled: true
+  
+  # Resource management
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  
+  # Security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+
+# Node Exporter
+nodeExporter:
+  enabled: true
+  
+  # Resource management
+  resources:
+    limits:
+      cpu: 200m
+      memory: 100Mi
+    requests:
+      cpu: 100m
+      memory: 50Mi
+
+# Kube State Metrics
+kubeStateMetrics:
+  enabled: true
+  
+  # Resource management
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Default monitoring rules
+defaultRules:
+  create: true
+  rules:
+    alertmanager: false  # Disabled since alertmanager is disabled
+    etcd: true
+    configReloaders: true
+    general: true
+    k8s: true
+    kubeApiserverAvailability: true
+    kubeApiserverBurnrate: true
+    kubeApiserverHistogram: true
+    kubeApiserverSlos: true
+    kubelet: true
+    kubeProxy: true
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
+
+# Cleanup settings
+cleanPrometheusOperatorObjectNames: true
+</file>
+
+<file path="apps/monitoring/tempo-values.yaml">
+# Tempo Configuration - Chart Version 1.17.3
+# Distributed tracing for LGTM stack
+
+# Global configuration
+global:
+  image:
+    # Use the latest stable version
+    tag: "2.6.1"
+
+# Tempo configuration
+tempo:
+  # Repository configuration
+  repository: grafana/tempo
+  tag: null
+  pullPolicy: IfNotPresent
+  
+  # Resource management
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  
+  # Tempo configuration
+  config: |
+    multitenancy_enabled: false
+    usage_report:
+      reporting_enabled: false
+    compactor:
+      compaction:
+        block_retention: 1h
+    distributor:
+      receivers:
+        jaeger:
+          protocols:
+            thrift_http:
+              endpoint: 0.0.0.0:14268
+            grpc:
+              endpoint: 0.0.0.0:14250
+            thrift_binary:
+              endpoint: 0.0.0.0:6832
+            thrift_compact:
+              endpoint: 0.0.0.0:6831
+        zipkin:
+          endpoint: 0.0.0.0:9411
+        otlp:
+          protocols:
+            http:
+              endpoint: 0.0.0.0:4318
+            grpc:
+              endpoint: 0.0.0.0:4317
+        opencensus:
+          endpoint: 0.0.0.0:55678
+    ingester:
+      max_block_duration: 5m
+    server:
+      http_listen_port: 3200
+      log_level: info
+    storage:
+      trace:
+        backend: local
+        wal:
+          path: /var/tempo/wal
+        local:
+          path: /var/tempo/blocks
+        pool:
+          max_workers: 100
+          queue_depth: 10000
+    querier:
+      frontend_worker:
+        frontend_address: tempo-query-frontend:9095
+    query_frontend:
+      search:
+        duration_slo: 5s
+        throughput_bytes_slo: 1.073741824e+09
+      trace_by_id:
+        duration_slo: 5s
+
+# Persistence configuration
+persistence:
+  enabled: true
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 10Gi
+
+# Service configuration
+service:
+  type: ClusterIP
+  ports:
+    # Tempo gRPC API
+    - name: tempo-prom-metrics
+      port: 3200
+      targetPort: 3200
+    # Jaeger receivers
+    - name: tempo-jaeger-thrift-http
+      port: 14268
+      targetPort: 14268
+    - name: tempo-jaeger-grpc
+      port: 14250
+      targetPort: 14250
+    - name: tempo-jaeger-thrift-binary
+      port: 6832
+      targetPort: 6832
+      protocol: UDP
+    - name: tempo-jaeger-thrift-compact
+      port: 6831
+      targetPort: 6831
+      protocol: UDP
+    # Zipkin receiver
+    - name: tempo-zipkin
+      port: 9411
+      targetPort: 9411
+    # OpenTelemetry receivers
+    - name: tempo-otlp-legacy
+      port: 55680
+      targetPort: 55680
+    - name: tempo-otlp-http
+      port: 4318
+      targetPort: 4318
+    - name: tempo-otlp-grpc
+      port: 4317
+      targetPort: 4317
+    # OpenCensus receiver
+    - name: tempo-opencensus
+      port: 55678
+      targetPort: 55678
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false  # Tempo needs to write to filesystem
+  allowPrivilegeEscalation: false
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+# ServiceMonitor for Prometheus integration
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  additionalLabels: {}
+  annotations: {}
+
+# Ingress configuration (optional, for external access)
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  hosts:
+    - host: tempo.milenika.dev
+      paths:
+        - path: /
+          pathType: Prefix
+  annotations:
+    # Cloudflare tunnel configuration
+    external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    # Security headers
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
+  tls:
+    - secretName: tempo-tls
+      hosts:
+        - tempo.milenika.dev
+
+# Extra volumes for temporary storage
+extraVolumes:
+  - name: tmp
+    emptyDir: {}
+
+extraVolumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+# Node selector and tolerations
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Replica count
+replicas: 1
+
+# Update strategy
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+
+# Probes
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 3200
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+livenessProbe:
+  httpGet:
+    path: /ready
+    port: 3200
+  initialDelaySeconds: 30
+  periodSeconds: 15
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3200"
+  prometheus.io/path: "/metrics"
+</file>
+
+<file path="apps/system/alloy-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: alloy
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  project: monitoring
+  source:
+    repoURL: https://github.com/mikha-22/homelab-gitops
+    targetRevision: HEAD
+    path: apps/alloy
+    kustomize:
+      version: v5.4.0
+      buildOptions: "--enable-helm --load-restrictor=LoadRestrictionsNone"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: alloy-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - Validate=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+</file>
+
+<file path="apps/monitoring/kustomization.yaml">
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: monitoring
+
+resources:
+  - namespace.yaml
+
+helmCharts:
+  # Prometheus Stack - Metrics collection and alerting
+  - name: kube-prometheus-stack
+    repo: https://prometheus-community.github.io/helm-charts
+    version: "75.9.0"
+    releaseName: prometheus-stack
+    valuesFile: prometheus-stack-values.yaml
+    namespace: monitoring
+
+  # Loki - Log aggregation
+  - name: loki
+    repo: https://grafana.github.io/helm-charts
+    version: "6.30.1"
+    releaseName: loki
+    valuesFile: loki-values.yaml
+    namespace: monitoring
+
+  # Tempo - Distributed tracing
+  - name: tempo
+    repo: https://grafana.github.io/helm-charts
+    version: "1.17.3"
+    releaseName: tempo
+    valuesFile: tempo-values.yaml
+    namespace: monitoring
+
+  # Promtail - Log collection (connects to both Loki and Tempo)
+  - name: promtail
+    repo: https://grafana.github.io/helm-charts
+    version: "6.17.0"
+    releaseName: promtail
+    valuesFile: promtail-values.yaml
+    namespace: monitoring
+
+# Common labels for all monitoring components
+commonLabels:
+  app.kubernetes.io/part-of: lgtm-stack
+  environment: homelab
+  managed-by: argocd
+</file>
+
+<file path="apps/monitoring/loki-values.yaml">
+# Loki Configuration - Chart Version 6.30.1
+# Optimized for homelab deployment with latest best practices
+
+# Global configuration
+global:
+  dnsService: kube-dns
+  dnsNamespace: kube-system
+
+# Deployment mode - SingleBinary for homelab efficiency
+deploymentMode: SingleBinary
+
+# Loki configuration
+loki:
+  # Authentication disabled for homelab simplicity
+  auth_enabled: false
+  
+  # Server configuration
+  server:
+    http_listen_port: 3100
+    grpc_listen_port: 9095
+    log_level: info
+    log_format: logfmt
+  
+  # Common configuration
+  common:
+    # Path prefix for object storage (when using cloud storage)
+    path_prefix: /var/loki
+    # Replication factor
+    replication_factor: 1
+    # Ring configuration for single binary mode
+    ring:
+      kvstore:
+        store: inmemory
+  
+  # Storage configuration - filesystem for homelab
+  storage_config:
+    filesystem:
+      directory: /var/loki
+    hedging:
+      at: 250ms
+      max_per_second: 20
+      up_to: 3
+  
+  # Schema configuration
+  schema_config:
+    configs:
+      - from: 2024-01-01
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+  
+  # Limits configuration
+  limits_config:
+    # Retention period
+    retention_period: 7d
+    # Ingestion limits
+    ingestion_rate_strategy: global
+    ingestion_rate_mb: 16
+    ingestion_burst_size_mb: 32
+    max_global_streams_per_user: 10000
+    max_query_length: 12000h
+    max_query_parallelism: 16
+    max_streams_per_user: 0
+    max_line_size: 256000
+    max_entries_limit_per_query: 10000
+    max_query_series: 10000
+    # Query timeout
+    query_timeout: 300s
+    # Split queries settings
+    split_queries_by_interval: 15m
+    max_concurrent_tail_requests: 10
+    max_cache_freshness_per_query: 10m
+    # Reject old samples
+    reject_old_samples: true
+    reject_old_samples_max_age: 168h
+    # Creation grace period
+    creation_grace_period: 10m
+    # Enforce metric name validation
+    enforce_metric_name: false
+    # Max metadata per user
+    max_metadata_per_user: 100000
+    max_metadata_per_metric: 10
+  
+  # Analytics configuration
+  analytics:
+    reporting_enabled: false
+  
+  # Query scheduler configuration
+  query_scheduler:
+    max_outstanding_requests_per_tenant: 2048
+  
+  # Frontend configuration
+  frontend:
+    max_outstanding_per_tenant: 2048
+    compress_responses: true
+    log_queries_longer_than: 5s
+  
+  # Querier configuration
+  querier:
+    max_concurrent: 16
+    query_timeout: 300s
+  
+  # Query range configuration
+  query_range:
+    # Results cache configuration
+    cache_results: true
+    max_retries: 5
+    results_cache:
+      cache:
+        embedded_cache:
+          enabled: true
+          max_size_mb: 500
+          ttl: 1h
+    
+  # Table manager configuration (for retention)
+  table_manager:
+    retention_deletes_enabled: true
+    retention_period: 7d
+  
+  # Compactor configuration
+  compactor:
+    working_directory: /var/loki/boltdb-shipper-compactor
+    shared_store: filesystem
+    compaction_interval: 10m
+    retention_enabled: true
+    retention_delete_delay: 2h
+    retention_delete_worker_count: 150
+    delete_request_cancel_period: 24h
+
+# Single binary specific configuration
+singleBinary:
+  # Number of replicas
+  replicas: 1
+  
+  # Resource management
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  
+  # Persistence configuration
+  persistence:
+    enabled: true
+    storageClass: local-path
+    size: 30Gi
+    accessModes:
+      - ReadWriteOnce
+  
+  # Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 10001
+    runAsGroup: 10001
+    fsGroup: 10001
+    seccompProfile:
+      type: RuntimeDefault
+  
+  # Container security context
+  containerSecurityContext:
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+    allowPrivilegeEscalation: false
+  
+  # Liveness probe
+  livenessProbe:
+    httpGet:
+      path: /ready
+      port: http-metrics
+      scheme: HTTP
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 1
+    successThreshold: 1
+    failureThreshold: 3
+  
+  # Readiness probe
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: http-metrics
+      scheme: HTTP
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 1
+    successThreshold: 1
+    failureThreshold: 3
+  
+  # Affinity and tolerations
+  affinity: {}
+  nodeSelector: {}
+  tolerations: []
+  
+  # Extra environment variables
+  extraEnv:
+    - name: GOMAXPROCS
+      value: "2"
+  
+  # Extra volumes and volume mounts for temporary directories
+  extraVolumes:
+    - name: tmp
+      emptyDir: {}
+    - name: runtime-tmp
+      emptyDir: {}
+  
+  extraVolumeMounts:
+    - name: tmp
+      mountPath: /tmp
+    - name: runtime-tmp
+      mountPath: /var/tmp
+
+# Gateway configuration (nginx proxy)
+gateway:
+  enabled: true
+  replicas: 1
+  
+  # Resource management
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  
+  # Service configuration
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: http
+    labels: {}
+    annotations: {}
+  
+  # Ingress configuration
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - host: loki.milenika.dev
+        paths:
+          - path: /
+            pathType: Prefix
+    annotations:
+      # Cloudflare tunnel configuration
+      external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+      # Security and performance
+      traefik.ingress.kubernetes.io/router.tls: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
+    tls:
+      - secretName: loki-gateway-tls
+        hosts:
+          - loki.milenika.dev
+
+# Test configuration
+test:
+  enabled: false
+
+# Monitoring configuration
+monitoring:
+  # Self monitoring disabled to keep things simple
+  selfMonitoring:
+    enabled: false
+    grafanaAgent:
+      installOperator: false
+  
+  # Loki canary for synthetic monitoring
+  lokiCanary:
+    enabled: true
+    resources:
+      limits:
+        cpu: 50m
+        memory: 64Mi
+      requests:
+        cpu: 25m
+        memory: 32Mi
+
+# ServiceMonitor for Prometheus integration
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  namespaceSelector: {}
+  annotations: {}
+  labels: {}
+  interval: 30s
+  scrapeTimeout: 10s
+  relabelings: []
+  metricRelabelings: []
+
+# PrometheusRule for alerting
+prometheusRule:
+  enabled: true
+  namespace: monitoring
+  annotations: {}
+  labels: {}
+  groups:
+    - name: loki-rules
+      rules:
+        - alert: LokiProcessTooManyRestarts
+          expr: changes(process_start_time_seconds{job=~"loki.*"}[15m]) > 2
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: Loki process too many restarts (instance {{ $labels.instance }})
+            description: "A loki process had too many restarts (target {{ $labels.instance }})\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+        
+        - alert: LokiRequestErrors
+          expr: 100 * sum(rate(loki_request_duration_seconds_count{status_code=~"5.."}[1m])) by (namespace, job, route) / sum(rate(loki_request_duration_seconds_count[1m])) by (namespace, job, route) > 10
+          for: 15m
+          labels:
+            severity: critical
+          annotations:
+            summary: Loki request errors (instance {{ $labels.instance }})
+            description: "The {{ $labels.job }} and {{ $labels.route }} are experiencing errors\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+</file>
+
+<file path="apps/monitoring/promtail-values.yaml">
+# Promtail Configuration for LGTM Stack - Chart Version 6.17.0
+# Enhanced for tracing integration with Tempo
+
+# Global configuration
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# Promtail configuration
+config:
+  # Enable Promtail config from Helm chart
+  enabled: true
+  
+  # Log level
+  logLevel: info
+  
+  # Log format
+  logFormat: logfmt
+  
+  # Server port
+  serverPort: 3101
+  
+  # Loki client configuration
+  clients:
+    - url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
+      # Retry configuration
+      backoff_config:
+        min_period: 500ms
+        max_period: 5m
+        max_retries: 10
+      # Batch configuration
+      batchsize: 1048576
+      batchwait: 1s
+      # Timeout
+      timeout: 10s
+      # External labels for better correlation
+      external_labels:
+        cluster: homelab
+        environment: homelab
+  
+  # Positions file
+  positions:
+    filename: /run/promtail/positions.yaml
+  
+  # Scrape configurations
+  scrape_configs:
+    # Kubernetes pod logs with trace extraction
+    - job_name: kubernetes-pods
+      kubernetes_sd_configs:
+        - role: pod
+      pipeline_stages:
+        # Parse container runtime format
+        - cri: {}
+        
+        # Extract trace IDs from logs for correlation with Tempo
+        - regex:
+            expression: '.*trace[_-]?id["\s:=]+(?P<trace_id>[a-fA-F0-9]+).*'
+        
+        # Extract span IDs if present
+        - regex:
+            expression: '.*span[_-]?id["\s:=]+(?P<span_id>[a-fA-F0-9]+).*'
+        
+        # Extract log level
+        - regex:
+            expression: '.*level["\s:=]+(?P<level>(DEBUG|INFO|WARN|ERROR|FATAL)).*'
+        
+        # Label extraction for better filtering
+        - labels:
+            trace_id:
+            span_id:
+            level:
+        
+        # Drop health check logs to reduce noise
+        - drop:
+            expression: '.*health.*check.*'
+            drop_counter_reason: 'health_checks'
+        
+        # Drop metrics endpoints
+        - drop:
+            expression: '.*GET /metrics.*'
+            drop_counter_reason: 'metrics_endpoint'
+            
+      relabel_configs:
+        - source_labels:
+            - __meta_kubernetes_pod_controller_name
+          regex: ([0-9a-z-.]+?)(-[0-9a-f]{8,10})?
+          action: replace
+          target_label: __tmp_controller_name
+        - source_labels:
+            - __meta_kubernetes_pod_label_app_kubernetes_io_name
+            - __meta_kubernetes_pod_label_app
+            - __tmp_controller_name
+            - __meta_kubernetes_pod_name
+          regex: ^;*([^;]+)(;.*)?$
+          action: replace
+          target_label: app
+        - source_labels:
+            - __meta_kubernetes_pod_label_app_kubernetes_io_instance
+            - __meta_kubernetes_pod_label_instance
+          regex: ^;*([^;]+)(;.*)?$
+          action: replace
+          target_label: instance
+        - source_labels:
+            - __meta_kubernetes_pod_label_app_kubernetes_io_component
+            - __meta_kubernetes_pod_label_component
+          regex: ^;*([^;]+)(;.*)?$
+          action: replace
+          target_label: component
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_pod_node_name
+          target_label: node_name
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_namespace
+          target_label: namespace
+        - action: replace
+          replacement: $1
+          separator: /
+          source_labels:
+          - namespace
+          - app
+          target_label: job
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_pod_name
+          target_label: pod
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_pod_container_name
+          target_label: container
+        - action: replace
+          replacement: /var/log/pods/*$1/*.log
+          separator: /
+          source_labels:
+          - __meta_kubernetes_pod_uid
+          - __meta_kubernetes_pod_container_name
+          target_label: __path__
+        # Add cluster and environment labels for multi-cluster setups
+        - action: replace
+          replacement: homelab
+          target_label: cluster
+        - action: replace
+          replacement: homelab
+          target_label: environment
+
+    # System logs with journal integration
+    - job_name: journal
+      journal:
+        max_age: 12h
+        path: /var/log/journal
+        labels:
+          job: systemd-journal
+      pipeline_stages:
+        # Extract trace information from systemd logs if present
+        - regex:
+            expression: '.*trace[_-]?id["\s:=]+(?P<trace_id>[a-fA-F0-9]+).*'
+        - labels:
+            trace_id:
+      relabel_configs:
+        - source_labels: ['__journal__systemd_unit']
+          target_label: 'unit'
+        - source_labels: ['__journal__hostname']
+          target_label: 'hostname'
+        - source_labels: ['__journal_priority_keyword']
+          target_label: 'level'
+        - action: replace
+          replacement: homelab
+          target_label: cluster
+
+# Deployment configuration
+daemonset:
+  enabled: true
+  
+  # Update strategy
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
+# Resource configuration
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+# Security context
+securityContext:
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+  allowPrivilegeEscalation: false
+
+# Pod security context
+podSecurityContext:
+  runAsUser: 0  # Required for reading log files
+  runAsGroup: 0
+  fsGroup: 0
+  seccompProfile:
+    type: RuntimeDefault
+
+# Service account
+serviceAccount:
+  create: true
+  name: promtail
+  annotations: {}
+
+# RBAC
+rbac:
+  create: true
+  pspEnabled: false
+
+# Node selector and tolerations
+nodeSelector: {}
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+    operator: Exists
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+
+# Volumes and volume mounts
+extraVolumes:
+  - name: tmp
+    emptyDir: {}
+  # Mount journal directory for system logs
+  - name: journal
+    hostPath:
+      path: /var/log/journal
+  - name: machine-id
+    hostPath:
+      path: /etc/machine-id
+
+extraVolumeMounts:
+  - name: tmp
+    mountPath: /tmp
+  - name: journal
+    mountPath: /var/log/journal
+    readOnly: true
+  - name: machine-id
+    mountPath: /etc/machine-id
+    readOnly: true
+
+# Service monitor for Prometheus
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  additionalLabels: {}
+  annotations: {}
+  scrapeTimeout: 10s
+  relabelings: []
+  metricRelabelings: []
+
+# Prometheus rule for LGTM stack
+prometheusRule:
+  enabled: true
+  additionalLabels: {}
+  rules:
+    - alert: PromtailRequestsErrors
+      expr: 100 * sum(rate(promtail_request_duration_seconds_count{status_code=~"5..|4.."}[1m])) by (namespace, job, route, instance) / sum(rate(promtail_request_duration_seconds_count[1m])) by (namespace, job, route, instance) > 10
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Promtail request errors (instance {{ $labels.instance }})
+        description: "The {{ $labels.job }} and {{ $labels.route }} are experiencing errors\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    
+    - alert: PromtailRequestLatency
+      expr: histogram_quantile(0.99, sum(rate(promtail_request_duration_seconds_bucket[5m])) by (le)) > 1
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Promtail request latency (instance {{ $labels.instance }})
+        description: "The {{ $labels.job }} {{ $labels.route }} is experiencing {{ printf \"%.2f\" $value }}s 99th percentile latency\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    
+    - alert: PromtailFileMissing
+      expr: promtail_files_active_total == 0
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: Promtail not collecting any logs
+        description: "Promtail instance {{ $labels.instance }} is not collecting any log files"
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3101"
+</file>
+
+<file path="apps/system/projects/monitoring-project.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  description: "Homelab LGTM Stack - Loki, Grafana, Tempo, ProMetheus"
+  
+  # Source repositories
+  sourceRepos:
+    - 'https://github.com/mikha-22/homelab-gitops'
+    - 'https://prometheus-community.github.io/helm-charts'
+    - 'https://grafana.github.io/helm-charts'
+  
+  # Deployment destinations - only monitoring namespace needed for LGTM
+  destinations:
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+  
+  # Cluster resource permissions
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+    - group: policy
+      kind: PodSecurityPolicy
+    - group: security.openshift.io
+      kind: SecurityContextConstraints
+  
+  # Namespace resource permissions
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  
+  # RBAC configuration
+  roles:
+    - name: monitoring-admin
+      description: Full access to LGTM monitoring resources
+      policies:
+        - p, proj:monitoring:monitoring-admin, applications, *, monitoring/*, allow
+        - p, proj:monitoring:monitoring-admin, repositories, *, *, allow
+      groups:
+        - homelab:monitoring-admins
+</file>
+
+<file path="apps/system/kustomization.yaml">
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - projects/monitoring-project.yaml
+  - monitoring-app.yaml
+  # Removed alloy-app.yaml - using Promtail in LGTM stack
+
+# Common labels for all system applications
+commonLabels:
+  app.kubernetes.io/part-of: homelab-gitops
+  environment: homelab
+</file>
+
+<file path="apps/system/monitoring-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: monitoring
+  source:
+    repoURL: https://github.com/mikha-22/homelab-gitops
+    targetRevision: HEAD
+    path: apps/monitoring
+    kustomize:
+      version: v5.4.0
+      buildOptions: "--enable-helm --load-restrictor=LoadRestrictionsNone"
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - Validate=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 5m
+  # Health checks for monitoring components
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+      jsonPointers:
+        - /spec/endpoints/0/interval
+</file>
+
+<file path=".gitignore">
+# Temporary files
+*.tmp
+*.temp
+temp/
+.tmp/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Kubernetes secrets (should never be committed)
+*.secret.yaml
+secrets/
+
+# Helm temporary files
+*.tgz
+charts/
+
+# Terraform state (if any)
+*.tfstate
+*.tfstate.backup
+.terraform/
+terraform.tfvars
+
+# Build outputs
+dist/
+build/
+target/
+
+# Logs
+*.log
+logs/
+
+# Backup files
+*.bak
+*.backup
+
+# IDE specific
+.vscode/settings.json
+.idea/
+*.iml
+
+# Local development
+.env
+.env.local
+local-values.yaml
+dev-values.yaml
+
+# ArgoCD generated files
+.argocd-source-*
+</file>
+
+<file path="bootstrap/root.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mikha-22/homelab-gitops
+    targetRevision: HEAD
+    path: apps/system
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+</file>
+
+</files>

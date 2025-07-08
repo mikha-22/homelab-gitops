@@ -1,22 +1,52 @@
-# FILE: apps/system/projects/monitoring-project.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
   name: monitoring
   namespace: argocd
 spec:
-  description: Project for the Homelab Monitoring Stack (Prometheus, Grafana, Loki)
+  description: "Homelab LGTM Stack - Loki, Grafana, Tempo, ProMetheus"
+  
+  # Source repositories
   sourceRepos:
-    - '*' # Allow deploying from any repo, can be locked down for production
+    - 'https://github.com/mikha-22/homelab-gitops'
+    - 'https://prometheus-community.github.io/helm-charts'
+    - 'https://grafana.github.io/helm-charts'
+  
+  # Deployment destinations - only monitoring namespace needed for LGTM
   destinations:
-    # Only allow this project to deploy to the 'monitoring' namespace
     - namespace: monitoring
       server: https://kubernetes.default.svc
-  # Allow the project to manage CRDs, ClusterRoles, etc., which are needed by the Prometheus stack
+  
+  # Cluster resource permissions
   clusterResourceWhitelist:
-    - group: '*'
-      kind: '*'
-  # Allow the project to manage any namespaced resource
+    - group: ''
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+    - group: policy
+      kind: PodSecurityPolicy
+    - group: security.openshift.io
+      kind: SecurityContextConstraints
+  
+  # Namespace resource permissions
   namespaceResourceWhitelist:
     - group: '*'
       kind: '*'
+  
+  # RBAC configuration
+  roles:
+    - name: monitoring-admin
+      description: Full access to LGTM monitoring resources
+      policies:
+        - p, proj:monitoring:monitoring-admin, applications, *, monitoring/*, allow
+        - p, proj:monitoring:monitoring-admin, repositories, *, *, allow
+      groups:
+        - homelab:monitoring-admins

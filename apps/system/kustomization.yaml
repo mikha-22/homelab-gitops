@@ -1,6 +1,12 @@
-# FILE: apps/system/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+
 resources:
   - projects/monitoring-project.yaml
   - monitoring-app.yaml
+  # Removed alloy-app.yaml - using Promtail in LGTM stack
+
+# Common labels for all system applications
+commonLabels:
+  app.kubernetes.io/part-of: homelab-gitops
+  environment: homelab
