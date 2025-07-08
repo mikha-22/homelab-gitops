@@ -12,9 +12,11 @@ spec:
     - 'https://prometheus-community.github.io/helm-charts'
     - 'https://grafana.github.io/helm-charts'
   
-  # Deployment destinations
+  # Deployment destinations - ADD kube-system for Prometheus components
   destinations:
     - namespace: monitoring
+      server: https://kubernetes.default.svc
+    - namespace: kube-system  # ADD THIS - Prometheus needs to create services here
       server: https://kubernetes.default.svc
   
   # Cluster resource permissions
