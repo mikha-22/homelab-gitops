@@ -13,8 +13,9 @@ spec:
     repoURL: https://github.com/mikha-22/homelab-gitops
     targetRevision: HEAD
     path: apps/monitoring
-    # Removed kustomize config for ArgoCD v3.x compatibility
-    # ArgoCD will auto-detect and handle Helm charts in Kustomize
+    # Use plugin for Helm support in ArgoCD v3.x
+    plugin:
+      name: kustomized-helm
     
   destination:
     server: https://kubernetes.default.svc

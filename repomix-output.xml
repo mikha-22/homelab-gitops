@@ -1371,58 +1371,17 @@ podAnnotations:
 </file>
 
 <file path="apps/system/projects/monitoring-project.yaml">
-apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
-  name: monitoring
-  namespace: argocd
-spec:
-  description: "Homelab LGTM Stack - Loki, Grafana, Tempo, ProMetheus"
-  
-  # Source repositories
-  sourceRepos:
-    - 'https://github.com/mikha-22/homelab-gitops'
-    - 'https://prometheus-community.github.io/helm-charts'
-    - 'https://grafana.github.io/helm-charts'
-  
-  # Deployment destinations - only monitoring namespace needed for LGTM
-  destinations:
-    - namespace: monitoring
-      server: https://kubernetes.default.svc
-  
-  # Cluster resource permissions
-  clusterResourceWhitelist:
-    - group: ''
-      kind: Namespace
-    - group: rbac.authorization.k8s.io
-      kind: ClusterRole
-    - group: rbac.authorization.k8s.io
-      kind: ClusterRoleBinding
-    - group: apiextensions.k8s.io
-      kind: CustomResourceDefinition
-    - group: admissionregistration.k8s.io
-      kind: MutatingWebhookConfiguration
-    - group: admissionregistration.k8s.io
-      kind: ValidatingWebhookConfiguration
-    - group: policy
-      kind: PodSecurityPolicy
-    - group: security.openshift.io
-      kind: SecurityContextConstraints
-  
-  # Namespace resource permissions
-  namespaceResourceWhitelist:
-    - group: '*'
-      kind: '*'
-  
-  # RBAC configuration
-  roles:
-    - name: monitoring-admin
-      description: Full access to LGTM monitoring resources
-      policies:
-        - p, proj:monitoring:monitoring-admin, applications, *, monitoring/*, allow
-        - p, proj:monitoring:monitoring-admin, repositories, *, *, allow
-      groups:
-        - homelab:monitoring-admins
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - projects/monitoring-project.yaml
+  - monitoring-app.yaml
+
+# Common labels for all system applications
+commonLabels:
+  app.kubernetes.io/part-of: homelab-gitops
+  environment: homelab
 </file>
 
 <file path="apps/system/kustomization.yaml">
@@ -1432,62 +1391,11 @@ kind: Kustomization
 resources:
   - projects/monitoring-project.yaml
   - monitoring-app.yaml
-  # Removed alloy-app.yaml - using Promtail in LGTM stack
 
 # Common labels for all system applications
 commonLabels:
   app.kubernetes.io/part-of: homelab-gitops
   environment: homelab
-</file>
-
-<file path="apps/system/monitoring-app.yaml">
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: monitoring
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
-spec:
-  project: monitoring
-  source:
-    repoURL: https://github.com/mikha-22/homelab-gitops
-    targetRevision: HEAD
-    path: apps/monitoring
-    kustomize:
-      version: v5.4.0
-      buildOptions: "--enable-helm --load-restrictor=LoadRestrictionsNone"
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: monitoring
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
-      - Validate=true
-      - PrunePropagationPolicy=foreground
-      - PruneLast=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 5m
-  # Health checks for monitoring components
-  ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      jsonPointers:
-        - /spec/replicas
-    - group: monitoring.coreos.com
-      kind: ServiceMonitor
-      jsonPointers:
-        - /spec/endpoints/0/interval
 </file>
 
 <file path=".gitignore">
@@ -1548,6 +1456,58 @@ dev-values.yaml
 
 # ArgoCD generated files
 .argocd-source-*
+</file>
+
+<file path="apps/system/monitoring-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: monitoring
+  source:
+    repoURL: https://github.com/mikha-22/homelab-gitops
+    targetRevision: HEAD
+    path: apps/monitoring
+    # Removed kustomize config for ArgoCD v3.x compatibility
+    # ArgoCD will auto-detect and handle Helm charts in Kustomize
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - Validate=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 5m
+        
+  # Health checks for monitoring components
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+      jsonPointers:
+        - /spec/endpoints/0/interval
 </file>
 
 <file path="bootstrap/root.yaml">
