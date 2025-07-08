@@ -55,7 +55,6 @@ apps/
   system/
     projects/
       monitoring-project.yaml
-    alloy-app.yaml
     kustomization.yaml
     monitoring-app.yaml
 bootstrap/
@@ -698,44 +697,6 @@ podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "3200"
   prometheus.io/path: "/metrics"
-</file>
-
-<file path="apps/system/alloy-app.yaml">
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: alloy
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "3"
-spec:
-  project: monitoring
-  source:
-    repoURL: https://github.com/mikha-22/homelab-gitops
-    targetRevision: HEAD
-    path: apps/alloy
-    kustomize:
-      version: v5.4.0
-      buildOptions: "--enable-helm --load-restrictor=LoadRestrictionsNone"
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: alloy-system
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
-      - Validate=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 3m
 </file>
 
 <file path="apps/monitoring/kustomization.yaml">

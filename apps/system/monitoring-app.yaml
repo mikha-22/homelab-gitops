@@ -15,7 +15,8 @@ spec:
     path: apps/monitoring
     kustomize:
       version: v5.4.0
-      buildOptions: "--enable-helm --load-restrictor=LoadRestrictionsNone"
+      # Removed buildOptions for compatibility with older ArgoCD versions
+      
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
