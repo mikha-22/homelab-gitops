@@ -1,6 +1,6 @@
 # Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
 # Chart Version: 75.9.0
-# Start simple, add complexity later
+# SIMPLIFIED SECURITY CONTEXTS
 
 # Global settings
 global:
@@ -15,19 +15,18 @@ crds:
 alertmanager:
   enabled: false
 
-# Grafana Configuration - SIMPLIFIED
+# Grafana Configuration - SIMPLIFIED SECURITY
 grafana:
   enabled: true
   
   # Admin credentials - will use generated password
   adminUser: admin
-  # No hardcoded password - more secure
   
   # Persistence
   persistence:
     enabled: true
     type: pvc
-    storageClassName: local-path
+    storageClassName: ""  # Use default storage class
     size: 10Gi
     accessModes:
       - ReadWriteOnce
@@ -41,23 +40,17 @@ grafana:
       cpu: 250m
       memory: 256Mi
   
-  # Security context
+  # SIMPLIFIED security context - remove problematic fields
   securityContext:
     runAsNonRoot: true
     runAsUser: 472
-    runAsGroup: 472
     fsGroup: 472
-    capabilities:
-      drop:
-        - ALL
-    readOnlyRootFilesystem: true
-    allowPrivilegeEscalation: false
   
-  # DISABLE INGRESS FOR NOW - use port-forward first
+  # DISABLE INGRESS FOR NOW
   ingress:
     enabled: false
   
-  # Data sources configuration - PROMETHEUS ONLY FOR NOW
+  # Data sources configuration - PROMETHEUS ONLY
   additionalDataSources:
     - name: Prometheus
       type: prometheus
@@ -73,12 +66,10 @@ grafana:
   grafana.ini:
     server:
       root_url: http://localhost:3000
-      serve_from_sub_path: false
     security:
       disable_gravatar: true
     auth:
       disable_login_form: false
-      disable_signout_menu: false
     auth.anonymous:
       enabled: false
     analytics:
@@ -88,7 +79,7 @@ grafana:
       mode: console
       level: info
 
-# Prometheus Configuration
+# Prometheus Configuration - SIMPLIFIED SECURITY
 prometheus:
   enabled: true
   
@@ -106,23 +97,17 @@ prometheus:
         cpu: 1000m
         memory: 2Gi
     
-    # Security context
+    # SIMPLIFIED security context
     securityContext:
       runAsNonRoot: true
       runAsUser: 1000
-      runAsGroup: 3000
       fsGroup: 2000
-      capabilities:
-        drop:
-          - ALL
-      readOnlyRootFilesystem: true
-      allowPrivilegeEscalation: false
     
-    # Storage
+    # Storage - use default storage class
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: local-path
+          storageClassName: ""  # Use default
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
@@ -140,7 +125,7 @@ prometheus:
     scrapeInterval: 30s
     evaluationInterval: 30s
 
-# Prometheus Operator
+# Prometheus Operator - SIMPLIFIED SECURITY
 prometheusOperator:
   enabled: true
   
@@ -153,22 +138,14 @@ prometheusOperator:
       cpu: 100m
       memory: 128Mi
   
-  # Security context
+  # SIMPLIFIED security context
   securityContext:
     runAsNonRoot: true
     runAsUser: 65534
-    runAsGroup: 65534
-    capabilities:
-      drop:
-        - ALL
-    readOnlyRootFilesystem: true
-    allowPrivilegeEscalation: false
 
 # Node Exporter
 nodeExporter:
   enabled: true
-  
-  # Resource management
   resources:
     limits:
       cpu: 200m
@@ -177,11 +154,9 @@ nodeExporter:
       cpu: 100m
       memory: 50Mi
 
-# Kube State Metrics
+# Kube State Metrics  
 kubeStateMetrics:
   enabled: true
-  
-  # Resource management
   resources:
     limits:
       cpu: 100m
@@ -194,7 +169,7 @@ kubeStateMetrics:
 defaultRules:
   create: true
   rules:
-    alertmanager: false  # Disabled since alertmanager is disabled
+    alertmanager: false
     etcd: true
     configReloaders: true
     general: true
