@@ -4,7 +4,6 @@ kind: Kustomization
 resources:
   - projects/monitoring-project.yaml
   - monitoring-app.yaml
-  # Removed alloy-app.yaml - using Promtail in LGTM stack
 
 # Common labels for all system applications
 commonLabels:

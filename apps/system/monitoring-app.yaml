@@ -13,13 +13,13 @@ spec:
     repoURL: https://github.com/mikha-22/homelab-gitops
     targetRevision: HEAD
     path: apps/monitoring
-    kustomize:
-      version: v5.4.0
-      # Removed buildOptions for compatibility with older ArgoCD versions
-      
+    # Removed kustomize config for ArgoCD v3.x compatibility
+    # ArgoCD will auto-detect and handle Helm charts in Kustomize
+    
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
+    
   syncPolicy:
     automated:
       prune: true
@@ -36,6 +36,7 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 5m
+        
   # Health checks for monitoring components
   ignoreDifferences:
     - group: apps
