@@ -1,6 +1,6 @@
 # Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
 # Chart Version: 75.9.0
-# SIMPLIFIED SECURITY CONTEXTS
+# SIMPLIFIED SECURITY, KEEP local-path storage
 
 # Global settings
 global:
@@ -22,11 +22,11 @@ grafana:
   # Admin credentials - will use generated password
   adminUser: admin
   
-  # Persistence
+  # Persistence - KEEP local-path since it exists
   persistence:
     enabled: true
     type: pvc
-    storageClassName: ""  # Use default storage class
+    storageClassName: local-path  # Keep this since it exists and is default
     size: 10Gi
     accessModes:
       - ReadWriteOnce
@@ -103,11 +103,11 @@ prometheus:
       runAsUser: 1000
       fsGroup: 2000
     
-    # Storage - use default storage class
+    # Storage - keep local-path
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: ""  # Use default
+          storageClassName: local-path
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
