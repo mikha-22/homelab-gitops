@@ -14,13 +14,11 @@ global:
 grafana:
   enabled: true
   
-  # Use a pre-existing secret for admin credentials (BEST PRACTICE)
   admin:
     existingSecret: grafana-admin-credentials
     userKey: admin-user
     passwordKey: admin-password
   
-  # Persistence configuration
   persistence:
     enabled: true
     storageClassName: "local-path"
@@ -28,14 +26,14 @@ grafana:
     accessModes:
       - ReadWriteOnce
   
-  # Ingress configuration
   ingress:
     enabled: true
     ingressClassName: traefik
     hosts: 
       - grafana.milenika.dev
     annotations:
-      external-dns.alpha.kubernetes.io/target: "e36ab9bf-8074-4886-ad3a-5b1cf5dce20a.cfargotunnel.com"
+      # FIX: Updated to the correct CNAME from your IaC project
+      external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
       external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
       traefik.ingress.kubernetes.io/router.tls: "true"
     tls:
@@ -43,13 +41,11 @@ grafana:
         hosts:
           - grafana.milenika.dev
   
-  # Service Monitor for Prometheus scraping
   serviceMonitor:
     enabled: true
     labels:
       release: kube-prometheus-stack
   
-  # Add Loki as a datasource declaratively
   additionalDataSources:
     - name: Loki
       type: loki
@@ -66,7 +62,6 @@ grafana:
       access: proxy
       isDefault: true
   
-  # Resource limits
   resources:
     limits:
       cpu: 500m
@@ -81,21 +76,17 @@ grafana:
 prometheus:
   enabled: true
   
-  # Service configuration
   service:
     type: ClusterIP
     port: 9090
   
-  # Service Monitor
   serviceMonitor:
     enabled: true
     
   prometheusSpec:
-    # Retention and storage
     retention: 30d
     retentionSize: 45GB
     
-    # Storage configuration
     storageSpec:
       volumeClaimTemplate:
         spec:
@@ -105,7 +96,6 @@ prometheus:
             requests:
               storage: 50Gi
     
-    # Resource limits
     resources:
       limits:
         cpu: 1000m
@@ -114,24 +104,19 @@ prometheus:
         cpu: 500m
         memory: 1Gi
     
-    # Security context
     securityContext:
       runAsNonRoot: true
       runAsUser: 65534
       fsGroup: 65534
     
-    # Additional scrape configs for custom metrics
     additionalScrapeConfigs: []
     
-    # Rule selector - monitor all PrometheusRule resources
     ruleSelector: {}
     ruleNamespaceSelector: {}
     
-    # ServiceMonitor selector - monitor all ServiceMonitor resources
     serviceMonitorSelector: {}
     serviceMonitorNamespaceSelector: {}
     
-    # PodMonitor selector - monitor all PodMonitor resources  
     podMonitorSelector: {}
     podMonitorNamespaceSelector: {}
 
@@ -139,7 +124,7 @@ prometheus:
 # ALERTMANAGER CONFIGURATION
 # ====================
 alertmanager:
-  enabled: false  # Disabled as specified in original config
+  enabled: false
   
 # ====================
 # PROMETHEUS OPERATOR CONFIGURATION
@@ -147,7 +132,6 @@ alertmanager:
 prometheusOperator:
   enabled: true
   
-  # Resource limits for the operator
   resources:
     limits:
       cpu: 200m
@@ -156,7 +140,6 @@ prometheusOperator:
       cpu: 100m
       memory: 100Mi
   
-  # Admission webhooks
   admissionWebhooks:
     enabled: true
     patch:
@@ -174,7 +157,6 @@ kube-state-metrics:
 prometheus-node-exporter:
   enabled: true
   
-  # Service monitor
   prometheus:
     monitor:
       enabled: true

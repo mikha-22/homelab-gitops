@@ -5,7 +5,7 @@ kind: Kustomization
 # Add namespace for all resources
 namespace: monitoring
 
-# Resources section - required for Kustomize to work properly
+# Resources section
 resources:
   - grafana-secret.yaml
 
@@ -15,7 +15,7 @@ helmCharts:
     repo: https://prometheus-community.github.io/helm-charts
     version: 58.1.0
     releaseName: kube-prometheus-stack
-    namespace: monitoring
+    # FIX: Removed redundant namespace key
     valuesFile: kube-prometheus-stack-values.yaml
     includeCRDs: true
 
@@ -23,7 +23,7 @@ helmCharts:
     repo: https://grafana.github.io/helm-charts
     version: 6.6.1
     releaseName: loki
-    namespace: monitoring
+    # FIX: Removed redundant namespace key
     valuesFile: loki-values.yaml
     includeCRDs: true
 

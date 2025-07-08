@@ -10,13 +10,16 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
 spec:
-  project: default
+  # FIX: Assign to the 'monitoring' project for proper permissions
+  project: monitoring
   source:
     repoURL: https://github.com/mikha-22/homelab-gitops
     targetRevision: HEAD
     path: apps/monitoring/homelab
     
     kustomize:
+      # FIX: Specify a Kustomize version to ensure --enable-helm is respected
+      version: v5.3.0
       buildOptions: "--enable-helm"
       
   destination:
