@@ -1,6 +1,6 @@
-# Prometheus Stack Configuration - LGTM Stack
+# Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
 # Chart Version: 75.9.0
-# Security hardened configuration
+# Start simple, add complexity later
 
 # Global settings
 global:
@@ -15,14 +15,13 @@ crds:
 alertmanager:
   enabled: false
 
-# Grafana Configuration
+# Grafana Configuration - SIMPLIFIED
 grafana:
   enabled: true
   
-  # Admin credentials - USE SECRETS IN PRODUCTION!
+  # Admin credentials - will use generated password
   adminUser: admin
-  # Remove hard-coded password - will use default generated password
-  # adminPassword: homelab-admin-2025  # REMOVED FOR SECURITY
+  # No hardcoded password - more secure
   
   # Persistence
   persistence:
@@ -54,25 +53,11 @@ grafana:
     readOnlyRootFilesystem: true
     allowPrivilegeEscalation: false
   
-  # Ingress with Cloudflare tunnel
+  # DISABLE INGRESS FOR NOW - use port-forward first
   ingress:
-    enabled: true
-    ingressClassName: traefik
-    hosts:
-      - grafana.milenika.dev
-    annotations:
-      # Cloudflare tunnel configuration
-      external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
-      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-      # Security headers
-      traefik.ingress.kubernetes.io/router.tls: "true"
-      traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
-    tls:
-      - secretName: grafana-tls
-        hosts:
-          - grafana.milenika.dev
+    enabled: false
   
-  # Data sources configuration - The complete LGTM stack
+  # Data sources configuration - PROMETHEUS ONLY FOR NOW
   additionalDataSources:
     - name: Prometheus
       type: prometheus
@@ -83,100 +68,14 @@ grafana:
         timeInterval: 30s
         queryTimeout: 60s
         httpMethod: POST
-        exemplarTraceIdDestinations:
-          - name: trace_id
-            datasourceUid: tempo
-    
-    - name: Loki
-      type: loki
-      url: http://loki-gateway.monitoring.svc.cluster.local
-      access: proxy
-      isDefault: false
-      jsonData:
-        maxLines: 1000
-        timeout: 60s
-        derivedFields:
-          - name: TraceID
-            matcherRegex: "trace_id=(\\w+)"
-            url: "$${__value.raw}"
-            datasourceUid: tempo
-    
-    - name: Tempo
-      type: tempo
-      uid: tempo
-      url: http://tempo.monitoring.svc.cluster.local:3200  # Updated port
-      access: proxy
-      isDefault: false
-      jsonData:
-        httpMethod: GET
-        serviceMap:
-          datasourceUid: prometheus
-        search:
-          hide: false
-        nodeGraph:
-          enabled: true
-        traceQuery:
-          timeShiftEnabled: true
-          spanStartTimeShift: '1h'
-          spanEndTimeShift: '-1h'
-        tracesToLogs:
-          datasourceUid: loki
-          tags: ['job', 'instance', 'pod', 'namespace']
-          mappedTags: [{ key: 'service.name', value: 'service' }]
-          mapTagNamesEnabled: false
-          spanStartTimeShift: '-1h'
-          spanEndTimeShift: '1h'
-          filterByTraceID: false
-          filterBySpanID: false
-        tracesToMetrics:
-          datasourceUid: prometheus
-          tags: [{ key: 'service.name', value: 'service' }, { key: 'job' }]
-          queries:
-            - name: 'Sample query'
-              query: 'sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[5m]))'
   
-  # Dashboard providers
-  dashboardProviders:
-    dashboardproviders.yaml:
-      apiVersion: 1
-      providers:
-        - name: 'default'
-          orgId: 1
-          folder: ''
-          type: file
-          disableDeletion: false
-          editable: true
-          options:
-            path: /var/lib/grafana/dashboards/default
-        - name: 'kubernetes'
-          orgId: 1
-          folder: 'Kubernetes'
-          type: file
-          disableDeletion: false
-          editable: true
-          options:
-            path: /var/lib/grafana/dashboards/kubernetes
-        - name: 'tempo'
-          orgId: 1
-          folder: 'Tempo'
-          type: file
-          disableDeletion: false
-          editable: true
-          options:
-            path: /var/lib/grafana/dashboards/tempo
-  
-  # Grafana configuration
+  # Grafana configuration - MINIMAL
   grafana.ini:
     server:
-      root_url: https://grafana.milenika.dev
+      root_url: http://localhost:3000
       serve_from_sub_path: false
     security:
       disable_gravatar: true
-      cookie_secure: true
-      cookie_samesite: strict
-      strict_transport_security: true
-      x_content_type_options: true
-      x_xss_protection: true
     auth:
       disable_login_form: false
       disable_signout_menu: false
@@ -188,11 +87,6 @@ grafana:
     log:
       mode: console
       level: info
-    panels:
-      disable_sanitize_html: false
-    # Feature toggles for tracing
-    feature_toggles:
-      enable: tracing tempo
 
 # Prometheus Configuration
 prometheus:
@@ -245,70 +139,6 @@ prometheus:
     # Scrape configuration
     scrapeInterval: 30s
     evaluationInterval: 30s
-    
-    # Additional scrape configs for the full LGTM stack
-    additionalScrapeConfigs:
-      - job_name: 'promtail'
-        kubernetes_sd_configs:
-          - role: pod
-            namespaces:
-              names:
-                - monitoring
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
-            action: keep
-            regex: promtail
-          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-            action: keep
-            regex: true
-          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-            action: replace
-            target_label: __metrics_path__
-            regex: (.+)
-          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-            action: replace
-            regex: ([^:]+)(?::\d+)?;(\d+)
-            replacement: $1:$2
-            target_label: __address__
-          - action: labelmap
-            regex: __meta_kubernetes_pod_label_(.+)
-          - source_labels: [__meta_kubernetes_namespace]
-            action: replace
-            target_label: kubernetes_namespace
-          - source_labels: [__meta_kubernetes_pod_name]
-            action: replace
-            target_label: kubernetes_pod_name
-      
-      - job_name: 'tempo'
-        kubernetes_sd_configs:
-          - role: pod
-            namespaces:
-              names:
-                - monitoring
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
-            action: keep
-            regex: tempo
-          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
-            action: keep
-            regex: true
-          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-            action: replace
-            target_label: __metrics_path__
-            regex: (.+)
-          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-            action: replace
-            regex: ([^:]+)(?::\d+)?;(\d+)
-            replacement: $1:$2
-            target_label: __address__
-          - action: labelmap
-            regex: __meta_kubernetes_pod_label_(.+)
-          - source_labels: [__meta_kubernetes_namespace]
-            action: replace
-            target_label: kubernetes_namespace
-          - source_labels: [__meta_kubernetes_pod_name]
-            action: replace
-            target_label: kubernetes_pod_name
 
 # Prometheus Operator
 prometheusOperator:
