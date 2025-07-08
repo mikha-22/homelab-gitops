@@ -23,10 +23,10 @@ helmCharts:
     valuesFile: loki-values.yaml
     namespace: monitoring
 
-  # Tempo - Distributed tracing
+  # Tempo - Distributed tracing (UPDATED VERSION)
   - name: tempo
     repo: https://grafana.github.io/helm-charts
-    version: "1.17.3"
+    version: "1.23.2"  # Updated from 1.17.3
     releaseName: tempo
     valuesFile: tempo-values.yaml
     namespace: monitoring

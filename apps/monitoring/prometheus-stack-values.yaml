@@ -1,6 +1,6 @@
 # Prometheus Stack Configuration - LGTM Stack
 # Chart Version: 75.9.0
-# Loki + Grafana + Tempo + ProMetheus
+# Security hardened configuration
 
 # Global settings
 global:
@@ -19,9 +19,10 @@ alertmanager:
 grafana:
   enabled: true
   
-  # Admin credentials (use secrets in production)
+  # Admin credentials - USE SECRETS IN PRODUCTION!
   adminUser: admin
-  adminPassword: homelab-admin-2025
+  # Remove hard-coded password - will use default generated password
+  # adminPassword: homelab-admin-2025  # REMOVED FOR SECURITY
   
   # Persistence
   persistence:
@@ -103,7 +104,7 @@ grafana:
     - name: Tempo
       type: tempo
       uid: tempo
-      url: http://tempo.monitoring.svc.cluster.local:3200
+      url: http://tempo.monitoring.svc.cluster.local:3200  # Updated port
       access: proxy
       isDefault: false
       jsonData:

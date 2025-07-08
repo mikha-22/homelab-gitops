@@ -10,3 +10,40 @@ metadata:
     pod-security.kubernetes.io/warn: restricted
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
+---
+# Add resource quota for better resource management
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: monitoring-quota
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: monitoring-quota
+    app.kubernetes.io/part-of: homelab-gitops
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "16"
+    limits.memory: 32Gi
+    persistentvolumeclaims: "10"
+    requests.storage: 100Gi
+---
+# Add limit range for default resource limits
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: monitoring-limits
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: monitoring-limits
+    app.kubernetes.io/part-of: homelab-gitops
+spec:
+  limits:
+  - default:
+      cpu: 500m
+      memory: 512Mi
+    defaultRequest:
+      cpu: 100m
+      memory: 128Mi
+    type: Container

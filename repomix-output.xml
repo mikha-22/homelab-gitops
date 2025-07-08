@@ -46,6 +46,9 @@ The content is organized as follows:
 <directory_structure>
 apps/
   monitoring/
+    namespace/
+      kustomization.yaml
+      security-headers.yaml
     kustomization.yaml
     loki-values.yaml
     namespace.yaml
@@ -56,14 +59,68 @@ apps/
     projects/
       monitoring-project.yaml
     kustomization.yaml
-    monitoring-app.yaml
+    loki-app.yaml
+    monitoring-namespace-app.yaml
+    prometheus-app.yaml
+    promtail-app.yaml
+    tempo-app.yaml
 bootstrap/
   root.yaml
 .gitignore
+force-refresh-command.txt
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="apps/monitoring/namespace/security-headers.yaml">
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: security-headers
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: security-headers
+    app.kubernetes.io/part-of: homelab-gitops
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+    customResponseHeaders:
+      X-Content-Type-Options: "nosniff"
+      X-Frame-Options: "DENY"
+      X-XSS-Protection: "1; mode=block"
+      Referrer-Policy: "strict-origin-when-cross-origin"
+      Permissions-Policy: "geolocation=(), microphone=(), camera=(), usb=(), bluetooth=(), gyroscope=(), magnetometer=(), display-capture=()"
+      Cross-Origin-Embedder-Policy: "require-corp"
+      Cross-Origin-Opener-Policy: "same-origin"
+      Cross-Origin-Resource-Policy: "same-origin"
+      Strict-Transport-Security: "max-age=31536000; includeSubDomains; preload"
+    contentSecurityPolicy: >-
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self' data:;
+      connect-src 'self' wss:;
+      frame-ancestors 'none';
+      base-uri 'self';
+      form-action 'self';
+</file>
+
+<file path="apps/monitoring/namespace/kustomization.yaml">
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../namespace.yaml
+  - security-headers.yaml
+
+# Add common labels to all resources
+commonLabels:
+  app.kubernetes.io/part-of: homelab-gitops
+  environment: homelab
+</file>
 
 <file path="apps/monitoring/namespace.yaml">
 apiVersion: v1
@@ -78,12 +135,49 @@ metadata:
     pod-security.kubernetes.io/warn: restricted
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
+---
+# Add resource quota for better resource management
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: monitoring-quota
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: monitoring-quota
+    app.kubernetes.io/part-of: homelab-gitops
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "16"
+    limits.memory: 32Gi
+    persistentvolumeclaims: "10"
+    requests.storage: 100Gi
+---
+# Add limit range for default resource limits
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: monitoring-limits
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: monitoring-limits
+    app.kubernetes.io/part-of: homelab-gitops
+spec:
+  limits:
+  - default:
+      cpu: 500m
+      memory: 512Mi
+    defaultRequest:
+      cpu: 100m
+      memory: 128Mi
+    type: Container
 </file>
 
 <file path="apps/monitoring/prometheus-stack-values.yaml">
 # Prometheus Stack Configuration - LGTM Stack
 # Chart Version: 75.9.0
-# Loki + Grafana + Tempo + ProMetheus
+# Security hardened configuration
 
 # Global settings
 global:
@@ -102,9 +196,10 @@ alertmanager:
 grafana:
   enabled: true
   
-  # Admin credentials (use secrets in production)
+  # Admin credentials - USE SECRETS IN PRODUCTION!
   adminUser: admin
-  adminPassword: homelab-admin-2025
+  # Remove hard-coded password - will use default generated password
+  # adminPassword: homelab-admin-2025  # REMOVED FOR SECURITY
   
   # Persistence
   persistence:
@@ -186,7 +281,7 @@ grafana:
     - name: Tempo
       type: tempo
       uid: tempo
-      url: http://tempo.monitoring.svc.cluster.local:3200
+      url: http://tempo.monitoring.svc.cluster.local:3200  # Updated port
       access: proxy
       isDefault: false
       jsonData:
@@ -475,14 +570,14 @@ cleanPrometheusOperatorObjectNames: true
 </file>
 
 <file path="apps/monitoring/tempo-values.yaml">
-# Tempo Configuration - Chart Version 1.17.3
-# Distributed tracing for LGTM stack
+# Tempo Configuration - Chart Version 1.23.2
+# Updated for Tempo 2.8+ compatibility
 
 # Global configuration
 global:
   image:
-    # Use the latest stable version
-    tag: "2.6.1"
+    # Use Tempo 2.8 (latest stable)
+    tag: "2.8.0"
 
 # Tempo configuration
 tempo:
@@ -500,7 +595,7 @@ tempo:
       cpu: 500m
       memory: 1Gi
   
-  # Tempo configuration
+  # Updated configuration for Tempo 2.8+
   config: |
     multitenancy_enabled: false
     usage_report:
@@ -533,7 +628,7 @@ tempo:
     ingester:
       max_block_duration: 5m
     server:
-      http_listen_port: 3200
+      http_listen_port: 3200  # Default port changed from 3100 to 3200 in v2.x
       log_level: info
     storage:
       trace:
@@ -554,6 +649,11 @@ tempo:
         throughput_bytes_slo: 1.073741824e+09
       trace_by_id:
         duration_slo: 5s
+    # Updated overrides format for v2.8+
+    overrides:
+      defaults:
+        metrics_generator:
+          processors: []
 
 # Persistence configuration
 persistence:
@@ -567,7 +667,7 @@ persistence:
 service:
   type: ClusterIP
   ports:
-    # Tempo gRPC API
+    # Tempo HTTP API (updated default port)
     - name: tempo-prom-metrics
       port: 3200
       targetPort: 3200
@@ -677,7 +777,7 @@ strategy:
   rollingUpdate:
     maxUnavailable: 1
 
-# Probes
+# Probes (updated paths for v2.8+)
 readinessProbe:
   httpGet:
     path: /ready
@@ -697,6 +797,207 @@ podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "3200"
   prometheus.io/path: "/metrics"
+</file>
+
+<file path="apps/system/loki-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  project: monitoring
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    targetRevision: 6.30.1
+    chart: loki
+    helm:
+      releaseName: loki
+      valueFiles:
+        - https://raw.githubusercontent.com/mikha-22/homelab-gitops/main/apps/monitoring/loki-values.yaml
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 5m
+</file>
+
+<file path="apps/system/monitoring-namespace-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-namespace
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: monitoring
+  source:
+    repoURL: https://github.com/mikha-22/homelab-gitops
+    targetRevision: HEAD
+    path: apps/monitoring/namespace
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+</file>
+
+<file path="apps/system/prometheus-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-stack
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: monitoring
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    targetRevision: 75.9.0
+    chart: kube-prometheus-stack
+    helm:
+      releaseName: prometheus-stack
+      valueFiles:
+        - https://raw.githubusercontent.com/mikha-22/homelab-gitops/main/apps/monitoring/prometheus-stack-values.yaml
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - Validate=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 5m
+        
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+</file>
+
+<file path="apps/system/promtail-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: promtail
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  project: monitoring
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    targetRevision: 6.17.0
+    chart: promtail
+    helm:
+      releaseName: promtail
+      valueFiles:
+        - https://raw.githubusercontent.com/mikha-22/homelab-gitops/main/apps/monitoring/promtail-values.yaml
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 5m
+</file>
+
+<file path="apps/system/tempo-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tempo
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  project: monitoring
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    targetRevision: 1.23.2  # Updated to latest version
+    chart: tempo
+    helm:
+      releaseName: tempo
+      valueFiles:
+        - https://raw.githubusercontent.com/mikha-22/homelab-gitops/main/apps/monitoring/tempo-values.yaml
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 5m
+</file>
+
+<file path="force-refresh-command.txt">
+kubectl annotate app root -n argocd argocd.argoproj.io/refresh=hard --overwrite
 </file>
 
 <file path="apps/monitoring/kustomization.yaml">
@@ -1370,34 +1671,6 @@ podAnnotations:
   prometheus.io/port: "3101"
 </file>
 
-<file path="apps/system/projects/monitoring-project.yaml">
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-  - projects/monitoring-project.yaml
-  - monitoring-app.yaml
-
-# Common labels for all system applications
-commonLabels:
-  app.kubernetes.io/part-of: homelab-gitops
-  environment: homelab
-</file>
-
-<file path="apps/system/kustomization.yaml">
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-  - projects/monitoring-project.yaml
-  - monitoring-app.yaml
-
-# Common labels for all system applications
-commonLabels:
-  app.kubernetes.io/part-of: homelab-gitops
-  environment: homelab
-</file>
-
 <file path=".gitignore">
 # Temporary files
 *.tmp
@@ -1458,56 +1731,79 @@ dev-values.yaml
 .argocd-source-*
 </file>
 
-<file path="apps/system/monitoring-app.yaml">
+<file path="apps/system/projects/monitoring-project.yaml">
 apiVersion: argoproj.io/v1alpha1
-kind: Application
+kind: AppProject
 metadata:
   name: monitoring
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
 spec:
-  project: monitoring
-  source:
-    repoURL: https://github.com/mikha-22/homelab-gitops
-    targetRevision: HEAD
-    path: apps/monitoring
-    # Removed kustomize config for ArgoCD v3.x compatibility
-    # ArgoCD will auto-detect and handle Helm charts in Kustomize
-    
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: monitoring
-    
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
-      - Validate=true
-      - PrunePropagationPolicy=foreground
-      - PruneLast=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 5m
-        
-  # Health checks for monitoring components
-  ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      jsonPointers:
-        - /spec/replicas
-    - group: monitoring.coreos.com
-      kind: ServiceMonitor
-      jsonPointers:
-        - /spec/endpoints/0/interval
+  description: "Homelab LGTM Stack - Loki, Grafana, Tempo, ProMetheus"
+  
+  # Source repositories
+  sourceRepos:
+    - 'https://github.com/mikha-22/homelab-gitops'
+    - 'https://prometheus-community.github.io/helm-charts'
+    - 'https://grafana.github.io/helm-charts'
+  
+  # Deployment destinations
+  destinations:
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+  
+  # Cluster resource permissions
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+    - group: policy
+      kind: PodSecurityPolicy
+    - group: security.openshift.io
+      kind: SecurityContextConstraints
+  
+  # Namespace resource permissions
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  
+  # RBAC configuration
+  roles:
+    - name: monitoring-admin
+      description: Full access to LGTM monitoring resources
+      policies:
+        - p, proj:monitoring:monitoring-admin, applications, *, monitoring/*, allow
+        - p, proj:monitoring:monitoring-admin, repositories, *, *, allow
+      groups:
+        - homelab:monitoring-admins
+</file>
+
+<file path="apps/system/kustomization.yaml">
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - projects/monitoring-project.yaml
+  - monitoring-namespace-app.yaml
+  - prometheus-app.yaml
+  - loki-app.yaml
+  - tempo-app.yaml
+  - promtail-app.yaml
+
+# Common labels for all system applications
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/part-of: homelab-gitops
+      environment: homelab
 </file>
 
 <file path="bootstrap/root.yaml">

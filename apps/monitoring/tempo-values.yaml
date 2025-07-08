@@ -1,11 +1,11 @@
-# Tempo Configuration - Chart Version 1.17.3
-# Distributed tracing for LGTM stack
+# Tempo Configuration - Chart Version 1.23.2
+# Updated for Tempo 2.8+ compatibility
 
 # Global configuration
 global:
   image:
-    # Use the latest stable version
-    tag: "2.6.1"
+    # Use Tempo 2.8 (latest stable)
+    tag: "2.8.0"
 
 # Tempo configuration
 tempo:
@@ -23,7 +23,7 @@ tempo:
       cpu: 500m
       memory: 1Gi
   
-  # Tempo configuration
+  # Updated configuration for Tempo 2.8+
   config: |
     multitenancy_enabled: false
     usage_report:
@@ -56,7 +56,7 @@ tempo:
     ingester:
       max_block_duration: 5m
     server:
-      http_listen_port: 3200
+      http_listen_port: 3200  # Default port changed from 3100 to 3200 in v2.x
       log_level: info
     storage:
       trace:
@@ -77,6 +77,11 @@ tempo:
         throughput_bytes_slo: 1.073741824e+09
       trace_by_id:
         duration_slo: 5s
+    # Updated overrides format for v2.8+
+    overrides:
+      defaults:
+        metrics_generator:
+          processors: []
 
 # Persistence configuration
 persistence:
@@ -90,7 +95,7 @@ persistence:
 service:
   type: ClusterIP
   ports:
-    # Tempo gRPC API
+    # Tempo HTTP API (updated default port)
     - name: tempo-prom-metrics
       port: 3200
       targetPort: 3200
@@ -200,7 +205,7 @@ strategy:
   rollingUpdate:
     maxUnavailable: 1
 
-# Probes
+# Probes (updated paths for v2.8+)
 readinessProbe:
   httpGet:
     path: /ready

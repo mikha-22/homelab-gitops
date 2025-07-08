@@ -1,0 +1,32 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: security-headers
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: security-headers
+    app.kubernetes.io/part-of: homelab-gitops
+spec:
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Proto: "https"
+    customResponseHeaders:
+      X-Content-Type-Options: "nosniff"
+      X-Frame-Options: "DENY"
+      X-XSS-Protection: "1; mode=block"
+      Referrer-Policy: "strict-origin-when-cross-origin"
+      Permissions-Policy: "geolocation=(), microphone=(), camera=(), usb=(), bluetooth=(), gyroscope=(), magnetometer=(), display-capture=()"
+      Cross-Origin-Embedder-Policy: "require-corp"
+      Cross-Origin-Opener-Policy: "same-origin"
+      Cross-Origin-Resource-Policy: "same-origin"
+      Strict-Transport-Security: "max-age=31536000; includeSubDomains; preload"
+    contentSecurityPolicy: >-
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self' data:;
+      connect-src 'self' wss:;
+      frame-ancestors 'none';
+      base-uri 'self';
+      form-action 'self';

@@ -11,7 +11,7 @@ spec:
   project: monitoring
   source:
     repoURL: https://grafana.github.io/helm-charts
-    targetRevision: 1.17.3
+    targetRevision: 1.23.2  # Updated to latest version
     chart: tempo
     helm:
       releaseName: tempo
