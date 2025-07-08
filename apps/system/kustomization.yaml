@@ -3,9 +3,15 @@ kind: Kustomization
 
 resources:
   - projects/monitoring-project.yaml
-  - monitoring-app.yaml
+  - monitoring-namespace-app.yaml
+  - prometheus-app.yaml
+  - loki-app.yaml
+  - tempo-app.yaml
+  - promtail-app.yaml
 
 # Common labels for all system applications
-commonLabels:
-  app.kubernetes.io/part-of: homelab-gitops
-  environment: homelab
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/part-of: homelab-gitops
+      environment: homelab

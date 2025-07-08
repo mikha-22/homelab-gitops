@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: monitoring
+  name: prometheus-stack
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,12 +10,13 @@ metadata:
 spec:
   project: monitoring
   source:
-    repoURL: https://github.com/mikha-22/homelab-gitops
-    targetRevision: HEAD
-    path: apps/monitoring
-    # Use plugin for Helm support in ArgoCD v3.x
-    plugin:
-      name: kustomized-helm
+    repoURL: https://prometheus-community.github.io/helm-charts
+    targetRevision: 75.9.0
+    chart: kube-prometheus-stack
+    helm:
+      releaseName: prometheus-stack
+      valueFiles:
+        - https://raw.githubusercontent.com/mikha-22/homelab-gitops/main/apps/monitoring/prometheus-stack-values.yaml
     
   destination:
     server: https://kubernetes.default.svc
@@ -29,8 +30,6 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - Validate=true
-      - PrunePropagationPolicy=foreground
-      - PruneLast=true
     retry:
       limit: 5
       backoff:
@@ -38,13 +37,8 @@ spec:
         factor: 2
         maxDuration: 5m
         
-  # Health checks for monitoring components
   ignoreDifferences:
     - group: apps
       kind: Deployment
       jsonPointers:
         - /spec/replicas
-    - group: monitoring.coreos.com
-      kind: ServiceMonitor
-      jsonPointers:
-        - /spec/endpoints/0/interval
