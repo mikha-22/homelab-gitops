@@ -1,6 +1,6 @@
 # Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
 # Chart Version: 75.9.0
-# SIMPLIFIED SECURITY, KEEP local-path storage
+# FIXED: Remove datasource default conflict
 
 # Global settings
 global:
@@ -15,18 +15,18 @@ crds:
 alertmanager:
   enabled: false
 
-# Grafana Configuration - SIMPLIFIED SECURITY
+# Grafana Configuration - REMOVE DATASOURCE CONFIG TO AVOID CONFLICT
 grafana:
   enabled: true
   
   # Admin credentials - will use generated password
   adminUser: admin
   
-  # Persistence - KEEP local-path since it exists
+  # Persistence
   persistence:
     enabled: true
     type: pvc
-    storageClassName: local-path  # Keep this since it exists and is default
+    storageClassName: local-path
     size: 10Gi
     accessModes:
       - ReadWriteOnce
@@ -40,7 +40,7 @@ grafana:
       cpu: 250m
       memory: 256Mi
   
-  # SIMPLIFIED security context - remove problematic fields
+  # SIMPLIFIED security context
   securityContext:
     runAsNonRoot: true
     runAsUser: 472
@@ -50,17 +50,8 @@ grafana:
   ingress:
     enabled: false
   
-  # Data sources configuration - PROMETHEUS ONLY
-  additionalDataSources:
-    - name: Prometheus
-      type: prometheus
-      url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090
-      access: proxy
-      isDefault: true
-      jsonData:
-        timeInterval: 30s
-        queryTimeout: 60s
-        httpMethod: POST
+  # REMOVE additionalDataSources to avoid default conflict
+  # The chart will auto-configure Prometheus datasource
   
   # Grafana configuration - MINIMAL
   grafana.ini:
@@ -79,7 +70,7 @@ grafana:
       mode: console
       level: info
 
-# Prometheus Configuration - SIMPLIFIED SECURITY
+# Prometheus Configuration
 prometheus:
   enabled: true
   
@@ -103,7 +94,7 @@ prometheus:
       runAsUser: 1000
       fsGroup: 2000
     
-    # Storage - keep local-path
+    # Storage
     storageSpec:
       volumeClaimTemplate:
         spec:
@@ -125,7 +116,7 @@ prometheus:
     scrapeInterval: 30s
     evaluationInterval: 30s
 
-# Prometheus Operator - SIMPLIFIED SECURITY
+# Prometheus Operator
 prometheusOperator:
   enabled: true
   
