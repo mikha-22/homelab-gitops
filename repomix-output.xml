@@ -1401,7 +1401,7 @@ labels:
 <file path="apps/monitoring/prometheus-stack-values.yaml">
 # Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
 # Chart Version: 75.9.0
-# FIXED: Remove datasource default conflict and disable init container
+# WITH INGRESS AND EXTERNAL ACCESS ENABLED
 
 # Global settings
 global:
@@ -1416,7 +1416,7 @@ crds:
 alertmanager:
   enabled: false
 
-# Grafana Configuration - DISABLE INIT CONTAINER
+# Grafana Configuration - WITH EXTERNAL ACCESS
 grafana:
   enabled: true
   
@@ -1451,18 +1451,39 @@ grafana:
     runAsUser: 472
     fsGroup: 472
   
-  # DISABLE INGRESS FOR NOW
+  # ENABLE INGRESS FOR EXTERNAL ACCESS
   ingress:
-    enabled: false
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - grafana.milenika.dev
+    annotations:
+      # Cloudflare tunnel configuration
+      external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+      # Security headers
+      traefik.ingress.kubernetes.io/router.tls: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - grafana.milenika.dev
   
-  # Grafana configuration - MINIMAL
+  # Grafana configuration - FOR EXTERNAL ACCESS
   grafana.ini:
     server:
-      root_url: http://localhost:3000
+      root_url: https://grafana.milenika.dev
+      serve_from_sub_path: false
     security:
       disable_gravatar: true
+      cookie_secure: true
+      cookie_samesite: strict
+      strict_transport_security: true
+      x_content_type_options: true
+      x_xss_protection: true
     auth:
       disable_login_form: false
+      disable_signout_menu: false
     auth.anonymous:
       enabled: false
     analytics:
@@ -1471,6 +1492,8 @@ grafana:
     log:
       mode: console
       level: info
+    panels:
+      disable_sanitize_html: false
 
 # Prometheus Configuration
 prometheus:
