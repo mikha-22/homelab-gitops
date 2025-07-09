@@ -5,9 +5,9 @@ resources:
   - projects/monitoring-project.yaml
   - monitoring-namespace-app.yaml
   - prometheus-app.yaml
-  # - loki-app.yaml          # COMMENTED OUT
-  # - tempo-app.yaml         # COMMENTED OUT  
-  # - promtail-app.yaml      # COMMENTED OUT
+  - loki-app.yaml          # UNCOMMENTED FOR LOKI
+  # - tempo-app.yaml         # KEEP COMMENTED FOR NOW
+  # - promtail-app.yaml      # KEEP COMMENTED FOR NOW
 
 # Common labels for all system applications
 labels:

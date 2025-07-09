@@ -238,22 +238,19 @@ gateway:
     labels: {}
     annotations: {}
   
-  # Ingress configuration
+  # Ingress configuration - FIXED TO MATCH WORKING PATTERN
   ingress:
     enabled: true
-    ingressClassName: traefik
     hosts:
       - host: loki.milenika.dev
         paths:
           - path: /
             pathType: Prefix
     annotations:
-      # Cloudflare tunnel configuration
-      external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
-      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-      # Security and performance
-      traefik.ingress.kubernetes.io/router.tls: "true"
-      traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
+      # Use same pattern as ArgoCD and Grafana
+      "kubernetes.io/ingress.class": "traefik"
+      "external-dns.alpha.kubernetes.io/target": "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+      "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
     tls:
       - secretName: loki-gateway-tls
         hosts:
