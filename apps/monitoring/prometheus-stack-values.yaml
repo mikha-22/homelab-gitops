@@ -50,18 +50,16 @@ grafana:
     runAsUser: 472
     fsGroup: 472
   
-  # ENABLE INGRESS FOR EXTERNAL ACCESS (REMOVED SECURITY MIDDLEWARE)
+  # ENABLE INGRESS FOR EXTERNAL ACCESS (MATCH ARGOCD PATTERN)
   ingress:
     enabled: true
-    ingressClassName: traefik
     hosts:
       - grafana.milenika.dev
     annotations:
-      # Cloudflare tunnel configuration
-      external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
-      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-      # TLS configuration
-      traefik.ingress.kubernetes.io/router.tls: "true"
+      # Use same pattern as ArgoCD
+      "kubernetes.io/ingress.class": "traefik"
+      "external-dns.alpha.kubernetes.io/target": "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+      "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
     tls:
       - secretName: grafana-tls
         hosts:
