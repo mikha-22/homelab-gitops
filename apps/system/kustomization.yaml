@@ -7,8 +7,8 @@ resources:
   - prometheus-app.yaml
   - loki-app.yaml          # UNCOMMENTED FOR LOKI
 #   - tempo-app.yaml         # KEEP COMMENTED FOR NOW
-  - promtail-app.yaml      # KEEP COMMENTED FOR NOW
-
+  - promtail-app.yaml
+  
 # Common labels for all system applications
 labels:
   - includeSelectors: true

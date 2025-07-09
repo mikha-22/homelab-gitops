@@ -4,6 +4,8 @@
 
 # Loki configuration - following official example
 loki:
+  auth_enabled: false  # CRITICAL: Disable auth for single-tenant homelab
+  
   commonConfig:
     replication_factor: 1  # CRITICAL: Must be 1 for single replica
   
