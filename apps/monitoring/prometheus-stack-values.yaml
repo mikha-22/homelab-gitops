@@ -1,228 +1,189 @@
-mikha@T440p ~/l/homelab-gitops (main)> kubectl logs -n monitoring -l app.kubernetes.io/name=grafana -c init-chown-data           (base)
-chown: /var/lib/grafana/csv: Permission denied
-chown: /var/lib/grafana/png: Permission denied
-chown: /var/lib/grafana/pdf: Permission denied
-mikha@T440p ~/l/homelab-gitops (main)> kubectl describe pod -n monitoring -l app.kubernetes.io/name=grafana                      (base)
-Name:             prometheus-stack-grafana-d448df678-77s7g
-Namespace:        monitoring
-Priority:         0
-Service Account:  prometheus-stack-grafana
-Node:             dev-k3s-master-01/192.168.1.181
-Start Time:       Wed, 09 Jul 2025 12:44:58 +0700
-Labels:           app.kubernetes.io/instance=prometheus-stack
-                  app.kubernetes.io/name=grafana
-                  app.kubernetes.io/version=12.0.2
-                  helm.sh/chart=grafana-9.2.10
-                  pod-template-hash=d448df678
-Annotations:      checksum/config: 47d5b7863afb1e85f68bf5d1679f91908427a8a5105ab141bf9228c4e0b505fe
-                  checksum/sc-dashboard-provider-config: e70bf6a851099d385178a76de9757bb0bef8299da6d8443602590e44f05fdf24
-                  checksum/secret: 032056e9c62bbe9d1daa41ee49cd3d9524c076f51ca4c65adadf4ef08ef28712
-                  kubectl.kubernetes.io/default-container: grafana
-                  kubernetes.io/limit-ranger:
-                    LimitRanger plugin set: cpu, memory request for container grafana-sc-dashboard; cpu, memory limit for container grafana-sc-dashboard; cpu,...
-Status:           Pending
-IP:               10.42.0.52
-IPs:
-  IP:           10.42.0.52
-Controlled By:  ReplicaSet/prometheus-stack-grafana-d448df678
-Init Containers:
-  init-chown-data:
-    Container ID:    containerd://e8a3a1379f8527909d67d6e9ba28b35adaba7f708b422a9a5ba833c99721a056
-    Image:           docker.io/library/busybox:1.31.1
-    Image ID:        docker.io/library/busybox@sha256:95cf004f559831017cdf4628aaf1bb30133677be8702a8c5f2994629f637a209
-    Port:            <none>
-    Host Port:       <none>
-    SeccompProfile:  RuntimeDefault
-    Command:
-      chown
-      -R
-      472:472
-      /var/lib/grafana
-    State:          Waiting
-      Reason:       CrashLoopBackOff
-    Last State:     Terminated
-      Reason:       Error
-      Exit Code:    1
-      Started:      Wed, 09 Jul 2025 12:50:48 +0700
-      Finished:     Wed, 09 Jul 2025 12:50:48 +0700
-    Ready:          False
-    Restart Count:  6
-    Limits:
-      cpu:     500m
-      memory:  512Mi
-    Requests:
-      cpu:        100m
-      memory:     128Mi
-    Environment:  <none>
-    Mounts:
-      /var/lib/grafana from storage (rw)
-      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-574rr (ro)
-Containers:
-  grafana-sc-dashboard:
-    Container ID:
-    Image:           quay.io/kiwigrid/k8s-sidecar:1.30.3
-    Image ID:
-    Port:            <none>
-    Host Port:       <none>
-    SeccompProfile:  RuntimeDefault
-    State:           Waiting
-      Reason:        PodInitializing
-    Ready:           False
-    Restart Count:   0
-    Limits:
-      cpu:     500m
-      memory:  512Mi
-    Requests:
-      cpu:     100m
-      memory:  128Mi
-    Environment:
-      METHOD:        WATCH
-      LABEL:         grafana_dashboard
-      LABEL_VALUE:   1
-      FOLDER:        /tmp/dashboards
-      RESOURCE:      both
-      NAMESPACE:     ALL
-      REQ_USERNAME:  <set to the key 'admin-user' in secret 'prometheus-stack-grafana'>      Optional: false
-      REQ_PASSWORD:  <set to the key 'admin-password' in secret 'prometheus-stack-grafana'>  Optional: false
-      REQ_URL:       http://localhost:3000/api/admin/provisioning/dashboards/reload
-      REQ_METHOD:    POST
-    Mounts:
-      /tmp/dashboards from sc-dashboard-volume (rw)
-      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-574rr (ro)
-  grafana-sc-datasources:
-    Container ID:
-    Image:           quay.io/kiwigrid/k8s-sidecar:1.30.3
-    Image ID:
-    Port:            <none>
-    Host Port:       <none>
-    SeccompProfile:  RuntimeDefault
-    State:           Waiting
-      Reason:        PodInitializing
-    Ready:           False
-    Restart Count:   0
-    Limits:
-      cpu:     500m
-      memory:  512Mi
-    Requests:
-      cpu:     100m
-      memory:  128Mi
-    Environment:
-      METHOD:        WATCH
-      LABEL:         grafana_datasource
-      LABEL_VALUE:   1
-      FOLDER:        /etc/grafana/provisioning/datasources
-      RESOURCE:      both
-      REQ_USERNAME:  <set to the key 'admin-user' in secret 'prometheus-stack-grafana'>      Optional: false
-      REQ_PASSWORD:  <set to the key 'admin-password' in secret 'prometheus-stack-grafana'>  Optional: false
-      REQ_URL:       http://localhost:3000/api/admin/provisioning/datasources/reload
-      REQ_METHOD:    POST
-    Mounts:
-      /etc/grafana/provisioning/datasources from sc-datasources-volume (rw)
-      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-574rr (ro)
-  grafana:
-    Container ID:
-    Image:           docker.io/grafana/grafana:12.0.2
-    Image ID:
-    Ports:           3000/TCP, 9094/TCP, 9094/UDP, 6060/TCP
-    Host Ports:      0/TCP, 0/TCP, 0/UDP, 0/TCP
-    SeccompProfile:  RuntimeDefault
-    State:           Waiting
-      Reason:        PodInitializing
-    Ready:           False
-    Restart Count:   0
-    Limits:
-      cpu:     500m
-      memory:  512Mi
-    Requests:
-      cpu:      250m
-      memory:   256Mi
-    Liveness:   http-get http://:3000/api/health delay=60s timeout=30s period=10s #success=1 #failure=10
-    Readiness:  http-get http://:3000/api/health delay=0s timeout=1s period=10s #success=1 #failure=3
-    Environment:
-      POD_IP:                       (v1:status.podIP)
-      GF_SECURITY_ADMIN_USER:      <set to the key 'admin-user' in secret 'prometheus-stack-grafana'>      Optional: false
-      GF_SECURITY_ADMIN_PASSWORD:  <set to the key 'admin-password' in secret 'prometheus-stack-grafana'>  Optional: false
-      GF_PATHS_DATA:               /var/lib/grafana/
-      GF_PATHS_LOGS:               /var/log/grafana
-      GF_PATHS_PLUGINS:            /var/lib/grafana/plugins
-      GF_PATHS_PROVISIONING:       /etc/grafana/provisioning
-    Mounts:
-      /etc/grafana/grafana.ini from config (rw,path="grafana.ini")
-      /etc/grafana/provisioning/dashboards/sc-dashboardproviders.yaml from sc-dashboard-provider (rw,path="provider.yaml")
-      /etc/grafana/provisioning/datasources from sc-datasources-volume (rw)
-      /tmp/dashboards from sc-dashboard-volume (rw)
-      /var/lib/grafana from storage (rw)
-      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-574rr (ro)
-Conditions:
-  Type                        Status
-  PodReadyToStartContainers   True
-  Initialized                 False
-  Ready                       False
-  ContainersReady             False
-  PodScheduled                True
-Volumes:
-  config:
-    Type:      ConfigMap (a volume populated by a ConfigMap)
-    Name:      prometheus-stack-grafana
-    Optional:  false
-  storage:
-    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
-    ClaimName:  prometheus-stack-grafana
-    ReadOnly:   false
-  sc-dashboard-volume:
-    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
-    Medium:
-    SizeLimit:  <unset>
-  sc-dashboard-provider:
-    Type:      ConfigMap (a volume populated by a ConfigMap)
-    Name:      prometheus-stack-grafana-config-dashboards
-    Optional:  false
-  sc-datasources-volume:
-    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
-    Medium:
-    SizeLimit:  <unset>
-  kube-api-access-574rr:
-    Type:                    Projected (a volume that contains injected data from multiple sources)
-    TokenExpirationSeconds:  3607
-    ConfigMapName:           kube-root-ca.crt
-    ConfigMapOptional:       <nil>
-    DownwardAPI:             true
-QoS Class:                   Burstable
-Node-Selectors:              <none>
-Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
-                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
-Events:
-  Type     Reason     Age                     From               Message
-  ----     ------     ----                    ----               -------
-  Normal   Scheduled  9m19s                   default-scheduler  Successfully assigned monitoring/prometheus-stack-grafana-d448df678-77s7g to dev-k3s-master-01
-  Normal   Pulled     7m48s (x5 over 9m18s)   kubelet            Container image "docker.io/library/busybox:1.31.1" already present on machine
-  Normal   Created    7m48s (x5 over 9m18s)   kubelet            Created container init-chown-data
-  Normal   Started    7m48s (x5 over 9m18s)   kubelet            Started container init-chown-data
-  Warning  BackOff    4m17s (x24 over 9m17s)  kubelet            Back-off restarting failed container init-chown-data in pod prometheus-stack-grafana-d448df678-77s7g_monitoring(410d9efe-096c-4a11-9540-c1b355216608)
-mikha@T440p ~/l/homelab-gitops (main)> kubectl get pvc -n monitoring                                                             (base)
-NAME                                                                               STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
-prometheus-prometheus-stack-kube-prom-db-prometheus-prometheus-stack-kube-prom-0   Bound    pvc-af03b531-c0b9-4518-a6ce-70a5ab4a3415   30Gi       RWO            local-path     <unset>                 14h
-prometheus-stack-grafana                                                           Bound    pvc-31cd3120-085c-436d-8bc5-f6b48d718789   10Gi       RWO            local-path     <unset>                 14h
-mikha@T440p ~/l/homelab-gitops (main)> kubectl describe pvc prometheus-stack-grafana -n monitoring                               (base)
-Name:          prometheus-stack-grafana
-Namespace:     monitoring
-StorageClass:  local-path
-Status:        Bound
-Volume:        pvc-31cd3120-085c-436d-8bc5-f6b48d718789
-Labels:        app.kubernetes.io/instance=prometheus-stack
-               app.kubernetes.io/name=grafana
-               app.kubernetes.io/version=12.0.2
-               helm.sh/chart=grafana-9.2.10
-Annotations:   argocd.argoproj.io/tracking-id: prometheus-stack:/PersistentVolumeClaim:monitoring/prometheus-stack-grafana
-               pv.kubernetes.io/bind-completed: yes
-               pv.kubernetes.io/bound-by-controller: yes
-               volume.beta.kubernetes.io/storage-provisioner: rancher.io/local-path
-               volume.kubernetes.io/selected-node: dev-k3s-master-01
-               volume.kubernetes.io/storage-provisioner: rancher.io/local-path
-Finalizers:    [kubernetes.io/pvc-protection]
-Capacity:      10Gi
-Access Modes:  RWO
-VolumeMode:    Filesystem
-Used By:       prometheus-stack-grafana-d448df678-77s7g
-Events:        <none>
-mikha@T440p ~/l/homelab-gitops (main)>     
+# Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
+# Chart Version: 75.9.0
+# FIXED: Remove datasource default conflict and disable init container
+
+# Global settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# CRDs configuration
+crds:
+  enabled: true
+
+# Disable AlertManager for simplified homelab setup
+alertmanager:
+  enabled: false
+
+# Grafana Configuration - DISABLE INIT CONTAINER
+grafana:
+  enabled: true
+  
+  # Admin credentials - will use generated password
+  adminUser: admin
+  
+  # DISABLE the problematic init container
+  initChownData:
+    enabled: false
+  
+  # Persistence
+  persistence:
+    enabled: true
+    type: pvc
+    storageClassName: local-path
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+  
+  # Resource management
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  # SIMPLIFIED security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 472
+    fsGroup: 472
+  
+  # DISABLE INGRESS FOR NOW
+  ingress:
+    enabled: false
+  
+  # Grafana configuration - MINIMAL
+  grafana.ini:
+    server:
+      root_url: http://localhost:3000
+    security:
+      disable_gravatar: true
+    auth:
+      disable_login_form: false
+    auth.anonymous:
+      enabled: false
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+    log:
+      mode: console
+      level: info
+
+# Prometheus Configuration
+prometheus:
+  enabled: true
+  
+  prometheusSpec:
+    # Data retention
+    retention: 15d
+    retentionSize: 20GB
+    
+    # Resource management
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+    
+    # SIMPLIFIED security context
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      fsGroup: 2000
+    
+    # Storage
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 30Gi
+    
+    # Service discovery and monitoring
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
+    podMonitorNamespaceSelector: {}
+    ruleNamespaceSelector: {}
+    
+    # Scrape configuration
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+
+# Prometheus Operator
+prometheusOperator:
+  enabled: true
+  
+  # Resource management
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  
+  # SIMPLIFIED security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+
+# Node Exporter
+nodeExporter:
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 100Mi
+    requests:
+      cpu: 100m
+      memory: 50Mi
+
+# Kube State Metrics  
+kubeStateMetrics:
+  enabled: true
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Default monitoring rules
+defaultRules:
+  create: true
+  rules:
+    alertmanager: false
+    etcd: true
+    configReloaders: true
+    general: true
+    k8s: true
+    kubeApiserverAvailability: true
+    kubeApiserverBurnrate: true
+    kubeApiserverHistogram: true
+    kubeApiserverSlos: true
+    kubelet: true
+    kubeProxy: true
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
+
+# Cleanup settings
+cleanPrometheusOperatorObjectNames: true
