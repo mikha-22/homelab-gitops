@@ -1,17 +1,11 @@
 # Loki Configuration - Chart Version 6.30.1
-# Fixed for proper Helm template compatibility
+# Minimal configuration to avoid template errors
 
-# Global configuration
-global:
-  dnsService: kube-dns
-  dnsNamespace: kube-system
-
-# Deployment mode - SingleBinary for homelab efficiency
+# Deployment mode
 deploymentMode: SingleBinary
 
-# Loki configuration
+# Basic Loki configuration
 loki:
-  # Authentication disabled for homelab simplicity
   auth_enabled: false
   
   # Server configuration
@@ -19,17 +13,16 @@ loki:
     http_listen_port: 3100
     grpc_listen_port: 9095
     log_level: info
-    log_format: logfmt
   
-  # FIXED: Use commonConfig format expected by the chart
-  commonConfig:
-    path_prefix: /var/loki
-    replication_factor: 1
-    ring:
-      kvstore:
-        store: inmemory
+  # Pattern ingester (required by chart)
+  pattern_ingester:
+    enabled: false
   
-  # FIXED: Use schemaConfig instead of schema_config
+  # Tracing configuration (required by chart)
+  tracing:
+    enabled: false
+  
+  # Basic schema configuration
   schemaConfig:
     configs:
       - from: 2024-01-01
@@ -40,103 +33,40 @@ loki:
           prefix: index_
           period: 24h
   
-  # FIXED: Use storage_config format
-  storage_config:
-    hedging:
-      at: 250ms
-      max_per_second: 20
-      up_to: 3
+  # Storage configuration (minimal)
+  storage:
+    type: filesystem
     filesystem:
-      directory: /var/loki
+      chunks_directory: /var/loki/chunks
+      rules_directory: /var/loki/rules
+    bucketNames:
+      chunks: chunks
+      ruler: ruler
+      admin: admin
   
   # Limits configuration
   limits_config:
-    # Retention period
     retention_period: 7d
-    # Ingestion limits
-    ingestion_rate_strategy: global
     ingestion_rate_mb: 16
     ingestion_burst_size_mb: 32
-    max_global_streams_per_user: 10000
     max_query_length: 12000h
     max_query_parallelism: 16
-    max_streams_per_user: 0
-    max_line_size: 256000
-    max_entries_limit_per_query: 10000
-    max_query_series: 10000
-    # Query timeout
     query_timeout: 300s
-    # Split queries settings
-    split_queries_by_interval: 15m
-    max_concurrent_tail_requests: 10
-    max_cache_freshness_per_query: 10m
-    # Reject old samples
     reject_old_samples: true
     reject_old_samples_max_age: 168h
-    # Creation grace period
-    creation_grace_period: 10m
-    # Enforce metric name validation
-    enforce_metric_name: false
-    # Max metadata per user
-    max_metadata_per_user: 100000
-    max_metadata_per_metric: 10
   
-  # Analytics configuration
-  analytics:
-    reporting_enabled: false
-  
-  # Query scheduler configuration
-  query_scheduler:
-    max_outstanding_requests_per_tenant: 2048
-  
-  # Frontend configuration
-  frontend:
-    max_outstanding_per_tenant: 2048
-    compress_responses: true
-    log_queries_longer_than: 5s
-  
-  # Querier configuration
-  querier:
-    max_concurrent: 16
-    query_timeout: 300s
-  
-  # Query range configuration
-  query_range:
-    # Results cache configuration
-    cache_results: true
-    max_retries: 5
-    results_cache:
-      cache:
-        embedded_cache:
-          enabled: true
-          max_size_mb: 500
-          ttl: 1h
-  
-  # Compactor configuration
-  compactor:
-    working_directory: /var/loki/boltdb-shipper-compactor
-    shared_store: filesystem
-    compaction_interval: 10m
-    retention_enabled: true
-    retention_delete_delay: 2h
-    retention_delete_worker_count: 150
-    delete_request_cancel_period: 24h
-  
-  # Tracing configuration
-  tracing:
-    enabled: false
+  # Common configuration
+  commonConfig:
+    path_prefix: /var/loki
+    replication_factor: 1
+    ring:
+      kvstore:
+        store: inmemory
 
-# FIXED: Use correct tableManager configuration
-tableManager:
-  retention_deletes_enabled: true
-  retention_period: 7d
-
-# Single binary specific configuration
+# Single binary configuration
 singleBinary:
-  # Number of replicas
   replicas: 1
   
-  # Resource management
   resources:
     limits:
       cpu: 1000m
@@ -145,7 +75,6 @@ singleBinary:
       cpu: 500m
       memory: 1Gi
   
-  # Persistence configuration
   persistence:
     enabled: true
     storageClass: local-path
@@ -153,76 +82,18 @@ singleBinary:
     accessModes:
       - ReadWriteOnce
   
-  # Pod security context
-  podSecurityContext:
-    runAsNonRoot: true
-    runAsUser: 10001
-    runAsGroup: 10001
-    fsGroup: 10001
-    seccompProfile:
-      type: RuntimeDefault
-  
-  # Container security context
-  containerSecurityContext:
-    readOnlyRootFilesystem: true
-    capabilities:
-      drop:
-        - ALL
-    allowPrivilegeEscalation: false
-  
-  # Liveness probe
-  livenessProbe:
-    httpGet:
-      path: /ready
-      port: http-metrics
-      scheme: HTTP
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 1
-    successThreshold: 1
-    failureThreshold: 3
-  
-  # Readiness probe
-  readinessProbe:
-    httpGet:
-      path: /ready
-      port: http-metrics
-      scheme: HTTP
-    initialDelaySeconds: 30
-    periodSeconds: 10
-    timeoutSeconds: 1
-    successThreshold: 1
-    failureThreshold: 3
-  
-  # Affinity and tolerations
-  affinity: {}
-  nodeSelector: {}
-  tolerations: []
-  
-  # Extra environment variables
-  extraEnv:
-    - name: GOMAXPROCS
-      value: "2"
-  
-  # Extra volumes and volume mounts for temporary directories
   extraVolumes:
     - name: tmp
-      emptyDir: {}
-    - name: runtime-tmp
       emptyDir: {}
   
   extraVolumeMounts:
     - name: tmp
       mountPath: /tmp
-    - name: runtime-tmp
-      mountPath: /var/tmp
 
-# Gateway configuration (nginx proxy)
+# Gateway configuration
 gateway:
   enabled: true
-  replicas: 1
   
-  # Resource management
   resources:
     limits:
       cpu: 100m
@@ -231,15 +102,7 @@ gateway:
       cpu: 50m
       memory: 64Mi
   
-  # Service configuration
-  service:
-    type: ClusterIP
-    port: 80
-    targetPort: http
-    labels: {}
-    annotations: {}
-  
-  # Ingress configuration - FIXED TO MATCH WORKING PATTERN
+  # Fixed ingress configuration
   ingress:
     enabled: true
     hosts:
@@ -248,7 +111,6 @@ gateway:
           - path: /
             pathType: Prefix
     annotations:
-      # Use same pattern as ArgoCD and Grafana
       "kubernetes.io/ingress.class": "traefik"
       "external-dns.alpha.kubernetes.io/target": "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
@@ -257,76 +119,31 @@ gateway:
         hosts:
           - loki.milenika.dev
 
-# Test configuration
+# Disable unnecessary components
 test:
   enabled: false
 
-# Monitoring configuration
-monitoring:
-  # Self monitoring disabled to keep things simple
-  selfMonitoring:
-    enabled: false
-    grafanaAgent:
-      installOperator: false
-  
-  # Loki canary for synthetic monitoring
-  lokiCanary:
-    enabled: true
-    resources:
-      limits:
-        cpu: 50m
-        memory: 64Mi
-      requests:
-        cpu: 25m
-        memory: 32Mi
-
-# ServiceMonitor for Prometheus integration
-serviceMonitor:
-  enabled: true
-  namespace: monitoring
-  namespaceSelector: {}
-  annotations: {}
-  labels: {}
-  interval: 30s
-  scrapeTimeout: 10s
-  relabelings: []
-  metricRelabelings: []
-
-# PrometheusRule for alerting
-prometheusRule:
-  enabled: true
-  namespace: monitoring
-  annotations: {}
-  labels: {}
-  groups:
-    - name: loki-rules
-      rules:
-        - alert: LokiProcessTooManyRestarts
-          expr: changes(process_start_time_seconds{job=~"loki.*"}[15m]) > 2
-          for: 0m
-          labels:
-            severity: warning
-          annotations:
-            summary: Loki process too many restarts (instance {{ $labels.instance }})
-            description: "A loki process had too many restarts (target {{ $labels.instance }})\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-        
-        - alert: LokiRequestErrors
-          expr: 100 * sum(rate(loki_request_duration_seconds_count{status_code=~"5.."}[1m])) by (namespace, job, route) / sum(rate(loki_request_duration_seconds_count[1m])) by (namespace, job, route) > 10
-          for: 15m
-          labels:
-            severity: critical
-          annotations:
-            summary: Loki request errors (instance {{ $labels.instance }})
-            description: "The {{ $labels.job }} and {{ $labels.route }} are experiencing errors\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-
-# FIXED: Add missing configuration sections that the chart expects
 chunksCache:
   enabled: false
 
 resultsCache:
   enabled: false
 
-# Pattern ingester configuration
-loki:
-  pattern_ingester:
+ruler:
+  enabled: false
+
+tableManager:
+  retention_deletes_enabled: true
+  retention_period: 7d
+
+# Monitoring
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  interval: 30s
+
+monitoring:
+  selfMonitoring:
+    enabled: false
+  lokiCanary:
     enabled: false
