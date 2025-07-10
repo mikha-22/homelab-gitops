@@ -7,19 +7,24 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "10"  # Deploy after monitoring stack
+    argocd.argoproj.io/sync-wave: "10"
 spec:
   project: default
-  source:
-    # Define the Helm chart repository as the source
-    repoURL: https://djjudas21.github.io/charts/
-    targetRevision: 8.2.4
-    chart: homer
-    helm:
-      releaseName: homer
-      # Point directly to the raw values file in your main branch
-      valueFiles:
-        - https://raw.githubusercontent.com/mikha-22/homelab-gitops/main/apps/homer/values.yaml
+  # This multi-source setup is the correct one for your chart
+  sources:
+    # Source 1: The Helm chart itself
+    - repoURL: https://djjudas21.github.io/charts/
+      targetRevision: 8.2.4
+      chart: homer
+      helm:
+        releaseName: homer
+        valueFiles:
+          # This tells Helm to get its values from the 'values' source below
+          - $values/apps/homer/values.yaml
+    # Source 2: Your Git repository, which is made available as the '$values' variable
+    - repoURL: https://github.com/mikha-22/homelab-gitops
+      targetRevision: HEAD
+      ref: values
     
   destination:
     server: https://kubernetes.default.svc

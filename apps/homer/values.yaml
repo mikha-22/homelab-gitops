@@ -1,3 +1,4 @@
+# apps/homer/values.yaml (Corrected)
 #
 # IMPORTANT NOTE
 #
@@ -8,7 +9,7 @@
 # Image configuration
 image:
   repository: b4bz/homer
-  tag: latest # Let's be explicit
+  tag: latest
   pullPolicy: IfNotPresent
 
 # Environment variables
@@ -30,7 +31,7 @@ ingress:
       "kubernetes.io/ingress.class": "traefik"
       "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- YOUR NEW CNAME
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-      "traefik.ingress.kubernetes.io/router.tls": "true" # Keep this, it's good practice
+      "traefik.ingress.kubernetes.io/router.tls": "true"
     hosts:
       - host: homer.milenika.dev
         paths:
@@ -73,15 +74,13 @@ configmap:
     data:
       config.yml: |
         ---
-        # Homepage configuration
-        title: "Mikha's Homelab"
-        subtitle: "LGTM Stack & Services"
+        title: "Homelab Dashboard"
+        subtitle: "GitOps Monitoring Stack Demo"
         logo: "logo.png"
-        
         header: true
         footer: '<p>Created with <span class="has-text-danger">❤️</span> | <a href="https://github.com/mikha-22/homelab-gitops">View on GitHub</a></p>'
         
-        # Theme
+        # Optional theme customization
         theme: default
         colors:
           light:

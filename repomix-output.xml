@@ -70,8 +70,9 @@ apps/
 bootstrap/
   root.yaml
 .gitignore
+fetch-argocd-password.txt
 force-refresh-command.txt
-tempo_hard_refresh.txt
+root-first-time-apply.txt
 </directory_structure>
 
 <files>
@@ -284,12 +285,16 @@ spec:
         maxDuration: 5m
 </file>
 
+<file path="fetch-argocd-password.txt">
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+</file>
+
 <file path="force-refresh-command.txt">
 kubectl annotate app root -n argocd argocd.argoproj.io/refresh=hard --overwrite
 </file>
 
-<file path="tempo_hard_refresh.txt">
-kubectl annotate app tempo -n argocd argocd.argoproj.io/refresh=hard --overwrite
+<file path="root-first-time-apply.txt">
+kubectl apply -f bootstrap/root.yaml
 </file>
 
 <file path="apps/monitoring/namespace/namespace.yaml">
@@ -642,46 +647,6 @@ podAnnotations:
   prometheus.io/port: "3101"
 </file>
 
-<file path="apps/system/homer-app.yaml">
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: homer
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "10"  # Deploy after monitoring stack
-spec:
-  project: default
-  # OPTION 1: Use multiple sources (requires ArgoCD 2.6+)
-  sources:
-    # Helm chart source
-    - repoURL: https://djjudas21.github.io/charts/
-      targetRevision: 8.2.4
-      chart: homer
-      helm:
-        releaseName: homer
-        valueFiles:
-          - $values/apps/homer/values.yaml
-    # Values file source
-    - repoURL: https://github.com/mikha-22/homelab-gitops
-      targetRevision: HEAD
-      ref: values
-    
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: homer
-    
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
-</file>
-
 <file path="apps/system/tempo-app.yaml">
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -735,6 +700,43 @@ labels:
     pairs:
       app.kubernetes.io/part-of: homelab-gitops
       environment: homelab
+</file>
+
+<file path="apps/system/homer-app.yaml">
+# apps/system/homer-app.yaml (Corrected)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: homer
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"  # Deploy after monitoring stack
+spec:
+  project: default
+  source:
+    # Define the Helm chart repository as the source
+    repoURL: https://djjudas21.github.io/charts/
+    targetRevision: 8.2.4
+    chart: homer
+    helm:
+      releaseName: homer
+      # Point directly to the raw values file in your main branch
+      valueFiles:
+        - https://raw.githubusercontent.com/mikha-22/homelab-gitops/main/apps/homer/values.yaml
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: homer
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
 </file>
 
 <file path="bootstrap/root.yaml">
@@ -888,56 +890,90 @@ spec:
 </file>
 
 <file path="apps/homer/values.yaml">
-# Homer Dashboard Configuration
+#
+# IMPORTANT NOTE
+#
+# This chart inherits from bjw-s common library chart. You can check the default values/options here:
+# https://github.com/bjw-s-labs/helm-charts/blob/main/charts/library/common/values.yaml
+#
+
+# Image configuration
 image:
   repository: b4bz/homer
-  tag: latest
+  tag: latest # Let's be explicit
   pullPolicy: IfNotPresent
 
-persistence:
-  enabled: true
-  storageClass: local-path
-  size: 1Gi
+# Environment variables
+env:
+  TZ: "Asia/Jakarta"
 
+# Service configuration
+service:
+  main:
+    ports:
+      http:
+        port: 8080
+
+# Ingress configuration - Using the CORRECT nested structure
 ingress:
-  enabled: true
-  className: traefik
-  hosts:
-    - host: homer.milenika.dev
-      paths:
-        - path: /
-          pathType: Prefix
-  annotations:
-    external-dns.alpha.kubernetes.io/target: "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- UPDATED
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    traefik.ingress.kubernetes.io/router.tls: "true"
-  tls:
-    - secretName: homer-tls
-      hosts:
-        - homer.milenika.dev
+  main:
+    enabled: true
+    annotations:
+      "kubernetes.io/ingress.class": "traefik"
+      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- YOUR NEW CNAME
+      "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+      "traefik.ingress.kubernetes.io/router.tls": "true" # Keep this, it's good practice
+    hosts:
+      - host: homer.milenika.dev
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: homer-tls
+        hosts:
+          - homer.milenika.dev
 
+# Security context
+securityContext:
+  runAsUser: 1000
+  runAsNonRoot: true
+  runAsGroup: 1000
+
+# Resources
 resources:
-  limits:
-    cpu: 100m
-    memory: 128Mi
   requests:
     cpu: 50m
     memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
 
-# Homer configuration
+# Persistence for assets (configs, icons, etc.) - Using the CORRECT nested structure
+persistence:
+  config:
+    enabled: true
+    type: pvc
+    storageClass: local-path
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    mountPath: /www/assets
+
+# ConfigMap for Homer configuration
 configmap:
   config:
     enabled: true
     data:
       config.yml: |
         ---
-        title: "Homelab Dashboard"
-        subtitle: "GitOps Monitoring Stack Demo"
+        # Homepage configuration
+        title: "Mikha's Homelab"
+        subtitle: "LGTM Stack & Services"
         logo: "logo.png"
+        
         header: true
         footer: '<p>Created with <span class="has-text-danger">❤️</span> | <a href="https://github.com/mikha-22/homelab-gitops">View on GitHub</a></p>'
         
-        # Optional theme customization
+        # Theme
         theme: default
         colors:
           light:
@@ -966,13 +1002,6 @@ configmap:
             card-shadow: rgba(0, 0, 0, 0.4)
             link: "#3273dc"
             link-hover: "#ffdd57"
-        
-        # Optional message
-        message:
-          style: "is-info"
-          title: "Demo Access Available!"
-          icon: "fa fa-info-circle"
-          content: "All services are configured with anonymous read-only access. No login required to explore our monitoring stack!"
         
         # Services
         services:
@@ -1492,14 +1521,14 @@ grafana:
     annotations:
       # Use same pattern as ArgoCD
       "kubernetes.io/ingress.class": "traefik"
-      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- UPDATED
+      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- YOUR NEW CNAME
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
     tls:
       - secretName: grafana-tls
         hosts:
           - grafana.milenika.dev
 
-  # Grafana configuration - WITH ANONYMOUS ACCESS
+  # Grafana configuration - WITH ANONYMOUS ACCESS and CORRECT STRUCTURE
   grafana.ini:
     server:
       root_url: "https://grafana.milenika.dev"
