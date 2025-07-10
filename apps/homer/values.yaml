@@ -28,7 +28,7 @@ ingress:
     enabled: true
     annotations:
       "kubernetes.io/ingress.class": "traefik"
-      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- THE ONLY CHANGE
+      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com"
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
       # The router.tls annotation is intentionally removed to match your working version
     hosts:
@@ -66,7 +66,7 @@ persistence:
     size: 1Gi
     mountPath: /www/assets
 
-# ConfigMap for Homer configuration - RESTORED TO MATCH WORKING VERSION
+# ConfigMap for Homer configuration
 configmap:
   config:
     enabled: true
@@ -120,26 +120,26 @@ configmap:
                 logo: "https://grafana.com/static/img/menu/grafana2.svg"
                 subtitle: "Metrics, Logs & Traces Visualization"
                 tag: "LGTM"
-                url: "https://grafana.milenika.dev"
+                url: "https://grafana.milenika.dev/d/homelab-overview/homelab-overview-lgtm-stack"
                 target: "_blank"
               - name: "Prometheus"
-                logo: "https://prometheus.io/assets/prometheus_logo_grey.svg"
+                logo: "https://raw.githubusercontent.com/prometheus/prometheus/main/documentation/images/prometheus-logo.svg"
                 subtitle: "Metrics Collection & Alerting"
                 tag: "metrics"
-                url: "https://prometheus.milenika.dev"
-                target: "_blank"
+                # url: "https://prometheus.milenika.dev"  # REMOVED - not clickable
+                # target: "_blank"                         # REMOVED - not clickable
               - name: "Loki"
                 logo: "https://grafana.com/static/img/logos/logo-loki.svg"
                 subtitle: "Log Aggregation"
                 tag: "logs"
-                url: "https://loki.milenika.dev"
-                target: "_blank"
+                # url: "https://loki.milenika.dev"         # REMOVED - not clickable
+                # target: "_blank"                         # REMOVED - not clickable
               - name: "Tempo"
-                logo: "https://grafana.com/static/img/logos/logo-tempo.svg"
+                logo: "https://raw.githubusercontent.com/grafana/tempo/master/docs/tempo/website/logo_and_name.png"
                 subtitle: "Distributed Tracing"
                 tag: "traces"
-                url: "https://tempo.milenika.dev"
-                target: "_blank"
+                # url: "https://tempo.milenika.dev"        # REMOVED - not clickable
+                # target: "_blank"                         # REMOVED - not clickable
           
           - name: "Infrastructure"
             icon: "fas fa-server"
@@ -155,6 +155,22 @@ configmap:
                 subtitle: "This Homepage"
                 tag: "dashboard"
                 url: "https://homer.milenika.dev"
+                target: "_blank"
+          
+          - name: "Source Code"
+            icon: "fab fa-github"
+            items:
+              - name: "GitOps Repository"
+                logo: "https://github.com/fluidicon.png"
+                subtitle: "Homelab GitOps configurations"
+                tag: "kubernetes"
+                url: "https://github.com/mikha-22/homelab-gitops"
+                target: "_blank"
+              - name: "Infrastructure as Code"
+                logo: "https://github.com/fluidicon.png"
+                subtitle: "Terraform & Automation"
+                tag: "terraform"
+                url: "https://github.com/mikha-22/homelab-iac"
                 target: "_blank"
         
         # Welcome message
