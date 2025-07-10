@@ -1,87 +1,53 @@
-#
-# IMPORTANT NOTE
-#
-# This chart inherits from bjw-s common library chart. You can check the default values/options here:
-# https://github.com/bjw-s-labs/helm-charts/blob/main/charts/library/common/values.yaml
-#
-
-# Image configuration
+# Homer Dashboard Configuration
 image:
   repository: b4bz/homer
-  tag: ""  # Uses chart default
+  tag: latest
   pullPolicy: IfNotPresent
 
-# Environment variables
-env:
-  TZ: "Asia/Jakarta"
+persistence:
+  enabled: true
+  storageClass: local-path
+  size: 1Gi
 
-# Service configuration
-service:
-  main:
-    ports:
-      http:
-        port: 8080
-
-# Ingress configuration - MATCH YOUR WORKING PATTERN
 ingress:
-  main:
-    enabled: true
-    # REMOVE className, use annotation instead like your other apps
-    annotations:
-      "kubernetes.io/ingress.class": "traefik"  # MATCH your working pattern
-      "external-dns.alpha.kubernetes.io/target": "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
-      "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-    hosts:
-      - host: homer.milenika.dev
-        paths:
-          - path: /
-            pathType: Prefix
-    tls:
-      - secretName: homer-tls
-        hosts:
-          - homer.milenika.dev
+  enabled: true
+  className: traefik
+  hosts:
+    - host: homer.milenika.dev
+      paths:
+        - path: /
+          pathType: Prefix
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  tls:
+    - secretName: homer-tls
+      hosts:
+        - homer.milenika.dev
 
-# Security context
-securityContext:
-  runAsUser: 1000
-  runAsNonRoot: true
-  runAsGroup: 1000
-
-# Resources
 resources:
-  requests:
-    cpu: 50m
-    memory: 64Mi
   limits:
     cpu: 100m
     memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
 
-# Persistence for assets (configs, icons, etc.)
-persistence:
-  config:
-    enabled: true
-    type: pvc
-    storageClass: local-path
-    accessMode: ReadWriteOnce
-    size: 1Gi
-    mountPath: /www/assets
-
-# ConfigMap for Homer configuration
+# Homer configuration
 configmap:
   config:
     enabled: true
     data:
       config.yml: |
         ---
-        # Homepage configuration
-        title: "Mikha's Homelab"
-        subtitle: "LGTM Stack & Services"
+        title: "Homelab Dashboard"
+        subtitle: "GitOps Monitoring Stack Demo"
         logo: "logo.png"
-        
         header: true
-        footer: '<p>Built with <span class="has-text-danger">❤️</span> using <a href="https://bulma.io/">bulma</a>, <a href="https://vuejs.org/">vuejs</a> & <a href="https://fontawesome.com/">font awesome</a></p>'
+        footer: '<p>Created with <span class="has-text-danger">❤️</span> | <a href="https://github.com/mikha-22/homelab-gitops">View on GitHub</a></p>'
         
-        # Theme
+        # Optional theme customization
         theme: default
         colors:
           light:
@@ -111,67 +77,87 @@ configmap:
             link: "#3273dc"
             link-hover: "#ffdd57"
         
+        # Optional message
+        message:
+          style: "is-info"
+          title: "Demo Access Available!"
+          icon: "fa fa-info-circle"
+          content: "All services are configured with anonymous read-only access. No login required to explore our monitoring stack!"
+        
         # Services
         services:
           - name: "Monitoring & Observability"
             icon: "fas fa-chart-line"
             items:
               - name: "Grafana"
-                logo: "https://grafana.com/static/img/menu/grafana2.svg"
-                subtitle: "Metrics, Logs & Traces Visualization"
-                tag: "LGTM"
+                logo: "assets/tools/grafana.png"
+                subtitle: "Metrics & Dashboards (Anonymous Viewer Access)"
+                tag: "monitoring"
+                keywords: "metrics visualization dashboards"
                 url: "https://grafana.milenika.dev"
                 target: "_blank"
+                tagstyle: "is-success"
+                
               - name: "Prometheus"
-                logo: "https://raw.githubusercontent.com/prometheus/prometheus.github.io/master/assets/prometheus_logo-cb55bb5c346.png"
-                subtitle: "Metrics Collection • View in Grafana"
-                tag: "metrics"
-                url: "https://grafana.milenika.dev/explore"
+                logo: "assets/tools/prometheus.png"
+                subtitle: "Metrics Collection"
+                tag: "monitoring"
+                keywords: "metrics time-series"
+                url: "https://prometheus.milenika.dev"
                 target: "_blank"
+                tagstyle: "is-warning"
+                
               - name: "Loki"
-                logo: "https://grafana.com/static/img/logos/logo-loki.svg"
-                subtitle: "Log Aggregation • View in Grafana"
+                logo: "assets/tools/loki.png"
+                subtitle: "Log Aggregation"
                 tag: "logs"
-                url: "https://grafana.milenika.dev/explore"
+                keywords: "logs aggregation"
+                url: "https://loki.milenika.dev"
                 target: "_blank"
+                tagstyle: "is-info"
+                
               - name: "Tempo"
-                logo: "https://grafana.com/static/assets/img/logos/grafana-tempo.svg"
-                subtitle: "Distributed Tracing • View in Grafana"
-                tag: "traces"
-                url: "https://grafana.milenika.dev/explore"
+                logo: "assets/tools/tempo.png"
+                subtitle: "Distributed Tracing"
+                tag: "tracing"
+                keywords: "tracing observability"
+                url: "https://tempo.milenika.dev"
                 target: "_blank"
+                tagstyle: "is-primary"
           
-          - name: "Infrastructure"
-            icon: "fas fa-server"
+          - name: "GitOps & Deployment"
+            icon: "fas fa-code-branch"
             items:
               - name: "ArgoCD"
-                logo: "https://argo-cd.readthedocs.io/en/stable/assets/logo.png"
-                subtitle: "GitOps Continuous Delivery"
+                logo: "assets/tools/argocd.png"
+                subtitle: "GitOps Deployment (Anonymous Read-Only Access)"
                 tag: "gitops"
-                url: "https://demo:homelab-readonly@argocd.milenika.dev"
+                keywords: "gitops kubernetes deployment"
+                url: "https://argocd.milenika.dev"
                 target: "_blank"
-              - name: "Homer Dashboard"
-                logo: "https://github.com/bastienwirtz/homer/raw/main/public/logo.png"
-                subtitle: "This Homepage"
-                tag: "dashboard"
-                url: "https://homer.milenika.dev"
-                target: "_blank"
-              - name: "Homelab GitOps"
-                logo: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-                subtitle: "Kubernetes Manifests & Applications"
-                tag: "gitops"
+                tagstyle: "is-link"
+                
+              - name: "GitHub Repository"
+                logo: "assets/tools/github.png"
+                subtitle: "Source Code & Documentation"
+                tag: "code"
+                keywords: "source documentation"
                 url: "https://github.com/mikha-22/homelab-gitops"
                 target: "_blank"
-              - name: "Homelab IaC"
-                logo: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-                subtitle: "Infrastructure as Code"
-                tag: "infrastructure"
-                url: "https://github.com/mikha-22/homelab-iac"
-                target: "_blank"
-        
-        # Welcome message
-        message:
-          style: "is-dark"
-          title: "Welcome to Mikha's Homelab!"
-          icon: "fa fa-grin"
-          content: "This dashboard provides quick access to all homelab services. Grafana has anonymous viewing enabled for easy demos. ArgoCD demo access: demo/homelab-readonly"
+                tagstyle: "is-dark"
+
+additionalConfig:
+  custom_assets: |
+    # Add custom CSS for better styling
+    <style>
+      .message {
+        margin-bottom: 2rem;
+      }
+      .tag {
+        margin-left: 0.5rem;
+      }
+      .card:hover {
+        transform: translateY(-3px);
+        transition: all 0.3s ease;
+      }
+    </style>

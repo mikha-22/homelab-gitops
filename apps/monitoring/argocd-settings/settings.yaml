@@ -1,0 +1,130 @@
+# ArgoCD Anonymous Access Configuration - Read Only
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Enable anonymous access
+  users.anonymous.enabled: "true"
+  # URL configuration for proper redirects
+  url: "https://argocd.milenika.dev"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Set default policy for anonymous users to read-only
+  policy.default: role:readonly
+  policy.csv: |
+    # Built-in roles (these are defined by ArgoCD)
+    # role:readonly - can get all resources
+    # role:admin - can do everything
+    
+    # Additional restrictions for anonymous access (optional)
+    # Deny access to sensitive resources if needed
+    p, role:readonly, repositories, *, *, deny
+    p, role:readonly, certificates, *, *, deny
+    p, role:readonly, gpgkeys, *, *, deny
+    
+    # Allow viewing applications and projects
+    p, role:readonly, applications, get, */*, allow
+    p, role:readonly, projects, get, *, allow
+    p, role:readonly, clusters, get, *, allow
+    
+    # Explicitly deny all write operations for safety
+    p, role:readonly, applications, create, */*, deny
+    p, role:readonly, applications, update, */*, deny
+    p, role:readonly, applications, delete, */*, deny
+    p, role:readonly, applications, sync, */*, deny
+    p, role:readonly, applications, action/*, */*, deny
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cmd-params-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Server configurations
+  server.insecure: "false"
+  # Disable internal TLS since we're using Traefik
+  server.grpc.web: "true"
+
+---
+# ArgoCD Ingress Configuration
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server-ingress
+  namespace: argocd
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # Important: Enable gRPC for ArgoCD
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls.options: default
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - argocd.milenika.dev
+      secretName: argocd-server-tls
+  rules:
+    - host: argocd.milenika.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80
+
+---
+# Additional Ingress for gRPC (if needed)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server-grpc-ingress
+  namespace: argocd
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    # gRPC configuration
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - argocd.milenika.dev
+      secretName: argocd-server-tls
+  rules:
+    - host: argocd.milenika.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 443

@@ -45,9 +45,12 @@ The content is organized as follows:
 
 <directory_structure>
 apps/
+  homer/
+    kustomization.yaml
+    values.yaml
   monitoring/
-    demo-accounts/
-      argocd-demo.yaml
+    argocd-settings/
+      settings.yaml
     namespace/
       kustomization.yaml
       namespace.yaml
@@ -59,7 +62,7 @@ apps/
   system/
     projects/
       monitoring-project.yaml
-    demo-accounts-app.yaml
+    argocd-settings-app.yaml
     homer-app.yaml
     kustomization.yaml
     loki-app.yaml
@@ -77,8 +80,38 @@ tempo_hard_refresh.txt
 <files>
 This section contains the contents of the repository's files.
 
-<file path="apps/monitoring/demo-accounts/argocd-demo.yaml">
-# ArgoCD Demo Account - Read Only Access
+<file path="apps/homer/kustomization.yaml">
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # Homer is deployed via Helm, so no resources here
+  # This file exists for potential future customizations
+
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/part-of: homelab-gitops
+      environment: homelab
+</file>
+
+<file path="apps/monitoring/argocd-settings/settings.yaml">
+# ArgoCD Anonymous Access Configuration - Read Only
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Enable anonymous access
+  users.anonymous.enabled: "true"
+  # URL configuration for proper redirects
+  url: "https://argocd.milenika.dev"
+
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -89,50 +122,30 @@ metadata:
     app.kubernetes.io/name: argocd-rbac-cm
     app.kubernetes.io/part-of: argocd
 data:
+  # Set default policy for anonymous users to read-only
   policy.default: role:readonly
   policy.csv: |
-    # Demo user permissions - READ ONLY
-    p, role:demo, applications, get, *, allow
-    p, role:demo, projects, get, *, allow
-    p, role:demo, repositories, get, *, allow
-    p, role:demo, clusters, get, *, allow
-    p, role:demo, certificates, get, *, allow
-    p, role:demo, gpgkeys, get, *, allow
+    # Built-in roles (these are defined by ArgoCD)
+    # role:readonly - can get all resources
+    # role:admin - can do everything
     
-    # Explicitly deny all write operations
-    p, role:demo, applications, create, *, deny
-    p, role:demo, applications, update, *, deny
-    p, role:demo, applications, delete, *, deny
-    p, role:demo, applications, sync, *, deny
-    p, role:demo, applications, action/*, *, deny
-    p, role:demo, applications, override, *, deny
+    # Additional restrictions for anonymous access (optional)
+    # Deny access to sensitive resources if needed
+    p, role:readonly, repositories, *, *, deny
+    p, role:readonly, certificates, *, *, deny
+    p, role:readonly, gpgkeys, *, *, deny
     
-    p, role:demo, projects, create, *, deny
-    p, role:demo, projects, update, *, deny
-    p, role:demo, projects, delete, *, deny
+    # Allow viewing applications and projects
+    p, role:readonly, applications, get, */*, allow
+    p, role:readonly, projects, get, *, allow
+    p, role:readonly, clusters, get, *, allow
     
-    p, role:demo, repositories, create, *, deny
-    p, role:demo, repositories, update, *, deny
-    p, role:demo, repositories, delete, *, deny
-    
-    # Assign demo user to demo role
-    g, demo, role:demo
-
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: argocd-secret
-  namespace: argocd
-  labels:
-    app.kubernetes.io/name: argocd-secret
-    app.kubernetes.io/part-of: argocd
-type: Opaque
-stringData:
-  # Demo user account - password: "homelab-readonly"
-  # Generated with: htpasswd -nbBC 10 "" "homelab-readonly" | tr -d ':\n' | sed 's/$2y/$2a/'
-  accounts.demo: "$2a$10$rRyBsGw/1cHPKyInIwbNOeR8tK2N7X8.P5vK9Y8Q6H1mW7P2vN1Fe"
-  accounts.demo.enabled: "true"
+    # Explicitly deny all write operations for safety
+    p, role:readonly, applications, create, */*, deny
+    p, role:readonly, applications, update, */*, deny
+    p, role:readonly, applications, delete, */*, deny
+    p, role:readonly, applications, sync, */*, deny
+    p, role:readonly, applications, action/*, */*, deny
 
 ---
 apiVersion: v1
@@ -144,31 +157,101 @@ metadata:
     app.kubernetes.io/name: argocd-cmd-params-cm
     app.kubernetes.io/part-of: argocd
 data:
-  # Enable demo account
-  accounts.demo: "login"
-  accounts.demo.enabled: "true"
+  # Server configurations
+  server.insecure: "false"
+  # Disable internal TLS since we're using Traefik
+  server.grpc.web: "true"
+
+---
+# ArgoCD Ingress Configuration
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server-ingress
+  namespace: argocd
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # Important: Enable gRPC for ArgoCD
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls.options: default
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - argocd.milenika.dev
+      secretName: argocd-server-tls
+  rules:
+    - host: argocd.milenika.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80
+
+---
+# Additional Ingress for gRPC (if needed)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server-grpc-ingress
+  namespace: argocd
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    # gRPC configuration
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - argocd.milenika.dev
+      secretName: argocd-server-tls
+  rules:
+    - host: argocd.milenika.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 443
 </file>
 
-<file path="apps/system/demo-accounts-app.yaml">
+<file path="apps/system/argocd-settings-app.yaml">
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: demo-accounts
+  name: argocd-settings
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "15"  # Deploy after monitoring stack
+    # Apply these settings after the main components
+    argocd.argoproj.io/sync-wave: "20"
 spec:
   project: default
   source:
     repoURL: https://github.com/mikha-22/homelab-gitops
     targetRevision: HEAD
-    path: apps/monitoring/demo-accounts
-    
+    # This points to the new directory you created
+    path: apps/monitoring/argocd-settings
+
   destination:
     server: https://kubernetes.default.svc
-    
+    # The ConfigMaps must be applied in the 'argocd' namespace
+    namespace: argocd
+
   syncPolicy:
     automated:
       prune: true
@@ -916,6 +999,172 @@ dev-values.yaml
 .argocd-source-*
 </file>
 
+<file path="apps/homer/values.yaml">
+# Homer Dashboard Configuration
+image:
+  repository: b4bz/homer
+  tag: latest
+  pullPolicy: IfNotPresent
+
+persistence:
+  enabled: true
+  storageClass: local-path
+  size: 1Gi
+
+ingress:
+  enabled: true
+  className: traefik
+  hosts:
+    - host: homer.milenika.dev
+      paths:
+        - path: /
+          pathType: Prefix
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  tls:
+    - secretName: homer-tls
+      hosts:
+        - homer.milenika.dev
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 50m
+    memory: 64Mi
+
+# Homer configuration
+configmap:
+  config:
+    enabled: true
+    data:
+      config.yml: |
+        ---
+        title: "Homelab Dashboard"
+        subtitle: "GitOps Monitoring Stack Demo"
+        logo: "logo.png"
+        header: true
+        footer: '<p>Created with <span class="has-text-danger">❤️</span> | <a href="https://github.com/mikha-22/homelab-gitops">View on GitHub</a></p>'
+        
+        # Optional theme customization
+        theme: default
+        colors:
+          light:
+            highlight-primary: "#3367d6"
+            highlight-secondary: "#4285f4"
+            highlight-hover: "#5a95f5"
+            background: "#f5f5f5"
+            card-background: "#ffffff"
+            text: "#363636"
+            text-header: "#ffffff"
+            text-title: "#303030"
+            text-subtitle: "#424242"
+            card-shadow: rgba(0, 0, 0, 0.1)
+            link: "#3273dc"
+            link-hover: "#363636"
+          dark:
+            highlight-primary: "#3367d6"
+            highlight-secondary: "#4285f4"
+            highlight-hover: "#5a95f5"
+            background: "#131313"
+            card-background: "#2b2b2b"
+            text: "#eaeaea"
+            text-header: "#ffffff"
+            text-title: "#fafafa"
+            text-subtitle: "#f5f5f5"
+            card-shadow: rgba(0, 0, 0, 0.4)
+            link: "#3273dc"
+            link-hover: "#ffdd57"
+        
+        # Optional message
+        message:
+          style: "is-info"
+          title: "Demo Access Available!"
+          icon: "fa fa-info-circle"
+          content: "All services are configured with anonymous read-only access. No login required to explore our monitoring stack!"
+        
+        # Services
+        services:
+          - name: "Monitoring & Observability"
+            icon: "fas fa-chart-line"
+            items:
+              - name: "Grafana"
+                logo: "assets/tools/grafana.png"
+                subtitle: "Metrics & Dashboards (Anonymous Viewer Access)"
+                tag: "monitoring"
+                keywords: "metrics visualization dashboards"
+                url: "https://grafana.milenika.dev"
+                target: "_blank"
+                tagstyle: "is-success"
+                
+              - name: "Prometheus"
+                logo: "assets/tools/prometheus.png"
+                subtitle: "Metrics Collection"
+                tag: "monitoring"
+                keywords: "metrics time-series"
+                url: "https://prometheus.milenika.dev"
+                target: "_blank"
+                tagstyle: "is-warning"
+                
+              - name: "Loki"
+                logo: "assets/tools/loki.png"
+                subtitle: "Log Aggregation"
+                tag: "logs"
+                keywords: "logs aggregation"
+                url: "https://loki.milenika.dev"
+                target: "_blank"
+                tagstyle: "is-info"
+                
+              - name: "Tempo"
+                logo: "assets/tools/tempo.png"
+                subtitle: "Distributed Tracing"
+                tag: "tracing"
+                keywords: "tracing observability"
+                url: "https://tempo.milenika.dev"
+                target: "_blank"
+                tagstyle: "is-primary"
+          
+          - name: "GitOps & Deployment"
+            icon: "fas fa-code-branch"
+            items:
+              - name: "ArgoCD"
+                logo: "assets/tools/argocd.png"
+                subtitle: "GitOps Deployment (Anonymous Read-Only Access)"
+                tag: "gitops"
+                keywords: "gitops kubernetes deployment"
+                url: "https://argocd.milenika.dev"
+                target: "_blank"
+                tagstyle: "is-link"
+                
+              - name: "GitHub Repository"
+                logo: "assets/tools/github.png"
+                subtitle: "Source Code & Documentation"
+                tag: "code"
+                keywords: "source documentation"
+                url: "https://github.com/mikha-22/homelab-gitops"
+                target: "_blank"
+                tagstyle: "is-dark"
+
+additionalConfig:
+  custom_assets: |
+    # Add custom CSS for better styling
+    <style>
+      .message {
+        margin-bottom: 2rem;
+      }
+      .tag {
+        margin-left: 0.5rem;
+      }
+      .card:hover {
+        transform: translateY(-3px);
+        transition: all 0.3s ease;
+      }
+    </style>
+</file>
+
 <file path="apps/system/projects/monitoring-project.yaml">
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
@@ -1577,8 +1826,9 @@ resources:
   - tempo-app.yaml
   - promtail-app.yaml
   - homer-app.yaml
-  - demo-accounts-app.yaml  # ADD THIS NEW LINE
-  
+  # This line is the only change:
+  - argocd-settings-app.yaml
+
 # Common labels for all system applications
 labels:
   - includeSelectors: true

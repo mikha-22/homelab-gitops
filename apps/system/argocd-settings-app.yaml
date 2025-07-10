@@ -1,22 +1,26 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: demo-accounts
+  name: argocd-settings
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "15"  # Deploy after monitoring stack
+    # Apply these settings after the main components
+    argocd.argoproj.io/sync-wave: "20"
 spec:
   project: default
   source:
     repoURL: https://github.com/mikha-22/homelab-gitops
     targetRevision: HEAD
-    path: apps/monitoring/demo-accounts
-    
+    # This points to the new directory you created
+    path: apps/monitoring/argocd-settings
+
   destination:
     server: https://kubernetes.default.svc
-    
+    # The ConfigMaps must be applied in the 'argocd' namespace
+    namespace: argocd
+
   syncPolicy:
     automated:
       prune: true
