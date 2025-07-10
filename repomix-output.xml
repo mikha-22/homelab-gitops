@@ -77,14 +77,22 @@ tempo_hard_refresh.txt
 This section contains the contents of the repository's files.
 
 <file path="apps/homer/values.yaml">
-# Homer Helm Chart Values
-# Based on official djjudas21/homer chart
+#
+# IMPORTANT NOTE
+#
+# This chart inherits from bjw-s common library chart. You can check the default values/options here:
+# https://github.com/bjw-s-labs/helm-charts/blob/main/charts/library/common/values.yaml
+#
 
 # Image configuration
 image:
   repository: b4bz/homer
   tag: ""  # Uses chart default
   pullPolicy: IfNotPresent
+
+# Environment variables
+env:
+  TZ: "Asia/Jakarta"
 
 # Service configuration
 service:
@@ -97,7 +105,7 @@ service:
 ingress:
   main:
     enabled: true
-    ingressClassName: traefik
+    className: traefik
     annotations:
       external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
       external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
@@ -112,15 +120,11 @@ ingress:
         hosts:
           - homer.milenika.dev
 
-# Persistence for assets (configs, icons, etc.)
-persistence:
-  assets:
-    enabled: true
-    type: persistentVolumeClaim
-    storageClass: local-path
-    accessMode: ReadWriteOnce
-    size: 1Gi
-    mountPath: /www/assets
+# Security context
+securityContext:
+  runAsUser: 1000
+  runAsNonRoot: true
+  runAsGroup: 1000
 
 # Resources
 resources:
@@ -131,144 +135,113 @@ resources:
     cpu: 100m
     memory: 128Mi
 
-# Homer configuration
-config: |
-  ---
-  # Homepage configuration
-  title: "Mikha's Homelab"
-  subtitle: "LGTM Stack & Services"
-  logo: "logo.png"
-  
-  header: true
-  footer: '<p>Built with <span class="has-text-danger">❤️</span> using <a href="https://bulma.io/">bulma</a>, <a href="https://vuejs.org/">vuejs</a> & <a href="https://fontawesome.com/">font awesome</a></p>'
-  
-  # Theme
-  theme: default
-  colors:
-    light:
-      highlight-primary: "#3367d6"
-      highlight-secondary: "#4285f4"
-      highlight-hover: "#5a95f5"
-      background: "#f5f5f5"
-      card-background: "#ffffff"
-      text: "#363636"
-      text-header: "#ffffff"
-      text-title: "#303030"
-      text-subtitle: "#424242"
-      card-shadow: rgba(0, 0, 0, 0.1)
-      link: "#3273dc"
-      link-hover: "#363636"
-    dark:
-      highlight-primary: "#3367d6"
-      highlight-secondary: "#4285f4"
-      highlight-hover: "#5a95f5"
-      background: "#131313"
-      card-background: "#2b2b2b"
-      text: "#eaeaea"
-      text-header: "#ffffff"
-      text-title: "#fafafa"
-      text-subtitle: "#f5f5f5"
-      card-shadow: rgba(0, 0, 0, 0.4)
-      link: "#3273dc"
-      link-hover: "#ffdd57"
-  
-  # Services
-  services:
-    - name: "Monitoring & Observability"
-      icon: "fas fa-chart-line"
-      items:
-        - name: "Grafana"
-          logo: "https://grafana.com/static/img/menu/grafana2.svg"
-          subtitle: "Metrics, Logs & Traces Visualization"
-          tag: "LGTM"
-          url: "https://grafana.milenika.dev"
-          target: "_blank"
-        - name: "Prometheus"
-          logo: "https://prometheus.io/assets/prometheus_logo_grey.svg"
-          subtitle: "Metrics Collection & Alerting"
-          tag: "metrics"
-          url: "https://prometheus.milenika.dev"
-          target: "_blank"
-        - name: "Loki"
-          logo: "https://grafana.com/static/img/logos/logo-loki.svg"
-          subtitle: "Log Aggregation"
-          tag: "logs"
-          url: "https://loki.milenika.dev"
-          target: "_blank"
-        - name: "Tempo"
-          logo: "https://grafana.com/static/img/logos/logo-tempo.svg"
-          subtitle: "Distributed Tracing"
-          tag: "traces"
-          url: "https://tempo.milenika.dev"
-          target: "_blank"
-    
-    - name: "Infrastructure"
-      icon: "fas fa-server"
-      items:
-        - name: "ArgoCD"
-          logo: "https://argo-cd.readthedocs.io/en/stable/assets/logo.png"
-          subtitle: "GitOps Continuous Delivery"
-          tag: "gitops"
-          url: "https://argocd.milenika.dev"
-          target: "_blank"
-        - name: "Homer Dashboard"
-          logo: "https://github.com/bastienwirtz/homer/raw/main/public/logo.png"
-          subtitle: "This Homepage"
-          tag: "dashboard"
-          url: "https://homer.milenika.dev"
-          target: "_blank"
-  
-  # Welcome message
-  message:
-    style: "is-dark"
-    title: "Welcome to Mikha's Homelab!"
-    icon: "fa fa-grin"
-    content: "This dashboard provides quick access to all your homelab services. Your LGTM observability stack is fully operational with Loki (logs), Grafana (visualization), Tempo (traces), and Prometheus (metrics)."
+# Persistence for assets (configs, icons, etc.)
+persistence:
+  config:
+    enabled: true
+    type: pvc
+    storageClass: local-path
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    mountPath: /www/assets
 
-# Environment variables (optional)
-env:
-  TZ: "Asia/Jakarta"
-
-# Security context
-securityContext:
-  runAsNonRoot: true
-  runAsUser: 1000
-  runAsGroup: 1000
-  fsGroup: 1000
-</file>
-
-<file path="apps/system/homer-app.yaml">
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: homer
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "10"  # Deploy after monitoring stack
-spec:
-  project: default
-  source:
-    repoURL: https://djjudas21.github.io/charts/
-    targetRevision: 8.2.4  # Latest stable version
-    chart: homer
-    helm:
-      releaseName: homer
-      valueFiles:
-        - https://raw.githubusercontent.com/mikha-22/homelab-gitops/main/apps/homer/values.yaml
-    
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: homer
-    
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
+# ConfigMap for Homer configuration
+configmap:
+  config:
+    enabled: true
+    data:
+      config.yml: |
+        ---
+        # Homepage configuration
+        title: "Mikha's Homelab"
+        subtitle: "LGTM Stack & Services"
+        logo: "logo.png"
+        
+        header: true
+        footer: '<p>Built with <span class="has-text-danger">❤️</span> using <a href="https://bulma.io/">bulma</a>, <a href="https://vuejs.org/">vuejs</a> & <a href="https://fontawesome.com/">font awesome</a></p>'
+        
+        # Theme
+        theme: default
+        colors:
+          light:
+            highlight-primary: "#3367d6"
+            highlight-secondary: "#4285f4"
+            highlight-hover: "#5a95f5"
+            background: "#f5f5f5"
+            card-background: "#ffffff"
+            text: "#363636"
+            text-header: "#ffffff"
+            text-title: "#303030"
+            text-subtitle: "#424242"
+            card-shadow: rgba(0, 0, 0, 0.1)
+            link: "#3273dc"
+            link-hover: "#363636"
+          dark:
+            highlight-primary: "#3367d6"
+            highlight-secondary: "#4285f4"
+            highlight-hover: "#5a95f5"
+            background: "#131313"
+            card-background: "#2b2b2b"
+            text: "#eaeaea"
+            text-header: "#ffffff"
+            text-title: "#fafafa"
+            text-subtitle: "#f5f5f5"
+            card-shadow: rgba(0, 0, 0, 0.4)
+            link: "#3273dc"
+            link-hover: "#ffdd57"
+        
+        # Services
+        services:
+          - name: "Monitoring & Observability"
+            icon: "fas fa-chart-line"
+            items:
+              - name: "Grafana"
+                logo: "https://grafana.com/static/img/menu/grafana2.svg"
+                subtitle: "Metrics, Logs & Traces Visualization"
+                tag: "LGTM"
+                url: "https://grafana.milenika.dev"
+                target: "_blank"
+              - name: "Prometheus"
+                logo: "https://prometheus.io/assets/prometheus_logo_grey.svg"
+                subtitle: "Metrics Collection & Alerting"
+                tag: "metrics"
+                url: "https://prometheus.milenika.dev"
+                target: "_blank"
+              - name: "Loki"
+                logo: "https://grafana.com/static/img/logos/logo-loki.svg"
+                subtitle: "Log Aggregation"
+                tag: "logs"
+                url: "https://loki.milenika.dev"
+                target: "_blank"
+              - name: "Tempo"
+                logo: "https://grafana.com/static/img/logos/logo-tempo.svg"
+                subtitle: "Distributed Tracing"
+                tag: "traces"
+                url: "https://tempo.milenika.dev"
+                target: "_blank"
+          
+          - name: "Infrastructure"
+            icon: "fas fa-server"
+            items:
+              - name: "ArgoCD"
+                logo: "https://argo-cd.readthedocs.io/en/stable/assets/logo.png"
+                subtitle: "GitOps Continuous Delivery"
+                tag: "gitops"
+                url: "https://argocd.milenika.dev"
+                target: "_blank"
+              - name: "Homer Dashboard"
+                logo: "https://github.com/bastienwirtz/homer/raw/main/public/logo.png"
+                subtitle: "This Homepage"
+                tag: "dashboard"
+                url: "https://homer.milenika.dev"
+                target: "_blank"
+        
+        # Welcome message
+        message:
+          style: "is-dark"
+          title: "Welcome to Mikha's Homelab!"
+          icon: "fa fa-grin"
+          content: "This dashboard provides quick access to all your homelab services. Your LGTM observability stack is fully operational with Loki (logs), Grafana (visualization), Tempo (traces), and Prometheus (metrics)."
 </file>
 
 <file path="apps/monitoring/namespace/security-headers.yaml">
@@ -304,6 +277,46 @@ spec:
       frame-ancestors 'none';
       base-uri 'self';
       form-action 'self';
+</file>
+
+<file path="apps/system/homer-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: homer
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"  # Deploy after monitoring stack
+spec:
+  project: default
+  # OPTION 1: Use multiple sources (requires ArgoCD 2.6+)
+  sources:
+    # Helm chart source
+    - repoURL: https://djjudas21.github.io/charts/
+      targetRevision: 8.2.4
+      chart: homer
+      helm:
+        releaseName: homer
+        valueFiles:
+          - $values/apps/homer/values.yaml
+    # Values file source
+    - repoURL: https://github.com/mikha-22/homelab-gitops
+      targetRevision: HEAD
+      ref: values
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: homer
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
 </file>
 
 <file path="apps/system/loki-app.yaml">
@@ -1396,27 +1409,6 @@ serviceMonitor:
   scrapeTimeout: 10s
 </file>
 
-<file path="apps/system/kustomization.yaml">
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-  - projects/monitoring-project.yaml
-  - monitoring-namespace-app.yaml
-  - prometheus-app.yaml
-  - loki-app.yaml
-  - tempo-app.yaml
-  - promtail-app.yaml
-  - homer-app.yaml
-  
-# Common labels for all system applications
-labels:
-  - includeSelectors: true
-    pairs:
-      app.kubernetes.io/part-of: homelab-gitops
-      environment: homelab
-</file>
-
 <file path="apps/monitoring/prometheus-stack-values.yaml">
 # Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
 # Chart Version: 75.9.0
@@ -1627,6 +1619,27 @@ defaultRules:
 
 # Cleanup settings
 cleanPrometheusOperatorObjectNames: true
+</file>
+
+<file path="apps/system/kustomization.yaml">
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - projects/monitoring-project.yaml
+  - monitoring-namespace-app.yaml
+  - prometheus-app.yaml
+  - loki-app.yaml
+  - tempo-app.yaml
+  - promtail-app.yaml
+  - homer-app.yaml
+  
+# Common labels for all system applications
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/part-of: homelab-gitops
+      environment: homelab
 </file>
 
 </files>

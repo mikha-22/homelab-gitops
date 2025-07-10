@@ -9,14 +9,20 @@ metadata:
     argocd.argoproj.io/sync-wave: "10"  # Deploy after monitoring stack
 spec:
   project: default
-  source:
-    repoURL: https://djjudas21.github.io/charts/
-    targetRevision: 8.2.4  # Latest stable version
-    chart: homer
-    helm:
-      releaseName: homer
-      valueFiles:
-        - https://raw.githubusercontent.com/mikha-22/homelab-gitops/main/apps/homer/values.yaml
+  # OPTION 1: Use multiple sources (requires ArgoCD 2.6+)
+  sources:
+    # Helm chart source
+    - repoURL: https://djjudas21.github.io/charts/
+      targetRevision: 8.2.4
+      chart: homer
+      helm:
+        releaseName: homer
+        valueFiles:
+          - $values/apps/homer/values.yaml
+    # Values file source
+    - repoURL: https://github.com/mikha-22/homelab-gitops
+      targetRevision: HEAD
+      ref: values
     
   destination:
     server: https://kubernetes.default.svc
