@@ -1,6 +1,21 @@
-# Updated Grafana section for prometheus-stack-values.yaml
-# Replace only the grafana: section with this
+# Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
+# Chart Version: 75.9.0
+# WITH INGRESS AND ANONYMOUS GRAFANA ACCESS ENABLED
 
+# Global settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# CRDs configuration
+crds:
+  enabled: true
+
+# Disable AlertManager for simplified homelab setup
+alertmanager:
+  enabled: false
+
+# Grafana Configuration - WITH ANONYMOUS ACCESS AND CORRECTED LGTM DATASOURCES
 grafana:
   enabled: true
   
@@ -51,7 +66,7 @@ grafana:
         hosts:
           - grafana.milenika.dev
   
-  # Grafana configuration with DEFAULT DASHBOARD REDIRECT
+  # Grafana configuration
   grafana.ini:
     server:
       root_url: "https://grafana.milenika.dev"
@@ -79,16 +94,9 @@ grafana:
       level: "info"
     panels:
       disable_sanitize_html: false
-    # REDIRECT TO HOMELAB DASHBOARD
-    dashboards:
-      default_home_dashboard_path: "/var/lib/grafana/dashboards/homelab-overview.json"
-    users:
-      # Set default dashboard for anonymous users
-      home_page: "dashboard"
-      default_theme: "dark"
 
-  # ADDITIONAL DATASOURCES FOR LGTM STACK - CONFIGURED VIA GITOPS!
-  additionalDataSources:
+  # CORRECTED: additionalDatasources (lowercase 's') - NOT additionalDataSources
+  additionalDatasources:
     # Loki for Logs
     - name: Loki
       type: loki
@@ -119,10 +127,11 @@ grafana:
         tracesToLogs:
           datasourceUid: loki
           tags: ['job', 'instance', 'pod', 'namespace']
-          mappedTags: [
-            { key: 'service.name', value: 'service' },
-            { key: 'service.namespace', value: 'namespace' }
-          ]
+          mappedTags:
+            - key: 'service.name'
+              value: 'service'
+            - key: 'service.namespace' 
+              value: 'namespace'
           mapTagNamesEnabled: false
           spanStartTimeShift: '1h'
           spanEndTimeShift: '1h'
@@ -149,8 +158,6 @@ grafana:
       folder: /tmp/dashboards
       provider:
         foldersFromFilesStructure: true
-        # Set homelab dashboard as default
-        defaultFolderName: "General"
     datasources:
       enabled: true
       searchNamespace: ALL
@@ -160,17 +167,103 @@ grafana:
       # The Prometheus datasource from the chart is already default
       defaultDatasourceEnabled: true
 
-  # DEFAULT DASHBOARD PROVISIONING
-  dashboardProviders:
-    dashboardproviders.yaml:
-      apiVersion: 1
-      providers:
-      - name: 'default'
-        orgId: 1
-        folder: ''
-        type: file
-        disableDeletion: false
-        editable: false
-        allowUiUpdates: false
-        options:
-          path: /var/lib/grafana/dashboards
+# Prometheus Configuration
+prometheus:
+  enabled: true
+  prometheusSpec:
+    retention: 15d
+    retentionSize: 20GB
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      fsGroup: 2000
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 30Gi
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
+    podMonitorNamespaceSelector: {}
+    ruleNamespaceSelector: {}
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+
+# Prometheus Operator
+prometheusOperator:
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+
+# Node Exporter
+nodeExporter:
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 100Mi
+    requests:
+      cpu: 100m
+      memory: 50Mi
+
+# Kube State Metrics  
+kubeStateMetrics:
+  enabled: true
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Default monitoring rules
+defaultRules:
+  create: true
+  rules:
+    alertmanager: false
+    etcd: true
+    configReloaders: true
+    general: true
+    k8s: true
+    kubeApiserverAvailability: true
+    kubeApiserverBurnrate: true
+    kubeApiserverHistogram: true
+    kubeApiserverSlos: true
+    kubelet: true
+    kubeProxy: true
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
+
+# Cleanup settings
+cleanPrometheusOperatorObjectNames: true
