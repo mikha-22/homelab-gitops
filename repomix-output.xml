@@ -908,7 +908,7 @@ ingress:
         - path: /
           pathType: Prefix
   annotations:
-    external-dns.alpha.kubernetes.io/target: "c6c7a9c0-cde2-4e89-bd87-312697ffd4cc.cfargotunnel.com" # <-- UPDATED
+    external-dns.alpha.kubernetes.io/target: "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- UPDATED
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
     traefik.ingress.kubernetes.io/router.tls: "true"
   tls:
@@ -1035,6 +1035,180 @@ configmap:
           title: "Welcome to Mikha's Homelab!"
           icon: "fa fa-grin"
           content: "This dashboard provides quick access to all your homelab services. Your LGTM observability stack is fully operational with Loki (logs), Grafana (visualization), Tempo (traces), and Prometheus (metrics)."
+</file>
+
+<file path="apps/monitoring/loki-values.yaml">
+# Loki Configuration - Chart Version 6.30.1
+# Based on OFFICIAL Grafana documentation for monolithic deployment
+# Reference: https://grafana.com/docs/loki/latest/setup/install/helm/install-monolithic/
+
+# Loki configuration - following official example
+loki:
+  auth_enabled: false  # CRITICAL: Disable auth for single-tenant homelab
+  
+  commonConfig:
+    replication_factor: 1  # CRITICAL: Must be 1 for single replica
+  
+  schemaConfig:
+    configs:
+      - from: "2024-04-01"
+        store: tsdb
+        object_store: filesystem  # Using filesystem for homelab
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+  
+  pattern_ingester:
+    enabled: true
+  
+  limits_config:
+    allow_structured_metadata: true
+    volume_enabled: true
+    retention_period: 7d  # 7 days for homelab
+  
+  ruler:
+    enable_api: true
+  
+  # Storage configuration for filesystem (homelab)
+  storage:
+    type: filesystem
+    bucketNames:
+      chunks: chunks
+      ruler: ruler
+      admin: admin
+  
+  # Additional homelab-specific limits
+  limits_config:
+    allow_structured_metadata: true
+    volume_enabled: true
+    retention_period: 7d
+    ingestion_rate_mb: 16
+    ingestion_burst_size_mb: 32
+    max_query_length: 12000h
+    reject_old_samples: true
+    reject_old_samples_max_age: 168h
+
+# Disable MinIO (we're using filesystem)
+minio:
+  enabled: false
+
+# CRITICAL: Set deployment mode
+deploymentMode: SingleBinary
+
+# Single binary configuration
+singleBinary:
+  replicas: 1
+  
+  # Resources for homelab
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  
+  # Persistence for filesystem storage
+  persistence:
+    enabled: true
+    storageClass: local-path
+    accessModes:
+      - ReadWriteOnce
+    size: 30Gi
+
+# CRITICAL: Zero out replica counts of other deployment modes
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+
+ingester:
+  replicas: 0
+querier:
+  replicas: 0
+queryFrontend:
+  replicas: 0
+queryScheduler:
+  replicas: 0
+distributor:
+  replicas: 0
+compactor:
+  replicas: 0
+indexGateway:
+  replicas: 0
+bloomCompactor:
+  replicas: 0
+bloomGateway:
+  replicas: 0
+
+# Gateway configuration (NGINX reverse proxy)
+gateway:
+  enabled: true
+  replicas: 1
+  
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  
+  # Ingress configuration - matches your working pattern
+  ingress:
+    enabled: true
+    hosts:
+      - host: loki.milenika.dev
+        paths:
+          - path: /
+            pathType: Prefix
+    annotations:
+      "kubernetes.io/ingress.class": "traefik"
+      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- UPDATED
+      "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+    tls:
+      - secretName: loki-gateway-tls
+        hosts:
+          - loki.milenika.dev
+
+# Disable test
+test:
+  enabled: false
+
+# Reduce cache memory for homelab
+chunksCache:
+  enabled: true
+  allocatedMemory: 500  # Reduced from default 8GB
+
+resultsCache:
+  enabled: true
+  allocatedMemory: 300  # Reduced from default
+
+# Disable self-monitoring for simplicity
+monitoring:
+  selfMonitoring:
+    enabled: false
+    grafanaAgent:
+      installOperator: false
+  lokiCanary:
+    enabled: true  # Keep canary for health checks
+    resources:
+      limits:
+        cpu: 50m
+        memory: 64Mi
+      requests:
+        cpu: 25m
+        memory: 32Mi
+
+# ServiceMonitor for Prometheus integration
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  interval: 30s
+  scrapeTimeout: 10s
 </file>
 
 <file path="apps/monitoring/tempo-values.yaml">
@@ -1181,9 +1355,9 @@ ingress:
         - path: /
           pathType: Prefix
   annotations:
-    external-dns.alpha.kubernetes.io/target": "c6c7a9c0-cde2-4e89-bd87-312697ffd4cc.cfargotunnel.com" # <-- UPDATED
-    external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-    traefik.ingress.kubernetes.io/router.tls": "true"
+    external-dns.alpha.kubernetes.io/target: "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
   tls:
     - secretName: tempo-tls
@@ -1231,180 +1405,6 @@ podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "3200"
   prometheus.io/path: "/metrics"
-</file>
-
-<file path="apps/monitoring/loki-values.yaml">
-# Loki Configuration - Chart Version 6.30.1
-# Based on OFFICIAL Grafana documentation for monolithic deployment
-# Reference: https://grafana.com/docs/loki/latest/setup/install/helm/install-monolithic/
-
-# Loki configuration - following official example
-loki:
-  auth_enabled: false  # CRITICAL: Disable auth for single-tenant homelab
-  
-  commonConfig:
-    replication_factor: 1  # CRITICAL: Must be 1 for single replica
-  
-  schemaConfig:
-    configs:
-      - from: "2024-04-01"
-        store: tsdb
-        object_store: filesystem  # Using filesystem for homelab
-        schema: v13
-        index:
-          prefix: loki_index_
-          period: 24h
-  
-  pattern_ingester:
-    enabled: true
-  
-  limits_config:
-    allow_structured_metadata: true
-    volume_enabled: true
-    retention_period: 7d  # 7 days for homelab
-  
-  ruler:
-    enable_api: true
-  
-  # Storage configuration for filesystem (homelab)
-  storage:
-    type: filesystem
-    bucketNames:
-      chunks: chunks
-      ruler: ruler
-      admin: admin
-  
-  # Additional homelab-specific limits
-  limits_config:
-    allow_structured_metadata: true
-    volume_enabled: true
-    retention_period: 7d
-    ingestion_rate_mb: 16
-    ingestion_burst_size_mb: 32
-    max_query_length: 12000h
-    reject_old_samples: true
-    reject_old_samples_max_age: 168h
-
-# Disable MinIO (we're using filesystem)
-minio:
-  enabled: false
-
-# CRITICAL: Set deployment mode
-deploymentMode: SingleBinary
-
-# Single binary configuration
-singleBinary:
-  replicas: 1
-  
-  # Resources for homelab
-  resources:
-    limits:
-      cpu: 1000m
-      memory: 2Gi
-    requests:
-      cpu: 500m
-      memory: 1Gi
-  
-  # Persistence for filesystem storage
-  persistence:
-    enabled: true
-    storageClass: local-path
-    accessModes:
-      - ReadWriteOnce
-    size: 30Gi
-
-# CRITICAL: Zero out replica counts of other deployment modes
-backend:
-  replicas: 0
-read:
-  replicas: 0
-write:
-  replicas: 0
-
-ingester:
-  replicas: 0
-querier:
-  replicas: 0
-queryFrontend:
-  replicas: 0
-queryScheduler:
-  replicas: 0
-distributor:
-  replicas: 0
-compactor:
-  replicas: 0
-indexGateway:
-  replicas: 0
-bloomCompactor:
-  replicas: 0
-bloomGateway:
-  replicas: 0
-
-# Gateway configuration (NGINX reverse proxy)
-gateway:
-  enabled: true
-  replicas: 1
-  
-  resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
-      cpu: 50m
-      memory: 64Mi
-  
-  # Ingress configuration - matches your working pattern
-  ingress:
-    enabled: true
-    hosts:
-      - host: loki.milenika.dev
-        paths:
-          - path: /
-            pathType: Prefix
-    annotations:
-      "kubernetes.io/ingress.class": "traefik"
-      "external-dns.alpha.kubernetes.io/target": "c6c7a9c0-cde2-4e89-bd87-312697ffd4cc.cfargotunnel.com" # <-- UPDATED
-      "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-    tls:
-      - secretName: loki-gateway-tls
-        hosts:
-          - loki.milenika.dev
-
-# Disable test
-test:
-  enabled: false
-
-# Reduce cache memory for homelab
-chunksCache:
-  enabled: true
-  allocatedMemory: 500  # Reduced from default 8GB
-
-resultsCache:
-  enabled: true
-  allocatedMemory: 300  # Reduced from default
-
-# Disable self-monitoring for simplicity
-monitoring:
-  selfMonitoring:
-    enabled: false
-    grafanaAgent:
-      installOperator: false
-  lokiCanary:
-    enabled: true  # Keep canary for health checks
-    resources:
-      limits:
-        cpu: 50m
-        memory: 64Mi
-      requests:
-        cpu: 25m
-        memory: 32Mi
-
-# ServiceMonitor for Prometheus integration
-serviceMonitor:
-  enabled: true
-  namespace: monitoring
-  interval: 30s
-  scrapeTimeout: 10s
 </file>
 
 <file path="apps/system/kustomization.yaml">
@@ -1492,7 +1492,7 @@ grafana:
     annotations:
       # Use same pattern as ArgoCD
       "kubernetes.io/ingress.class": "traefik"
-      "external-dns.alpha.kubernetes.io/target": "c6c7a9c0-cde2-4e89-bd87-312697ffd4cc.cfargotunnel.com" # <-- UPDATED
+      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- UPDATED
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
     tls:
       - secretName: grafana-tls

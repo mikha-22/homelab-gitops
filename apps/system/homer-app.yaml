@@ -1,3 +1,4 @@
+# apps/system/homer-app.yaml (Corrected)
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -9,20 +10,16 @@ metadata:
     argocd.argoproj.io/sync-wave: "10"  # Deploy after monitoring stack
 spec:
   project: default
-  # OPTION 1: Use multiple sources (requires ArgoCD 2.6+)
-  sources:
-    # Helm chart source
-    - repoURL: https://djjudas21.github.io/charts/
-      targetRevision: 8.2.4
-      chart: homer
-      helm:
-        releaseName: homer
-        valueFiles:
-          - $values/apps/homer/values.yaml
-    # Values file source
-    - repoURL: https://github.com/mikha-22/homelab-gitops
-      targetRevision: HEAD
-      ref: values
+  source:
+    # Define the Helm chart repository as the source
+    repoURL: https://djjudas21.github.io/charts/
+    targetRevision: 8.2.4
+    chart: homer
+    helm:
+      releaseName: homer
+      # Point directly to the raw values file in your main branch
+      valueFiles:
+        - https://raw.githubusercontent.com/mikha-22/homelab-gitops/main/apps/homer/values.yaml
     
   destination:
     server: https://kubernetes.default.svc
