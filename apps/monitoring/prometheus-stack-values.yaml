@@ -1,21 +1,6 @@
-# Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
-# Chart Version: 75.9.0
-# WITH INGRESS AND ANONYMOUS GRAFANA ACCESS ENABLED
+# Fixed Grafana Configuration Section for prometheus-stack-values.yaml
+# This replaces the existing grafana section in your file
 
-# Global settings
-global:
-  imageRegistry: ""
-  imagePullSecrets: []
-
-# CRDs configuration
-crds:
-  enabled: true
-
-# Disable AlertManager for simplified homelab setup
-alertmanager:
-  enabled: false
-
-# Grafana Configuration - WITH ANONYMOUS ACCESS
 grafana:
   enabled: true
   
@@ -50,26 +35,23 @@ grafana:
     runAsUser: 472
     fsGroup: 472
   
-  # INGRESS CONFIGURATION - CORRECTED TO BE COMPATIBLE WITH THIS CHART
+  # CORRECTED INGRESS CONFIGURATION - This is the key fix!
   ingress:
     enabled: true
-    hosts:
-      - host: grafana.milenika.dev
-        paths:
-          - path: /
-            pathType: Prefix
+    # Use ingressClassName instead of annotations for Traefik
+    ingressClassName: traefik
     annotations:
-      "kubernetes.io/ingress.class": "traefik"
       "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com"
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-      # ADDED BACK: This is the correct way to enable TLS for this chart with Traefik
-      "traefik.ingress.kubernetes.io/router.tls": "true"
-      
-    # REMOVED: The tls block is incompatible with this chart's template
-    # tls:
-    #   - secretName: grafana-tls
-    #     hosts:
-    #       - grafana.milenika.dev
+      # REMOVED the problematic traefik.ingress.kubernetes.io/router.tls annotation
+    hosts:
+      - grafana.milenika.dev
+    path: /
+    pathType: Prefix
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - grafana.milenika.dev
   
   # Grafana configuration
   grafana.ini:
@@ -99,104 +81,3 @@ grafana:
       level: "info"
     panels:
       disable_sanitize_html: false
-
-# Prometheus Configuration
-prometheus:
-  enabled: true
-  prometheusSpec:
-    retention: 15d
-    retentionSize: 20GB
-    resources:
-      limits:
-        cpu: 2000m
-        memory: 4Gi
-      requests:
-        cpu: 1000m
-        memory: 2Gi
-    securityContext:
-      runAsNonRoot: true
-      runAsUser: 1000
-      fsGroup: 2000
-    storageSpec:
-      volumeClaimTemplate:
-        spec:
-          storageClassName: local-path
-          accessModes: ["ReadWriteOnce"]
-          resources:
-            requests:
-              storage: 30Gi
-    serviceMonitorSelectorNilUsesHelmValues: false
-    podMonitorSelectorNilUsesHelmValues: false
-    ruleSelectorNilUsesHelmValues: false
-    serviceMonitorNamespaceSelector: {}
-    podMonitorNamespaceSelector: {}
-    ruleNamespaceSelector: {}
-    scrapeInterval: 30s
-    evaluationInterval: 30s
-
-# Prometheus Operator
-prometheusOperator:
-  enabled: true
-  resources:
-    limits:
-      cpu: 200m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
-  securityContext:
-    runAsNonRoot: true
-    runAsUser: 65534
-
-# Node Exporter
-nodeExporter:
-  enabled: true
-  resources:
-    limits:
-      cpu: 200m
-      memory: 100Mi
-    requests:
-      cpu: 100m
-      memory: 50Mi
-
-# Kube State Metrics  
-kubeStateMetrics:
-  enabled: true
-  resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
-      cpu: 50m
-      memory: 64Mi
-
-# Default monitoring rules
-defaultRules:
-  create: true
-  rules:
-    alertmanager: false
-    etcd: true
-    configReloaders: true
-    general: true
-    k8s: true
-    kubeApiserverAvailability: true
-    kubeApiserverBurnrate: true
-    kubeApiserverHistogram: true
-    kubeApiserverSlos: true
-    kubelet: true
-    kubeProxy: true
-    kubePrometheusGeneral: true
-    kubePrometheusNodeRecording: true
-    kubernetesApps: true
-    kubernetesResources: true
-    kubernetesStorage: true
-    kubernetesSystem: true
-    network: true
-    node: true
-    nodeExporterAlerting: true
-    nodeExporterRecording: true
-    prometheus: true
-    prometheusOperator: true
-
-# Cleanup settings
-cleanPrometheusOperatorObjectNames: true
