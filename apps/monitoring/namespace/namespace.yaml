@@ -10,7 +10,7 @@ metadata:
     pod-security.kubernetes.io/audit: privileged  
     pod-security.kubernetes.io/warn: privileged
   annotations:
-    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/sync-wave: "-2"
 ---
 # Add resource quota for better resource management
 apiVersion: v1
@@ -21,6 +21,8 @@ metadata:
   labels:
     app.kubernetes.io/name: monitoring-quota
     app.kubernetes.io/part-of: homelab-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   hard:
     requests.cpu: "8"
@@ -39,6 +41,8 @@ metadata:
   labels:
     app.kubernetes.io/name: monitoring-limits
     app.kubernetes.io/part-of: homelab-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   limits:
   - default:

@@ -1,6 +1,7 @@
-# Prometheus Stack Configuration - CORRECTED DATASOURCES
+# Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
 # Chart Version: 75.9.0
-# WITH PROPER GITOPS DATASOURCE INTEGRATION
+# WITH INGRESS AND ANONYMOUS GRAFANA ACCESS ENABLED
+# FIXED: additionalDataSources (uppercase S) and proper service URLs
 
 # Global settings
 global:
@@ -15,11 +16,11 @@ crds:
 alertmanager:
   enabled: false
 
-# Grafana Configuration - CORRECTED DATASOURCE INTEGRATION
+# Grafana Configuration - WITH ANONYMOUS ACCESS AND CORRECTED LGTM DATASOURCES
 grafana:
   enabled: true
   
-  # Admin credentials
+  # Admin credentials - will use generated password
   adminUser: admin
   
   # DISABLE the problematic init container
@@ -95,14 +96,13 @@ grafana:
     panels:
       disable_sanitize_html: false
 
-  # CORRECTED: additionalDataSources (uppercase 'S') - PROPER LGTM INTEGRATION
+  # FIXED: additionalDataSources (uppercase 'S') - NOT additionalDatasources
   additionalDataSources:
-    # Loki for Logs - CORRECTED SERVICE URL
+    # Loki for Logs
     - name: Loki
       type: loki
       access: proxy
       url: http://loki-gateway.monitoring.svc.cluster.local
-      uid: loki
       isDefault: false
       version: 1
       editable: true
@@ -113,13 +113,8 @@ grafana:
             matcherRegex: "trace[_-]?id[\"\\s:=]+([a-fA-F0-9]+)"
             name: TraceID
             url: "$${__value.raw}"
-            urlDisplayLabel: "View Trace"
-        # Maximum number of lines to display in explore
-        maxLines: 1000
-        # Enable live streaming
-        live: true
         
-    # Tempo for Traces - CORRECTED SERVICE URL
+    # Tempo for Traces  
     - name: Tempo
       type: tempo
       access: proxy
@@ -141,19 +136,6 @@ grafana:
           mapTagNamesEnabled: false
           spanStartTimeShift: '1h'
           spanEndTimeShift: '1h'
-          filterByTraceID: true
-          filterBySpanID: false
-        # Enable trace to metrics correlation
-        tracesToMetrics:
-          datasourceUid: prometheus
-          tags:
-            - key: 'service.name'
-              value: 'service'
-            - key: 'service.namespace'
-              value: 'namespace'
-          queries:
-            - name: 'Sample query'
-              query: 'sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[5m]))'
         # Enable service map
         serviceMap:
           datasourceUid: prometheus
@@ -163,7 +145,7 @@ grafana:
         # Search configuration
         search:
           hide: false
-        # Loki search integration
+        # Loki search
         lokiSearch:
           datasourceUid: loki
 

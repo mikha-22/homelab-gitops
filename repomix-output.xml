@@ -866,7 +866,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "6"
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   project: monitoring
   source:
@@ -896,7 +896,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   project: monitoring
   source:
@@ -936,7 +936,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: monitoring
   source:
@@ -966,7 +966,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: monitoring
   source:
@@ -1013,7 +1013,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "5"
+    argocd.argoproj.io/sync-wave: "4"
 spec:
   project: monitoring
   source:
@@ -1069,7 +1069,7 @@ metadata:
     pod-security.kubernetes.io/audit: privileged  
     pod-security.kubernetes.io/warn: privileged
   annotations:
-    argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/sync-wave: "-2"
 ---
 # Add resource quota for better resource management
 apiVersion: v1
@@ -1080,6 +1080,8 @@ metadata:
   labels:
     app.kubernetes.io/name: monitoring-quota
     app.kubernetes.io/part-of: homelab-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   hard:
     requests.cpu: "8"
@@ -1098,6 +1100,8 @@ metadata:
   labels:
     app.kubernetes.io/name: monitoring-limits
     app.kubernetes.io/part-of: homelab-gitops
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   limits:
   - default:
@@ -1415,7 +1419,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   project: monitoring
   source:
@@ -1602,6 +1606,8 @@ kind: AppProject
 metadata:
   name: monitoring
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   description: "Homelab LGTM Stack - Loki, Grafana, Tempo, ProMetheus"
   
@@ -2239,6 +2245,7 @@ labels:
 # Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
 # Chart Version: 75.9.0
 # WITH INGRESS AND ANONYMOUS GRAFANA ACCESS ENABLED
+# FIXED: additionalDataSources (uppercase S) and proper service URLs
 
 # Global settings
 global:
@@ -2333,8 +2340,8 @@ grafana:
     panels:
       disable_sanitize_html: false
 
-  # CORRECTED: additionalDatasources (lowercase 's') - NOT additionalDataSources
-  additionalDatasources:
+  # FIXED: additionalDataSources (uppercase 'S') - NOT additionalDatasources
+  additionalDataSources:
     # Loki for Logs
     - name: Loki
       type: loki
