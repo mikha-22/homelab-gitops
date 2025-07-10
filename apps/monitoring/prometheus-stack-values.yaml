@@ -68,10 +68,7 @@ grafana:
       "traefik.ingress.kubernetes.io/router.tls": "true"
       
     # CRITICAL: REMOVED the entire 'tls' block to let Traefik manage certificates
-    # tls:
-    #   - secretName: grafana-tls
-    #     hosts:
-    #       - grafana.milenika.dev
+    # No 'tls:' block should be here
   
   # Grafana configuration
   grafana.ini:

@@ -1390,22 +1390,22 @@ configmap:
                 url: "https://grafana.milenika.dev"
                 target: "_blank"
               - name: "Prometheus"
-                logo: "https://raw.githubusercontent.com/prometheus/prometheus.github.io/master/assets/prometheus_logo-cb55bb5c346.png"
-                subtitle: "Metrics Collection • View in Grafana"
+                logo: "https://prometheus.io/assets/prometheus_logo_grey.svg"
+                subtitle: "Metrics Collection & Alerting"
                 tag: "metrics"
-                url: "https://grafana.milenika.dev/explore"
+                url: "https://prometheus.milenika.dev"
                 target: "_blank"
               - name: "Loki"
                 logo: "https://grafana.com/static/img/logos/logo-loki.svg"
-                subtitle: "Log Aggregation • View in Grafana"
+                subtitle: "Log Aggregation"
                 tag: "logs"
-                url: "https://grafana.milenika.dev/explore"
+                url: "https://loki.milenika.dev"
                 target: "_blank"
               - name: "Tempo"
-                logo: "https://grafana.com/static/assets/img/logos/grafana-tempo.svg"
-                subtitle: "Distributed Tracing • View in Grafana"
+                logo: "https://grafana.com/static/img/logos/logo-tempo.svg"
+                subtitle: "Distributed Tracing"
                 tag: "traces"
-                url: "https://grafana.milenika.dev/explore"
+                url: "https://tempo.milenika.dev"
                 target: "_blank"
           
           - name: "Infrastructure"
@@ -1422,18 +1422,6 @@ configmap:
                 subtitle: "This Homepage"
                 tag: "dashboard"
                 url: "https://homer.milenika.dev"
-                target: "_blank"
-              - name: "Homelab GitOps"
-                logo: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-                subtitle: "Kubernetes Manifests & Applications"
-                tag: "gitops"
-                url: "https://github.com/mikha-22/homelab-gitops"
-                target: "_blank"
-              - name: "Homelab IaC"
-                logo: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-                subtitle: "Infrastructure as Code"
-                tag: "infrastructure"
-                url: "https://github.com/mikha-22/homelab-iac"
                 target: "_blank"
         
         # Welcome message
@@ -1521,7 +1509,7 @@ grafana:
     runAsUser: 472
     fsGroup: 472
   
-  # ENABLE INGRESS FOR EXTERNAL ACCESS (CORRECTED STRUCTURE)
+  # CORRECTED AND UNIFIED INGRESS CONFIGURATION
   ingress:
     enabled: true
     hosts:
@@ -1530,17 +1518,21 @@ grafana:
           - path: /
             pathType: Prefix
     annotations:
-      # Use same pattern as ArgoCD
+      # Standard annotations for Traefik and ExternalDNS
       "kubernetes.io/ingress.class": "traefik"
-      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- NEW CNAME
+      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com"
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-      # The router.tls annotation is intentionally removed to match your working version
-    tls:
-      - secretName: grafana-tls
-        hosts:
-          - grafana.milenika.dev
+      
+      # CRITICAL: Tell Traefik to handle TLS termination for this route
+      "traefik.ingress.kubernetes.io/router.tls": "true"
+      
+    # CRITICAL: REMOVED the entire 'tls' block to let Traefik manage certificates
+    # tls:
+    #   - secretName: grafana-tls
+    #     hosts:
+    #       - grafana.milenika.dev
   
-  # Grafana configuration - PRESERVING WORKING STRUCTURE
+  # Grafana configuration
   grafana.ini:
     server:
       root_url: "https://grafana.milenika.dev"
@@ -1556,7 +1548,7 @@ grafana:
       disable_login_form: false
       disable_signout_menu: false
     "auth.anonymous":
-      enabled: true # <-- ENABLED ANONYMOUS ACCESS
+      enabled: true
       org_name: "Main Org."
       org_role: "Viewer"
       hide_version: true
@@ -1572,13 +1564,9 @@ grafana:
 # Prometheus Configuration
 prometheus:
   enabled: true
-  
   prometheusSpec:
-    # Data retention
     retention: 15d
     retentionSize: 20GB
-    
-    # Resource management
     resources:
       limits:
         cpu: 2000m
@@ -1586,14 +1574,10 @@ prometheus:
       requests:
         cpu: 1000m
         memory: 2Gi
-    
-    # SIMPLIFIED security context
     securityContext:
       runAsNonRoot: true
       runAsUser: 1000
       fsGroup: 2000
-    
-    # Storage
     storageSpec:
       volumeClaimTemplate:
         spec:
@@ -1602,24 +1586,18 @@ prometheus:
           resources:
             requests:
               storage: 30Gi
-    
-    # Service discovery and monitoring
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
     serviceMonitorNamespaceSelector: {}
     podMonitorNamespaceSelector: {}
     ruleNamespaceSelector: {}
-    
-    # Scrape configuration
     scrapeInterval: 30s
     evaluationInterval: 30s
 
 # Prometheus Operator
 prometheusOperator:
   enabled: true
-  
-  # Resource management
   resources:
     limits:
       cpu: 200m
@@ -1627,8 +1605,6 @@ prometheusOperator:
     requests:
       cpu: 100m
       memory: 128Mi
-  
-  # SIMPLIFIED security context
   securityContext:
     runAsNonRoot: true
     runAsUser: 65534
