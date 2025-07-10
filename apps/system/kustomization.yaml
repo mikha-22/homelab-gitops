@@ -11,6 +11,7 @@ resources:
   - tempo-app.yaml
   - promtail-app.yaml
   - homer-app.yaml
+  - dashboards-app.yaml
   # The line for argocd-settings-app.yaml has been removed.
 
 # Common labels for all system applications

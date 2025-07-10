@@ -1,4 +1,4 @@
-# Fixed Grafana Configuration Section for prometheus-stack-values.yaml
+# Complete Grafana Configuration Section for prometheus-stack-values.yaml
 # This replaces the existing grafana section in your file
 
 grafana:
@@ -35,15 +35,13 @@ grafana:
     runAsUser: 472
     fsGroup: 472
   
-  # CORRECTED INGRESS CONFIGURATION - This is the key fix!
+  # CORRECTED INGRESS CONFIGURATION
   ingress:
     enabled: true
-    # Use ingressClassName instead of annotations for Traefik
     ingressClassName: traefik
     annotations:
       "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com"
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-      # REMOVED the problematic traefik.ingress.kubernetes.io/router.tls annotation
     hosts:
       - grafana.milenika.dev
     path: /
@@ -81,3 +79,74 @@ grafana:
       level: "info"
     panels:
       disable_sanitize_html: false
+
+  # ADDITIONAL DATASOURCES FOR LGTM STACK - CONFIGURED VIA GITOPS!
+  additionalDataSources:
+    # Loki for Logs
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki-gateway.monitoring.svc.cluster.local
+      isDefault: false
+      version: 1
+      editable: true
+      jsonData:
+        # Enable trace to logs correlation
+        derivedFields:
+          - datasourceUid: tempo
+            matcherRegex: "trace[_-]?id[\"\\s:=]+([a-fA-F0-9]+)"
+            name: TraceID
+            url: "$${__value.raw}"
+        
+    # Tempo for Traces  
+    - name: Tempo
+      type: tempo
+      access: proxy
+      url: http://tempo.monitoring.svc.cluster.local:3200
+      uid: tempo
+      isDefault: false
+      version: 1
+      editable: true
+      jsonData:
+        # Enable trace to logs correlation
+        tracesToLogs:
+          datasourceUid: loki
+          tags: ['job', 'instance', 'pod', 'namespace']
+          mappedTags: [
+            { key: 'service.name', value: 'service' },
+            { key: 'service.namespace', value: 'namespace' }
+          ]
+          mapTagNamesEnabled: false
+          spanStartTimeShift: '1h'
+          spanEndTimeShift: '1h'
+        # Enable service map
+        serviceMap:
+          datasourceUid: prometheus
+        # Enable node graph
+        nodeGraph:
+          enabled: true
+        # Search configuration
+        search:
+          hide: false
+        # Loki search
+        lokiSearch:
+          datasourceUid: loki
+
+  # Sidecar configuration for automatic dashboard/datasource discovery
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+      label: grafana_dashboard
+      labelValue: "1"
+      folder: /tmp/dashboards
+      provider:
+        foldersFromFilesStructure: true
+    datasources:
+      enabled: true
+      searchNamespace: ALL
+      label: grafana_datasource
+      labelValue: "1"
+      # IMPORTANT: Don't mark any additional datasource as default
+      # The Prometheus datasource from the chart is already default
+      defaultDatasourceEnabled: true
