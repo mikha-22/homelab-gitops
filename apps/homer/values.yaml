@@ -22,15 +22,16 @@ service:
       http:
         port: 8080
 
-# Ingress configuration for external access
+# Ingress configuration - MATCH YOUR WORKING PATTERN
 ingress:
   main:
     enabled: true
-    className: traefik
+    # REMOVE className, use annotation instead like your other apps
     annotations:
-      external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
-      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-      traefik.ingress.kubernetes.io/router.tls: "true"
+      "kubernetes.io/ingress.class": "traefik"  # MATCH your working pattern
+      "external-dns.alpha.kubernetes.io/target": "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+      "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+      # REMOVE the traefik.ingress.kubernetes.io/router.tls - not in your working apps
     hosts:
       - host: homer.milenika.dev
         paths:
