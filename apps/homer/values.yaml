@@ -1,53 +1,87 @@
-# Homer Dashboard Configuration
+#
+# IMPORTANT NOTE
+#
+# This chart inherits from bjw-s common library chart. You can check the default values/options here:
+# https://github.com/bjw-s-labs/helm-charts/blob/main/charts/library/common/values.yaml
+#
+
+# Image configuration
 image:
   repository: b4bz/homer
-  tag: latest
+  tag: latest # Let's be explicit
   pullPolicy: IfNotPresent
 
-persistence:
-  enabled: true
-  storageClass: local-path
-  size: 1Gi
+# Environment variables
+env:
+  TZ: "Asia/Jakarta"
 
+# Service configuration
+service:
+  main:
+    ports:
+      http:
+        port: 8080
+
+# Ingress configuration - Using the CORRECT nested structure
 ingress:
-  enabled: true
-  className: traefik
-  hosts:
-    - host: homer.milenika.dev
-      paths:
-        - path: /
-          pathType: Prefix
-  annotations:
-    external-dns.alpha.kubernetes.io/target: "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- UPDATED
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    traefik.ingress.kubernetes.io/router.tls: "true"
-  tls:
-    - secretName: homer-tls
-      hosts:
-        - homer.milenika.dev
+  main:
+    enabled: true
+    annotations:
+      "kubernetes.io/ingress.class": "traefik"
+      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- YOUR NEW CNAME
+      "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+      "traefik.ingress.kubernetes.io/router.tls": "true" # Keep this, it's good practice
+    hosts:
+      - host: homer.milenika.dev
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: homer-tls
+        hosts:
+          - homer.milenika.dev
 
+# Security context
+securityContext:
+  runAsUser: 1000
+  runAsNonRoot: true
+  runAsGroup: 1000
+
+# Resources
 resources:
-  limits:
-    cpu: 100m
-    memory: 128Mi
   requests:
     cpu: 50m
     memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
 
-# Homer configuration
+# Persistence for assets (configs, icons, etc.) - Using the CORRECT nested structure
+persistence:
+  config:
+    enabled: true
+    type: pvc
+    storageClass: local-path
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    mountPath: /www/assets
+
+# ConfigMap for Homer configuration
 configmap:
   config:
     enabled: true
     data:
       config.yml: |
         ---
-        title: "Homelab Dashboard"
-        subtitle: "GitOps Monitoring Stack Demo"
+        # Homepage configuration
+        title: "Mikha's Homelab"
+        subtitle: "LGTM Stack & Services"
         logo: "logo.png"
+        
         header: true
         footer: '<p>Created with <span class="has-text-danger">❤️</span> | <a href="https://github.com/mikha-22/homelab-gitops">View on GitHub</a></p>'
         
-        # Optional theme customization
+        # Theme
         theme: default
         colors:
           light:
@@ -76,13 +110,6 @@ configmap:
             card-shadow: rgba(0, 0, 0, 0.4)
             link: "#3273dc"
             link-hover: "#ffdd57"
-        
-        # Optional message
-        message:
-          style: "is-info"
-          title: "Demo Access Available!"
-          icon: "fa fa-info-circle"
-          content: "All services are configured with anonymous read-only access. No login required to explore our monitoring stack!"
         
         # Services
         services:

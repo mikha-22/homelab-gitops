@@ -58,14 +58,14 @@ grafana:
     annotations:
       # Use same pattern as ArgoCD
       "kubernetes.io/ingress.class": "traefik"
-      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- UPDATED
+      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- YOUR NEW CNAME
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
     tls:
       - secretName: grafana-tls
         hosts:
           - grafana.milenika.dev
 
-  # Grafana configuration - WITH ANONYMOUS ACCESS
+  # Grafana configuration - WITH ANONYMOUS ACCESS and CORRECT STRUCTURE
   grafana.ini:
     server:
       root_url: "https://grafana.milenika.dev"
