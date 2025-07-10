@@ -8,7 +8,7 @@
 # Image configuration
 image:
   repository: b4bz/homer
-  tag: latest
+  tag: ""  # Uses chart default
   pullPolicy: IfNotPresent
 
 # Environment variables
@@ -22,15 +22,15 @@ service:
       http:
         port: 8080
 
-# Ingress configuration
+# Ingress configuration - MATCHING YOUR WORKING PATTERN EXACTLY
 ingress:
   main:
     enabled: true
     annotations:
       "kubernetes.io/ingress.class": "traefik"
-      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # Your new CNAME
+      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- THE ONLY CHANGE
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-      "traefik.ingress.kubernetes.io/router.tls": "true"
+      # The router.tls annotation is intentionally removed to match your working version
     hosts:
       - host: homer.milenika.dev
         paths:
@@ -57,7 +57,6 @@ resources:
     memory: 128Mi
 
 # Persistence for assets (configs, icons, etc.)
-# The chart will automatically use the homer-config ConfigMap data here.
 persistence:
   config:
     enabled: true
@@ -67,107 +66,112 @@ persistence:
     size: 1Gi
     mountPath: /www/assets
 
-#
-# The 'configmap:' block has been intentionally removed to match the working configuration.
-# The configuration data below will be automatically placed in a ConfigMap named 'homer-config'
-# by Argo CD and mounted into the '/www/assets' path by the Helm chart's logic.
-#
----
-# Homepage configuration
-title: "Homelab Dashboard"
-subtitle: "GitOps Monitoring Stack Demo"
-logo: "logo.png"
-header: true
-footer: '<p>Created with <span class="has-text-danger">❤️</span> | <a href="https://github.com/mikha-22/homelab-gitops">View on GitHub</a></p>'
-
-# Optional theme customization
-theme: default
-colors:
-  light:
-    highlight-primary: "#3367d6"
-    highlight-secondary: "#4285f4"
-    highlight-hover: "#5a95f5"
-    background: "#f5f5f5"
-    card-background: "#ffffff"
-    text: "#363636"
-    text-header: "#ffffff"
-    text-title: "#303030"
-    text-subtitle: "#424242"
-    card-shadow: rgba(0, 0, 0, 0.1)
-    link: "#3273dc"
-    link-hover: "#363636"
-  dark:
-    highlight-primary: "#3367d6"
-    highlight-secondary: "#4285f4"
-    highlight-hover: "#5a95f5"
-    background: "#131313"
-    card-background: "#2b2b2b"
-    text: "#eaeaea"
-    text-header: "#ffffff"
-    text-title: "#fafafa"
-    text-subtitle: "#f5f5f5"
-    card-shadow: rgba(0, 0, 0, 0.4)
-    link: "#3273dc"
-    link-hover: "#ffdd57"
-
-# Services
-services:
-  - name: "Monitoring & Observability"
-    icon: "fas fa-chart-line"
-    items:
-      - name: "Grafana"
-        logo: "assets/tools/grafana.png"
-        subtitle: "Metrics & Dashboards (Anonymous Viewer Access)"
-        tag: "monitoring"
-        keywords: "metrics visualization dashboards"
-        url: "https://grafana.milenika.dev"
-        target: "_blank"
-        tagstyle: "is-success"
+# ConfigMap for Homer configuration - RESTORED TO MATCH WORKING VERSION
+configmap:
+  config:
+    enabled: true
+    data:
+      config.yml: |
+        ---
+        # Homepage configuration
+        title: "Mikha's Homelab"
+        subtitle: "LGTM Stack & Services"
+        logo: "logo.png"
         
-      - name: "Prometheus"
-        logo: "https://prometheus.io/assets/prometheus_logo_grey.svg"
-        subtitle: "Metrics Collection & Alerting"
-        tag: "metrics"
-        url: "https://prometheus.milenika.dev"
-        target: "_blank"
-        tagstyle: "is-warning"
+        header: true
+        footer: '<p>Built with <span class="has-text-danger">❤️</span> using <a href="https://bulma.io/">bulma</a>, <a href="https://vuejs.org/">vuejs</a> & <a href="https://fontawesome.com/">font awesome</a></p>'
         
-      - name: "Loki"
-        logo: "https://grafana.com/static/img/logos/logo-loki.svg"
-        subtitle: "Log Aggregation"
-        tag: "logs"
-        url: "https://loki.milenika.dev"
-        target: "_blank"
-        tagstyle: "is-info"
+        # Theme
+        theme: default
+        colors:
+          light:
+            highlight-primary: "#3367d6"
+            highlight-secondary: "#4285f4"
+            highlight-hover: "#5a95f5"
+            background: "#f5f5f5"
+            card-background: "#ffffff"
+            text: "#363636"
+            text-header: "#ffffff"
+            text-title: "#303030"
+            text-subtitle: "#424242"
+            card-shadow: rgba(0, 0, 0, 0.1)
+            link: "#3273dc"
+            link-hover: "#363636"
+          dark:
+            highlight-primary: "#3367d6"
+            highlight-secondary: "#4285f4"
+            highlight-hover: "#5a95f5"
+            background: "#131313"
+            card-background: "#2b2b2b"
+            text: "#eaeaea"
+            text-header: "#ffffff"
+            text-title: "#fafafa"
+            text-subtitle: "#f5f5f5"
+            card-shadow: rgba(0, 0, 0, 0.4)
+            link: "#3273dc"
+            link-hover: "#ffdd57"
         
-      - name: "Tempo"
-        logo: "https://grafana.com/static/img/logos/logo-tempo.svg"
-        subtitle: "Distributed Tracing"
-        tag: "traces"
-        url: "https://tempo.milenika.dev"
-        target: "_blank"
-        tagstyle: "is-primary"
-  
-  - name: "GitOps & Deployment"
-    icon: "fas fa-code-branch"
-    items:
-      - name: "ArgoCD"
-        logo: "assets/tools/argocd.png"
-        subtitle: "GitOps Deployment (Anonymous Read-Only Access)"
-        tag: "gitops"
-        keywords: "gitops kubernetes deployment"
-        url: "https://argocd.milenika.dev"
-        target: "_blank"
-      - name: "Homer Dashboard"
-        logo: "https://github.com/bastienwirtz/homer/raw/main/public/logo.png"
-        subtitle: "This Homepage"
-        tag: "dashboard"
-        url: "https://homer.milenika.dev"
-        target: "_blank"
-
-# Welcome message
-message:
-  style: "is-dark"
-  title: "Welcome to Mikha's Homelab!"
-  icon: "fa fa-grin"
-  content: "This dashboard provides quick access to all your homelab services. Your LGTM observability stack is fully operational with Loki (logs), Grafana (visualization), Tempo (traces), and Prometheus (metrics)."
+        # Services
+        services:
+          - name: "Monitoring & Observability"
+            icon: "fas fa-chart-line"
+            items:
+              - name: "Grafana"
+                logo: "https://grafana.com/static/img/menu/grafana2.svg"
+                subtitle: "Metrics, Logs & Traces Visualization"
+                tag: "LGTM"
+                url: "https://grafana.milenika.dev"
+                target: "_blank"
+              - name: "Prometheus"
+                logo: "https://raw.githubusercontent.com/prometheus/prometheus.github.io/master/assets/prometheus_logo-cb55bb5c346.png"
+                subtitle: "Metrics Collection • View in Grafana"
+                tag: "metrics"
+                url: "https://grafana.milenika.dev/explore"
+                target: "_blank"
+              - name: "Loki"
+                logo: "https://grafana.com/static/img/logos/logo-loki.svg"
+                subtitle: "Log Aggregation • View in Grafana"
+                tag: "logs"
+                url: "https://grafana.milenika.dev/explore"
+                target: "_blank"
+              - name: "Tempo"
+                logo: "https://grafana.com/static/assets/img/logos/grafana-tempo.svg"
+                subtitle: "Distributed Tracing • View in Grafana"
+                tag: "traces"
+                url: "https://grafana.milenika.dev/explore"
+                target: "_blank"
+          
+          - name: "Infrastructure"
+            icon: "fas fa-server"
+            items:
+              - name: "ArgoCD"
+                logo: "https://argo-cd.readthedocs.io/en/stable/assets/logo.png"
+                subtitle: "GitOps Continuous Delivery"
+                tag: "gitops"
+                url: "https://argocd.milenika.dev"
+                target: "_blank"
+              - name: "Homer Dashboard"
+                logo: "https://github.com/bastienwirtz/homer/raw/main/public/logo.png"
+                subtitle: "This Homepage"
+                tag: "dashboard"
+                url: "https://homer.milenika.dev"
+                target: "_blank"
+              - name: "Homelab GitOps"
+                logo: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                subtitle: "Kubernetes Manifests & Applications"
+                tag: "gitops"
+                url: "https://github.com/mikha-22/homelab-gitops"
+                target: "_blank"
+              - name: "Homelab IaC"
+                logo: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                subtitle: "Infrastructure as Code"
+                tag: "infrastructure"
+                url: "https://github.com/mikha-22/homelab-iac"
+                target: "_blank"
+        
+        # Welcome message
+        message:
+          style: "is-dark"
+          title: "Welcome to Mikha's Homelab!"
+          icon: "fa fa-grin"
+          content: "This dashboard provides quick access to all your homelab services. Your LGTM observability stack is fully operational with Loki (logs), Grafana (visualization), Tempo (traces), and Prometheus (metrics)."
