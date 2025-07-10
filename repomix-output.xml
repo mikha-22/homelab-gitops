@@ -1521,11 +1521,14 @@ grafana:
     runAsUser: 472
     fsGroup: 472
   
-  # ENABLE INGRESS FOR EXTERNAL ACCESS (MATCHING YOUR WORKING PATTERN EXACTLY)
+  # ENABLE INGRESS FOR EXTERNAL ACCESS (CORRECTED STRUCTURE)
   ingress:
     enabled: true
     hosts:
-      - grafana.milenika.dev
+      - host: grafana.milenika.dev
+        paths:
+          - path: /
+            pathType: Prefix
     annotations:
       # Use same pattern as ArgoCD
       "kubernetes.io/ingress.class": "traefik"
