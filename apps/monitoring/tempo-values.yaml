@@ -132,12 +132,11 @@ service:
       port: 55678
       targetPort: 55678
 
-# Security context
+# Container security context
 securityContext:
   runAsNonRoot: true
   runAsUser: 10001
   runAsGroup: 10001
-  fsGroup: 10001
   capabilities:
     drop:
       - ALL
