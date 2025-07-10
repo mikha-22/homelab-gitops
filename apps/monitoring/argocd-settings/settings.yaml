@@ -30,18 +30,18 @@ data:
     # Built-in roles (these are defined by ArgoCD)
     # role:readonly - can get all resources
     # role:admin - can do everything
-    
+
     # Additional restrictions for anonymous access (optional)
     # Deny access to sensitive resources if needed
     p, role:readonly, repositories, *, *, deny
     p, role:readonly, certificates, *, *, deny
     p, role:readonly, gpgkeys, *, *, deny
-    
+
     # Allow viewing applications and projects
     p, role:readonly, applications, get, */*, allow
     p, role:readonly, projects, get, *, allow
     p, role:readonly, clusters, get, *, allow
-    
+
     # Explicitly deny all write operations for safety
     p, role:readonly, applications, create, */*, deny
     p, role:readonly, applications, update, */*, deny
@@ -128,3 +128,21 @@ spec:
                 name: argocd-server
                 port:
                   number: 443
+---
+# Restore the essential argocd-secret
+# This secret is required for the ArgoCD server to operate.
+# It does not contain user data, allowing anonymous access to work as configured.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argocd-secret
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-secret
+    app.kubernetes.io/part-of: argocd
+type: Opaque
+# stringData will be populated by ArgoCD's controller
+# A placeholder is sufficient to create the secret
+stringData:
+  admin.password: ""
+  server.secretkey: ""
