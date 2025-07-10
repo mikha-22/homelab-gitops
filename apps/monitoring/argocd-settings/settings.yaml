@@ -24,30 +24,24 @@ metadata:
     app.kubernetes.io/name: argocd-rbac-cm
     app.kubernetes.io/part-of: argocd
 data:
-  # Set default policy for anonymous users to read-only
-  policy.default: role:readonly
+  # BEST PRACTICE: Set the default policy to a dedicated, restricted role for anonymous users.
+  policy.default: role:anonymous
   policy.csv: |
-    # Built-in roles (these are defined by ArgoCD)
-    # role:readonly - can get all resources
-    # role:admin - can do everything
+    # Define a new role for anonymous users.
+    # Grant this role read-only access ONLY to applications and projects.
+    p, role:anonymous, applications, get, */*, allow
+    p, role:anonymous, projects, get, *, allow
 
-    # Additional restrictions for anonymous access (optional)
-    # Deny access to sensitive resources if needed
-    p, role:readonly, repositories, *, *, deny
-    p, role:readonly, certificates, *, *, deny
-    p, role:readonly, gpgkeys, *, *, deny
-
-    # Allow viewing applications and projects
-    p, role:readonly, applications, get, */*, allow
-    p, role:readonly, projects, get, *, allow
-    p, role:readonly, clusters, get, *, allow
-
-    # Explicitly deny all write operations for safety
-    p, role:readonly, applications, create, */*, deny
-    p, role:readonly, applications, update, */*, deny
-    p, role:readonly, applications, delete, */*, deny
-    p, role:readonly, applications, sync, */*, deny
-    p, role:readonly, applications, action/*, */*, deny
+    # Explicitly deny access to everything else for this role for maximum security.
+    p, role:anonymous, repositories, *, *, deny
+    p, role:anonymous, certificates, *, *, deny
+    p, role:anonymous, gpgkeys, *, *, deny
+    p, role:anonymous, clusters, get, *, deny
+    p, role:anonymous, applications, create, */*, deny
+    p, role:anonymous, applications, update, */*, deny
+    p, role:anonymous, applications, delete, */*, deny
+    p, role:anonymous, applications, sync, */*, deny
+    p, role:anonymous, applications, action/*, */*, deny
 
 ---
 apiVersion: v1
