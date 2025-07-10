@@ -1,15 +1,13 @@
 # Tempo Configuration - Chart Version 1.23.2
-# Fixed for Tempo 2.8+ compatibility
+# Minimal configuration for single binary deployment
 
 # Global configuration
 global:
   image:
-    # Use Tempo 2.8 (latest stable)
     tag: "2.8.0"
 
-# Tempo configuration - FIXED: removed conflicting tag
+# Tempo configuration
 tempo:
-  # Repository configuration
   repository: grafana/tempo
   pullPolicy: IfNotPresent
   
@@ -22,7 +20,7 @@ tempo:
       cpu: 500m
       memory: 1Gi
   
-  # Updated configuration for Tempo 2.8+
+  # Tempo configuration for single binary
   config: |
     multitenancy_enabled: false
     usage_report:
@@ -55,7 +53,7 @@ tempo:
     ingester:
       max_block_duration: 5m
     server:
-      http_listen_port: 3200  # Default port changed from 3100 to 3200 in v2.x
+      http_listen_port: 3200
       log_level: info
     storage:
       trace:
@@ -76,7 +74,6 @@ tempo:
         throughput_bytes_slo: 1.073741824e+09
       trace_by_id:
         duration_slo: 5s
-    # Updated overrides format for v2.8+
     overrides:
       defaults:
         metrics_generator:
@@ -94,11 +91,9 @@ persistence:
 service:
   type: ClusterIP
   ports:
-    # Tempo HTTP API (updated default port)
     - name: tempo-prom-metrics
       port: 3200
       targetPort: 3200
-    # Jaeger receivers
     - name: tempo-jaeger-thrift-http
       port: 14268
       targetPort: 14268
@@ -113,11 +108,9 @@ service:
       port: 6831
       targetPort: 6831
       protocol: UDP
-    # Zipkin receiver
     - name: tempo-zipkin
       port: 9411
       targetPort: 9411
-    # OpenTelemetry receivers
     - name: tempo-otlp-legacy
       port: 55680
       targetPort: 55680
@@ -127,20 +120,9 @@ service:
     - name: tempo-otlp-grpc
       port: 4317
       targetPort: 4317
-    # OpenCensus receiver
     - name: tempo-opencensus
       port: 55678
       targetPort: 55678
-
-# Simplified security context for single Tempo chart
-securityContext: {}
-
-# Pod security context
-podSecurityContext:
-  fsGroup: 10001
-  runAsNonRoot: true
-  runAsUser: 10001
-  runAsGroup: 10001
 
 # ServiceMonitor for Prometheus integration
 serviceMonitor:
@@ -149,7 +131,7 @@ serviceMonitor:
   additionalLabels: {}
   annotations: {}
 
-# Ingress configuration (optional, for external access)
+# Ingress configuration for external access
 ingress:
   enabled: true
   ingressClassName: traefik
@@ -159,10 +141,8 @@ ingress:
         - path: /
           pathType: Prefix
   annotations:
-    # Cloudflare tunnel configuration
     external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    # Security headers
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
   tls:
@@ -179,12 +159,10 @@ extraVolumeMounts:
   - name: tmp
     mountPath: /tmp
 
-# Node selector and tolerations
+# Basic settings
 nodeSelector: {}
 tolerations: []
 affinity: {}
-
-# Replica count
 replicas: 1
 
 # Update strategy
@@ -193,7 +171,7 @@ strategy:
   rollingUpdate:
     maxUnavailable: 1
 
-# Probes (updated paths for v2.8+)
+# Health check probes
 readinessProbe:
   httpGet:
     path: /ready
