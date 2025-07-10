@@ -712,19 +712,24 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "10"  # Deploy after monitoring stack
+    argocd.argoproj.io/sync-wave: "10"
 spec:
   project: default
-  source:
-    # Define the Helm chart repository as the source
-    repoURL: https://djjudas21.github.io/charts/
-    targetRevision: 8.2.4
-    chart: homer
-    helm:
-      releaseName: homer
-      # Point directly to the raw values file in your main branch
-      valueFiles:
-        - https://raw.githubusercontent.com/mikha-22/homelab-gitops/main/apps/homer/values.yaml
+  # This multi-source setup is the correct one for your chart
+  sources:
+    # Source 1: The Helm chart itself
+    - repoURL: https://djjudas21.github.io/charts/
+      targetRevision: 8.2.4
+      chart: homer
+      helm:
+        releaseName: homer
+        valueFiles:
+          # This tells Helm to get its values from the 'values' source below
+          - $values/apps/homer/values.yaml
+    # Source 2: Your Git repository, which is made available as the '$values' variable
+    - repoURL: https://github.com/mikha-22/homelab-gitops
+      targetRevision: HEAD
+      ref: values
     
   destination:
     server: https://kubernetes.default.svc
@@ -887,183 +892,6 @@ spec:
         - p, proj:monitoring:monitoring-admin, repositories, *, *, allow
       groups:
         - homelab:monitoring-admins
-</file>
-
-<file path="apps/homer/values.yaml">
-#
-# IMPORTANT NOTE
-#
-# This chart inherits from bjw-s common library chart. You can check the default values/options here:
-# https://github.com/bjw-s-labs/helm-charts/blob/main/charts/library/common/values.yaml
-#
-
-# Image configuration
-image:
-  repository: b4bz/homer
-  tag: latest # Let's be explicit
-  pullPolicy: IfNotPresent
-
-# Environment variables
-env:
-  TZ: "Asia/Jakarta"
-
-# Service configuration
-service:
-  main:
-    ports:
-      http:
-        port: 8080
-
-# Ingress configuration - Using the CORRECT nested structure
-ingress:
-  main:
-    enabled: true
-    annotations:
-      "kubernetes.io/ingress.class": "traefik"
-      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- YOUR NEW CNAME
-      "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-      "traefik.ingress.kubernetes.io/router.tls": "true" # Keep this, it's good practice
-    hosts:
-      - host: homer.milenika.dev
-        paths:
-          - path: /
-            pathType: Prefix
-    tls:
-      - secretName: homer-tls
-        hosts:
-          - homer.milenika.dev
-
-# Security context
-securityContext:
-  runAsUser: 1000
-  runAsNonRoot: true
-  runAsGroup: 1000
-
-# Resources
-resources:
-  requests:
-    cpu: 50m
-    memory: 64Mi
-  limits:
-    cpu: 100m
-    memory: 128Mi
-
-# Persistence for assets (configs, icons, etc.) - Using the CORRECT nested structure
-persistence:
-  config:
-    enabled: true
-    type: pvc
-    storageClass: local-path
-    accessMode: ReadWriteOnce
-    size: 1Gi
-    mountPath: /www/assets
-
-# ConfigMap for Homer configuration
-configmap:
-  config:
-    enabled: true
-    data:
-      config.yml: |
-        ---
-        # Homepage configuration
-        title: "Mikha's Homelab"
-        subtitle: "LGTM Stack & Services"
-        logo: "logo.png"
-        
-        header: true
-        footer: '<p>Created with <span class="has-text-danger">❤️</span> | <a href="https://github.com/mikha-22/homelab-gitops">View on GitHub</a></p>'
-        
-        # Theme
-        theme: default
-        colors:
-          light:
-            highlight-primary: "#3367d6"
-            highlight-secondary: "#4285f4"
-            highlight-hover: "#5a95f5"
-            background: "#f5f5f5"
-            card-background: "#ffffff"
-            text: "#363636"
-            text-header: "#ffffff"
-            text-title: "#303030"
-            text-subtitle: "#424242"
-            card-shadow: rgba(0, 0, 0, 0.1)
-            link: "#3273dc"
-            link-hover: "#363636"
-          dark:
-            highlight-primary: "#3367d6"
-            highlight-secondary: "#4285f4"
-            highlight-hover: "#5a95f5"
-            background: "#131313"
-            card-background: "#2b2b2b"
-            text: "#eaeaea"
-            text-header: "#ffffff"
-            text-title: "#fafafa"
-            text-subtitle: "#f5f5f5"
-            card-shadow: rgba(0, 0, 0, 0.4)
-            link: "#3273dc"
-            link-hover: "#ffdd57"
-        
-        # Services
-        services:
-          - name: "Monitoring & Observability"
-            icon: "fas fa-chart-line"
-            items:
-              - name: "Grafana"
-                logo: "assets/tools/grafana.png"
-                subtitle: "Metrics & Dashboards (Anonymous Viewer Access)"
-                tag: "monitoring"
-                keywords: "metrics visualization dashboards"
-                url: "https://grafana.milenika.dev"
-                target: "_blank"
-                tagstyle: "is-success"
-                
-              - name: "Prometheus"
-                logo: "https://prometheus.io/assets/prometheus_logo_grey.svg"
-                subtitle: "Metrics Collection & Alerting"
-                tag: "metrics"
-                url: "https://prometheus.milenika.dev"
-                target: "_blank"
-                tagstyle: "is-warning"
-                
-              - name: "Loki"
-                logo: "https://grafana.com/static/img/logos/logo-loki.svg"
-                subtitle: "Log Aggregation"
-                tag: "logs"
-                url: "https://loki.milenika.dev"
-                target: "_blank"
-                tagstyle: "is-info"
-                
-              - name: "Tempo"
-                logo: "https://grafana.com/static/img/logos/logo-tempo.svg"
-                subtitle: "Distributed Tracing"
-                tag: "traces"
-                url: "https://tempo.milenika.dev"
-                target: "_blank"
-                tagstyle: "is-primary"
-          
-          - name: "GitOps & Deployment"
-            icon: "fas fa-code-branch"
-            items:
-              - name: "ArgoCD"
-                logo: "assets/tools/argocd.png"
-                subtitle: "GitOps Deployment (Anonymous Read-Only Access)"
-                tag: "gitops"
-                keywords: "gitops kubernetes deployment"
-                url: "https://argocd.milenika.dev"
-                target: "_blank"
-              - name: "Homer Dashboard"
-                logo: "https://github.com/bastienwirtz/homer/raw/main/public/logo.png"
-                subtitle: "This Homepage"
-                tag: "dashboard"
-                url: "https://homer.milenika.dev"
-                target: "_blank"
-        
-        # Welcome message
-        message:
-          style: "is-dark"
-          title: "Welcome to Mikha's Homelab!"
-          icon: "fa fa-grin"
-          content: "This dashboard provides quick access to all your homelab services. Your LGTM observability stack is fully operational with Loki (logs), Grafana (visualization), Tempo (traces), and Prometheus (metrics)."
 </file>
 
 <file path="apps/monitoring/loki-values.yaml">
@@ -1436,6 +1264,186 @@ podAnnotations:
   prometheus.io/path: "/metrics"
 </file>
 
+<file path="apps/homer/values.yaml">
+#
+# IMPORTANT NOTE
+#
+# This chart inherits from bjw-s common library chart. You can check the default values/options here:
+# https://github.com/bjw-s-labs/helm-charts/blob/main/charts/library/common/values.yaml
+#
+
+# Image configuration
+image:
+  repository: b4bz/homer
+  tag: ""  # Uses chart default
+  pullPolicy: IfNotPresent
+
+# Environment variables
+env:
+  TZ: "Asia/Jakarta"
+
+# Service configuration
+service:
+  main:
+    ports:
+      http:
+        port: 8080
+
+# Ingress configuration - MATCHING YOUR WORKING PATTERN EXACTLY
+ingress:
+  main:
+    enabled: true
+    annotations:
+      "kubernetes.io/ingress.class": "traefik"
+      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- THE ONLY CHANGE
+      "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+      # The router.tls annotation is intentionally removed to match your working version
+    hosts:
+      - host: homer.milenika.dev
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: homer-tls
+        hosts:
+          - homer.milenika.dev
+
+# Security context
+securityContext:
+  runAsUser: 1000
+  runAsNonRoot: true
+  runAsGroup: 1000
+
+# Resources
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+# Persistence for assets (configs, icons, etc.)
+persistence:
+  config:
+    enabled: true
+    type: pvc
+    storageClass: local-path
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    mountPath: /www/assets
+
+# ConfigMap for Homer configuration - RESTORED TO MATCH WORKING VERSION
+configmap:
+  config:
+    enabled: true
+    data:
+      config.yml: |
+        ---
+        # Homepage configuration
+        title: "Mikha's Homelab"
+        subtitle: "LGTM Stack & Services"
+        logo: "logo.png"
+        
+        header: true
+        footer: '<p>Built with <span class="has-text-danger">❤️</span> using <a href="https://bulma.io/">bulma</a>, <a href="https://vuejs.org/">vuejs</a> & <a href="https://fontawesome.com/">font awesome</a></p>'
+        
+        # Theme
+        theme: default
+        colors:
+          light:
+            highlight-primary: "#3367d6"
+            highlight-secondary: "#4285f4"
+            highlight-hover: "#5a95f5"
+            background: "#f5f5f5"
+            card-background: "#ffffff"
+            text: "#363636"
+            text-header: "#ffffff"
+            text-title: "#303030"
+            text-subtitle: "#424242"
+            card-shadow: rgba(0, 0, 0, 0.1)
+            link: "#3273dc"
+            link-hover: "#363636"
+          dark:
+            highlight-primary: "#3367d6"
+            highlight-secondary: "#4285f4"
+            highlight-hover: "#5a95f5"
+            background: "#131313"
+            card-background: "#2b2b2b"
+            text: "#eaeaea"
+            text-header: "#ffffff"
+            text-title: "#fafafa"
+            text-subtitle: "#f5f5f5"
+            card-shadow: rgba(0, 0, 0, 0.4)
+            link: "#3273dc"
+            link-hover: "#ffdd57"
+        
+        # Services
+        services:
+          - name: "Monitoring & Observability"
+            icon: "fas fa-chart-line"
+            items:
+              - name: "Grafana"
+                logo: "https://grafana.com/static/img/menu/grafana2.svg"
+                subtitle: "Metrics, Logs & Traces Visualization"
+                tag: "LGTM"
+                url: "https://grafana.milenika.dev"
+                target: "_blank"
+              - name: "Prometheus"
+                logo: "https://raw.githubusercontent.com/prometheus/prometheus.github.io/master/assets/prometheus_logo-cb55bb5c346.png"
+                subtitle: "Metrics Collection • View in Grafana"
+                tag: "metrics"
+                url: "https://grafana.milenika.dev/explore"
+                target: "_blank"
+              - name: "Loki"
+                logo: "https://grafana.com/static/img/logos/logo-loki.svg"
+                subtitle: "Log Aggregation • View in Grafana"
+                tag: "logs"
+                url: "https://grafana.milenika.dev/explore"
+                target: "_blank"
+              - name: "Tempo"
+                logo: "https://grafana.com/static/assets/img/logos/grafana-tempo.svg"
+                subtitle: "Distributed Tracing • View in Grafana"
+                tag: "traces"
+                url: "https://grafana.milenika.dev/explore"
+                target: "_blank"
+          
+          - name: "Infrastructure"
+            icon: "fas fa-server"
+            items:
+              - name: "ArgoCD"
+                logo: "https://argo-cd.readthedocs.io/en/stable/assets/logo.png"
+                subtitle: "GitOps Continuous Delivery"
+                tag: "gitops"
+                url: "https://argocd.milenika.dev"
+                target: "_blank"
+              - name: "Homer Dashboard"
+                logo: "https://github.com/bastienwirtz/homer/raw/main/public/logo.png"
+                subtitle: "This Homepage"
+                tag: "dashboard"
+                url: "https://homer.milenika.dev"
+                target: "_blank"
+              - name: "Homelab GitOps"
+                logo: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                subtitle: "Kubernetes Manifests & Applications"
+                tag: "gitops"
+                url: "https://github.com/mikha-22/homelab-gitops"
+                target: "_blank"
+              - name: "Homelab IaC"
+                logo: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                subtitle: "Infrastructure as Code"
+                tag: "infrastructure"
+                url: "https://github.com/mikha-22/homelab-iac"
+                target: "_blank"
+        
+        # Welcome message
+        message:
+          style: "is-dark"
+          title: "Welcome to Mikha's Homelab!"
+          icon: "fa fa-grin"
+          content: "This dashboard provides quick access to all your homelab services. Your LGTM observability stack is fully operational with Loki (logs), Grafana (visualization), Tempo (traces), and Prometheus (metrics)."
+</file>
+
 <file path="apps/system/kustomization.yaml">
 # apps/system/kustomization.yaml
 
@@ -1481,14 +1489,14 @@ alertmanager:
 # Grafana Configuration - WITH ANONYMOUS ACCESS
 grafana:
   enabled: true
-
+  
   # Admin credentials - will use generated password
   adminUser: admin
-
+  
   # DISABLE the problematic init container
   initChownData:
     enabled: false
-
+  
   # Persistence
   persistence:
     enabled: true
@@ -1497,7 +1505,7 @@ grafana:
     size: 10Gi
     accessModes:
       - ReadWriteOnce
-
+  
   # Resource management
   resources:
     limits:
@@ -1506,14 +1514,14 @@ grafana:
     requests:
       cpu: 250m
       memory: 256Mi
-
+  
   # SIMPLIFIED security context
   securityContext:
     runAsNonRoot: true
     runAsUser: 472
     fsGroup: 472
-
-  # ENABLE INGRESS FOR EXTERNAL ACCESS (MATCH ARGOCD PATTERN)
+  
+  # ENABLE INGRESS FOR EXTERNAL ACCESS (MATCHING YOUR WORKING PATTERN EXACTLY)
   ingress:
     enabled: true
     hosts:
@@ -1521,31 +1529,19 @@ grafana:
     annotations:
       # Use same pattern as ArgoCD
       "kubernetes.io/ingress.class": "traefik"
-      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- YOUR NEW CNAME
+      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- NEW CNAME
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+      # The router.tls annotation is intentionally removed to match your working version
     tls:
       - secretName: grafana-tls
         hosts:
           - grafana.milenika.dev
-
-  # Grafana configuration - WITH ANONYMOUS ACCESS and CORRECT STRUCTURE
+  
+  # Grafana configuration - PRESERVING WORKING STRUCTURE
   grafana.ini:
     server:
       root_url: "https://grafana.milenika.dev"
       serve_from_sub_path: false
-
-    # ENABLE ANONYMOUS ACCESS FOR DEMOS
-    auth.anonymous:
-      enabled: true
-      org_name: "Main Org."
-      org_role: "Viewer"
-      hide_version: true
-
-    # Keep login form available for admin access
-    auth:
-      disable_login_form: false
-      disable_signout_menu: false
-
     security:
       disable_gravatar: true
       cookie_secure: true
@@ -1553,28 +1549,32 @@ grafana:
       strict_transport_security: true
       x_content_type_options: true
       x_xss_protection: true
-      allow_embedding: false
-
+    auth:
+      disable_login_form: false
+      disable_signout_menu: false
+    "auth.anonymous":
+      enabled: true # <-- ENABLED ANONYMOUS ACCESS
+      org_name: "Main Org."
+      org_role: "Viewer"
+      hide_version: true
     analytics:
       reporting_enabled: false
       check_for_updates: false
-
     log:
       mode: "console"
       level: "info"
-
     panels:
       disable_sanitize_html: false
 
 # Prometheus Configuration
 prometheus:
   enabled: true
-
+  
   prometheusSpec:
     # Data retention
     retention: 15d
     retentionSize: 20GB
-
+    
     # Resource management
     resources:
       limits:
@@ -1583,13 +1583,13 @@ prometheus:
       requests:
         cpu: 1000m
         memory: 2Gi
-
+    
     # SIMPLIFIED security context
     securityContext:
       runAsNonRoot: true
       runAsUser: 1000
       fsGroup: 2000
-
+    
     # Storage
     storageSpec:
       volumeClaimTemplate:
@@ -1599,7 +1599,7 @@ prometheus:
           resources:
             requests:
               storage: 30Gi
-
+    
     # Service discovery and monitoring
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
@@ -1607,7 +1607,7 @@ prometheus:
     serviceMonitorNamespaceSelector: {}
     podMonitorNamespaceSelector: {}
     ruleNamespaceSelector: {}
-
+    
     # Scrape configuration
     scrapeInterval: 30s
     evaluationInterval: 30s
@@ -1615,7 +1615,7 @@ prometheus:
 # Prometheus Operator
 prometheusOperator:
   enabled: true
-
+  
   # Resource management
   resources:
     limits:
@@ -1624,7 +1624,7 @@ prometheusOperator:
     requests:
       cpu: 100m
       memory: 128Mi
-
+  
   # SIMPLIFIED security context
   securityContext:
     runAsNonRoot: true
@@ -1641,7 +1641,7 @@ nodeExporter:
       cpu: 100m
       memory: 50Mi
 
-# Kube State Metrics
+# Kube State Metrics  
 kubeStateMetrics:
   enabled: true
   resources:
