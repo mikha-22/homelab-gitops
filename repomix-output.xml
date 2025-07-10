@@ -49,8 +49,6 @@ apps/
     kustomization.yaml
     values.yaml
   monitoring/
-    argocd-settings/
-      settings.yaml
     namespace/
       kustomization.yaml
       namespace.yaml
@@ -62,7 +60,6 @@ apps/
   system/
     projects/
       monitoring-project.yaml
-    argocd-settings-app.yaml
     homer-app.yaml
     kustomization.yaml
     loki-app.yaml
@@ -128,39 +125,6 @@ spec:
       frame-ancestors 'none';
       base-uri 'self';
       form-action 'self';
-</file>
-
-<file path="apps/system/argocd-settings-app.yaml">
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: argocd-settings
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    # Apply these settings after the main components
-    argocd.argoproj.io/sync-wave: "20"
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/mikha-22/homelab-gitops
-    targetRevision: HEAD
-    # This points to the new directory you created
-    path: apps/monitoring/argocd-settings
-
-  destination:
-    server: https://kubernetes.default.svc
-    # The ConfigMaps must be applied in the 'argocd' namespace
-    namespace: argocd
-
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
 </file>
 
 <file path="apps/system/loki-app.yaml">
@@ -756,151 +720,6 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 5m
-</file>
-
-<file path="apps/monitoring/argocd-settings/settings.yaml">
-# ArgoCD Anonymous Access Configuration - Read Only
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: argocd-cm
-  namespace: argocd
-  labels:
-    app.kubernetes.io/name: argocd-cm
-    app.kubernetes.io/part-of: argocd
-data:
-  # Enable anonymous access
-  users.anonymous.enabled: "true"
-  # URL configuration for proper redirects
-  url: "https://argocd.milenika.dev"
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: argocd-rbac-cm
-  namespace: argocd
-  labels:
-    app.kubernetes.io/name: argocd-rbac-cm
-    app.kubernetes.io/part-of: argocd
-data:
-  # BEST PRACTICE: Set the default policy to a dedicated, restricted role for anonymous users.
-  policy.default: role:anonymous
-  policy.csv: |
-    # Define a new role for anonymous users.
-    # Grant this role read-only access ONLY to applications and projects.
-    p, role:anonymous, applications, get, */*, allow
-    p, role:anonymous, projects, get, *, allow
-
-    # Explicitly deny access to everything else for this role for maximum security.
-    p, role:anonymous, repositories, *, *, deny
-    p, role:anonymous, certificates, *, *, deny
-    p, role:anonymous, gpgkeys, *, *, deny
-    p, role:anonymous, clusters, get, *, deny
-    p, role:anonymous, applications, create, */*, deny
-    p, role:anonymous, applications, update, */*, deny
-    p, role:anonymous, applications, delete, */*, deny
-    p, role:anonymous, applications, sync, */*, deny
-    p, role:anonymous, applications, action/*, */*, deny
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: argocd-cmd-params-cm
-  namespace: argocd
-  labels:
-    app.kubernetes.io/name: argocd-cmd-params-cm
-    app.kubernetes.io/part-of: argocd
-data:
-  # Server configurations
-  server.insecure: "false"
-  # Disable internal TLS since we're using Traefik
-  server.grpc.web: "true"
-
----
-# ArgoCD Ingress Configuration
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: argocd-server-ingress
-  namespace: argocd
-  annotations:
-    kubernetes.io/ingress.class: traefik
-    external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    # Important: Enable gRPC for ArgoCD
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.tls.options: default
-spec:
-  ingressClassName: traefik
-  tls:
-    - hosts:
-        - argocd.milenika.dev
-      secretName: argocd-server-tls
-  rules:
-    - host: argocd.milenika.dev
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: argocd-server
-                port:
-                  number: 80
-
----
-# Additional Ingress for gRPC (if needed)
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: argocd-server-grpc-ingress
-  namespace: argocd
-  annotations:
-    kubernetes.io/ingress.class: traefik
-    external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    # gRPC configuration
-    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
-    traefik.ingress.kubernetes.io/router.tls: "true"
-spec:
-  ingressClassName: traefik
-  tls:
-    - hosts:
-        - argocd.milenika.dev
-      secretName: argocd-server-tls
-  rules:
-    - host: argocd.milenika.dev
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: argocd-server
-                port:
-                  number: 443
----
-# Restore the essential argocd-secret
-# This secret is required for the ArgoCD server to operate.
-# It does not contain user data, allowing anonymous access to work as configured.
-apiVersion: v1
-kind: Secret
-metadata:
-  name: argocd-secret
-  namespace: argocd
-  labels:
-    app.kubernetes.io/name: argocd-secret
-    app.kubernetes.io/part-of: argocd
-type: Opaque
-# stringData will be populated by ArgoCD's controller
-# A placeholder is sufficient to create the secret
-stringData:
-  admin.password: ""
-  server.secretkey: ""
 </file>
 
 <file path="apps/monitoring/namespace/kustomization.yaml">
@@ -1588,29 +1407,6 @@ serviceMonitor:
   scrapeTimeout: 10s
 </file>
 
-<file path="apps/system/kustomization.yaml">
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-  - projects/monitoring-project.yaml
-  - monitoring-namespace-app.yaml
-  - prometheus-app.yaml
-  - loki-app.yaml
-  - tempo-app.yaml
-  - promtail-app.yaml
-  - homer-app.yaml
-  # This line is the only change:
-  - argocd-settings-app.yaml
-
-# Common labels for all system applications
-labels:
-  - includeSelectors: true
-    pairs:
-      app.kubernetes.io/part-of: homelab-gitops
-      environment: homelab
-</file>
-
 <file path="apps/monitoring/prometheus-stack-values.yaml">
 # Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
 # Chart Version: 75.9.0
@@ -1833,6 +1629,30 @@ defaultRules:
 
 # Cleanup settings
 cleanPrometheusOperatorObjectNames: true
+</file>
+
+<file path="apps/system/kustomization.yaml">
+# apps/system/kustomization.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - projects/monitoring-project.yaml
+  - monitoring-namespace-app.yaml
+  - prometheus-app.yaml
+  - loki-app.yaml
+  - tempo-app.yaml
+  - promtail-app.yaml
+  - homer-app.yaml
+  # The line for argocd-settings-app.yaml has been removed.
+
+# Common labels for all system applications
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/part-of: homelab-gitops
+      environment: homelab
 </file>
 
 </files>

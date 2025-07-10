@@ -141,9 +141,9 @@ ingress:
         - path: /
           pathType: Prefix
   annotations:
-    external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    traefik.ingress.kubernetes.io/router.tls: "true"
+    external-dns.alpha.kubernetes.io/target": "c6c7a9c0-cde2-4e89-bd87-312697ffd4cc.cfargotunnel.com" # <-- UPDATED
+    external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+    traefik.ingress.kubernetes.io/router.tls": "true"
     traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
   tls:
     - secretName: tempo-tls
