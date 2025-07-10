@@ -136,12 +136,11 @@ service:
 securityContext:
   runAsNonRoot: true
   runAsUser: 10001
-  runAsGroup: 10001
+  readOnlyRootFilesystem: false  # Tempo needs to write to filesystem
+  allowPrivilegeEscalation: false
   capabilities:
     drop:
       - ALL
-  readOnlyRootFilesystem: false  # Tempo needs to write to filesystem
-  allowPrivilegeEscalation: false
 
 # Pod security context
 podSecurityContext:
