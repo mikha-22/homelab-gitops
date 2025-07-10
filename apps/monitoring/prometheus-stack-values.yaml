@@ -1,5 +1,6 @@
-# Prometheus Stack Configuration - WITH ANONYMOUS GRAFANA ACCESS
+# Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
 # Chart Version: 75.9.0
+# WITH INGRESS AND ANONYMOUS GRAFANA ACCESS ENABLED
 
 # Global settings
 global:
@@ -14,7 +15,7 @@ crds:
 alertmanager:
   enabled: false
 
-# Grafana Configuration - WITH ANONYMOUS ACCESS FOR DEMOS
+# Grafana Configuration - WITH ANONYMOUS ACCESS
 grafana:
   enabled: true
 
@@ -49,12 +50,13 @@ grafana:
     runAsUser: 472
     fsGroup: 472
 
-  # ENABLE INGRESS FOR EXTERNAL ACCESS
+  # ENABLE INGRESS FOR EXTERNAL ACCESS (MATCH ARGOCD PATTERN)
   ingress:
     enabled: true
     hosts:
       - grafana.milenika.dev
     annotations:
+      # Use same pattern as ArgoCD
       "kubernetes.io/ingress.class": "traefik"
       "external-dns.alpha.kubernetes.io/target": "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
@@ -72,8 +74,8 @@ grafana:
     # ENABLE ANONYMOUS ACCESS FOR DEMOS
     auth.anonymous:
       enabled: true
-      org_name: "Main Org."  # CORRECTED: Use the default organization name
-      org_role: "Viewer"      # Read-only access
+      org_name: "Main Org."
+      org_role: "Viewer"
       hide_version: true
 
     # Keep login form available for admin access
