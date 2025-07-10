@@ -1,3 +1,5 @@
+# apps/system/kustomization.yaml
+
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -9,8 +11,7 @@ resources:
   - tempo-app.yaml
   - promtail-app.yaml
   - homer-app.yaml
-  # This line is the only change:
-  - argocd-settings-app.yaml
+  # The line for argocd-settings-app.yaml has been removed.
 
 # Common labels for all system applications
 labels:
