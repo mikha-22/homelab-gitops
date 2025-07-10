@@ -1,5 +1,5 @@
 # Tempo Configuration - Chart Version 1.23.2
-# Updated for Tempo 2.8+ compatibility
+# Fixed for Tempo 2.8+ compatibility
 
 # Global configuration
 global:
@@ -7,11 +7,10 @@ global:
     # Use Tempo 2.8 (latest stable)
     tag: "2.8.0"
 
-# Tempo configuration
+# Tempo configuration - FIXED: removed conflicting tag
 tempo:
   # Repository configuration
   repository: grafana/tempo
-  tag: null
   pullPolicy: IfNotPresent
   
   # Resource management
