@@ -8,6 +8,7 @@ resources:
   - loki-app.yaml
   - tempo-app.yaml
   - promtail-app.yaml
+  - homer-app.yaml
   
 # Common labels for all system applications
 labels:

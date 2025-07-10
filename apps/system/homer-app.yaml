@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: homer
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"  # Deploy after monitoring stack
+spec:
+  project: default
+  source:
+    repoURL: https://djjudas21.github.io/charts/
+    targetRevision: 8.2.4  # Latest stable version
+    chart: homer
+    helm:
+      releaseName: homer
+      valueFiles:
+        - https://raw.githubusercontent.com/mikha-22/homelab-gitops/main/apps/homer/values.yaml
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: homer
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
