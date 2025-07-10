@@ -132,24 +132,15 @@ service:
       port: 55678
       targetPort: 55678
 
-# Container security context
-securityContext:
-  runAsNonRoot: true
-  runAsUser: 10001
-  readOnlyRootFilesystem: false  # Tempo needs to write to filesystem
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
+# Simplified security context for single Tempo chart
+securityContext: {}
 
 # Pod security context
 podSecurityContext:
+  fsGroup: 10001
   runAsNonRoot: true
   runAsUser: 10001
   runAsGroup: 10001
-  fsGroup: 10001
-  seccompProfile:
-    type: RuntimeDefault
 
 # ServiceMonitor for Prometheus integration
 serviceMonitor:
