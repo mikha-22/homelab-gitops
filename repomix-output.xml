@@ -1014,7 +1014,7 @@ gateway:
       cpu: 50m
       memory: 64Mi
   
-  # Ingress configuration - matches your working pattern
+  # Ingress configuration - FIXED
   ingress:
     enabled: true
     hosts:
@@ -1024,12 +1024,16 @@ gateway:
             pathType: Prefix
     annotations:
       "kubernetes.io/ingress.class": "traefik"
-      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com" # <-- UPDATED
+      # FIX #1: Point to the CORRECT Cloudflare Tunnel CNAME
+      "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com"
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-    tls:
-      - secretName: loki-gateway-tls
-        hosts:
-          - loki.milenika.dev
+      # FIX #2: Tell Traefik to handle TLS automatically
+      "traefik.ingress.kubernetes.io/router.tls": "true"
+    # FIX #3: REMOVED the entire tls block
+    # tls:
+    #   - secretName: loki-gateway-tls
+    #     hosts:
+    #       - loki.milenika.dev
 
 # Disable test
 test:
@@ -1202,7 +1206,7 @@ serviceMonitor:
   additionalLabels: {}
   annotations: {}
 
-# Ingress configuration for external access
+# Ingress configuration for external access - FIXED
 ingress:
   enabled: true
   ingressClassName: traefik
@@ -1212,14 +1216,16 @@ ingress:
         - path: /
           pathType: Prefix
   annotations:
-    external-dns.alpha.kubernetes.io/target: "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com"
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    # CNAME target is correct.
+    external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
     traefik.ingress.kubernetes.io/router.tls: "true"
     traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
-  tls:
-    - secretName: tempo-tls
-      hosts:
-        - tempo.milenika.dev
+  # FIX: REMOVED the entire tls block
+  # tls:
+  #   - secretName: tempo-tls
+  #     hosts:
+  #       - tempo.milenika.dev
 
 # Extra volumes for temporary storage
 extraVolumes:

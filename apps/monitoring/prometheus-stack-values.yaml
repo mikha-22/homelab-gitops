@@ -50,7 +50,7 @@ grafana:
     runAsUser: 472
     fsGroup: 472
   
-  # CORRECTED AND UNIFIED INGRESS CONFIGURATION
+  # INGRESS CONFIGURATION - CORRECTED TO MATCH HOMER
   ingress:
     enabled: true
     hosts:
@@ -60,15 +60,14 @@ grafana:
             pathType: Prefix
     annotations:
       "kubernetes.io/ingress.class": "traefik"
-      # FIX #1: Point to the CORRECT Cloudflare Tunnel CNAME from your screenshot
       "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com"
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-      
-      # FIX #2: Tell Traefik to handle TLS automatically
-      "traefik.ingress.kubernetes.io/router.tls": "true"
-      
-    # CRITICAL: REMOVED the entire 'tls' block to let Traefik manage certificates
-    # No 'tls:' block should be here.
+      # "traefik.ingress.kubernetes.io/router.tls": "true" <-- REMOVED
+    # ADDED: Explicit TLS configuration to match Homer
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - grafana.milenika.dev
   
   # Grafana configuration
   grafana.ini:

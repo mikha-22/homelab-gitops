@@ -117,7 +117,7 @@ gateway:
       cpu: 50m
       memory: 64Mi
   
-  # Ingress configuration - FIXED
+  # Ingress configuration - CORRECTED TO MATCH HOMER
   ingress:
     enabled: true
     hosts:
@@ -127,16 +127,14 @@ gateway:
             pathType: Prefix
     annotations:
       "kubernetes.io/ingress.class": "traefik"
-      # FIX #1: Point to the CORRECT Cloudflare Tunnel CNAME
       "external-dns.alpha.kubernetes.io/target": "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com"
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-      # FIX #2: Tell Traefik to handle TLS automatically
-      "traefik.ingress.kubernetes.io/router.tls": "true"
-    # FIX #3: REMOVED the entire tls block
-    # tls:
-    #   - secretName: loki-gateway-tls
-    #     hosts:
-    #       - loki.milenika.dev
+      # "traefik.ingress.kubernetes.io/router.tls": "true" <-- REMOVED
+    # ADDED: Explicit TLS configuration to match Homer
+    tls:
+      - secretName: loki-gateway-tls
+        hosts:
+          - loki.milenika.dev
 
 # Disable test
 test:
