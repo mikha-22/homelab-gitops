@@ -908,7 +908,7 @@ ingress:
         - path: /
           pathType: Prefix
   annotations:
-    external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/target: "c6c7a9c0-cde2-4e89-bd87-312697ffd4cc.cfargotunnel.com" # <-- UPDATED
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
     traefik.ingress.kubernetes.io/router.tls: "true"
   tls:
@@ -1181,9 +1181,9 @@ ingress:
         - path: /
           pathType: Prefix
   annotations:
-    external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    traefik.ingress.kubernetes.io/router.tls: "true"
+    external-dns.alpha.kubernetes.io/target": "c6c7a9c0-cde2-4e89-bd87-312697ffd4cc.cfargotunnel.com" # <-- UPDATED
+    external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+    traefik.ingress.kubernetes.io/router.tls": "true"
     traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
   tls:
     - secretName: tempo-tls
@@ -1363,7 +1363,7 @@ gateway:
             pathType: Prefix
     annotations:
       "kubernetes.io/ingress.class": "traefik"
-      "external-dns.alpha.kubernetes.io/target": "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+      "external-dns.alpha.kubernetes.io/target": "c6c7a9c0-cde2-4e89-bd87-312697ffd4cc.cfargotunnel.com" # <-- UPDATED
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
     tls:
       - secretName: loki-gateway-tls
@@ -1405,6 +1405,30 @@ serviceMonitor:
   namespace: monitoring
   interval: 30s
   scrapeTimeout: 10s
+</file>
+
+<file path="apps/system/kustomization.yaml">
+# apps/system/kustomization.yaml
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - projects/monitoring-project.yaml
+  - monitoring-namespace-app.yaml
+  - prometheus-app.yaml
+  - loki-app.yaml
+  - tempo-app.yaml
+  - promtail-app.yaml
+  - homer-app.yaml
+  # The line for argocd-settings-app.yaml has been removed.
+
+# Common labels for all system applications
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/part-of: homelab-gitops
+      environment: homelab
 </file>
 
 <file path="apps/monitoring/prometheus-stack-values.yaml">
@@ -1468,7 +1492,7 @@ grafana:
     annotations:
       # Use same pattern as ArgoCD
       "kubernetes.io/ingress.class": "traefik"
-      "external-dns.alpha.kubernetes.io/target": "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
+      "external-dns.alpha.kubernetes.io/target": "c6c7a9c0-cde2-4e89-bd87-312697ffd4cc.cfargotunnel.com" # <-- UPDATED
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
     tls:
       - secretName: grafana-tls
@@ -1629,30 +1653,6 @@ defaultRules:
 
 # Cleanup settings
 cleanPrometheusOperatorObjectNames: true
-</file>
-
-<file path="apps/system/kustomization.yaml">
-# apps/system/kustomization.yaml
-
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-resources:
-  - projects/monitoring-project.yaml
-  - monitoring-namespace-app.yaml
-  - prometheus-app.yaml
-  - loki-app.yaml
-  - tempo-app.yaml
-  - promtail-app.yaml
-  - homer-app.yaml
-  # The line for argocd-settings-app.yaml has been removed.
-
-# Common labels for all system applications
-labels:
-  - includeSelectors: true
-    pairs:
-      app.kubernetes.io/part-of: homelab-gitops
-      environment: homelab
 </file>
 
 </files>
