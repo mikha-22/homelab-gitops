@@ -45,9 +45,9 @@ The content is organized as follows:
 
 <directory_structure>
 apps/
-  homer/
-    values.yaml
   monitoring/
+    demo-accounts/
+      argocd-demo.yaml
     namespace/
       kustomization.yaml
       namespace.yaml
@@ -59,6 +59,7 @@ apps/
   system/
     projects/
       monitoring-project.yaml
+    demo-accounts-app.yaml
     homer-app.yaml
     kustomization.yaml
     loki-app.yaml
@@ -76,172 +77,105 @@ tempo_hard_refresh.txt
 <files>
 This section contains the contents of the repository's files.
 
-<file path="apps/homer/values.yaml">
-#
-# IMPORTANT NOTE
-#
-# This chart inherits from bjw-s common library chart. You can check the default values/options here:
-# https://github.com/bjw-s-labs/helm-charts/blob/main/charts/library/common/values.yaml
-#
+<file path="apps/monitoring/demo-accounts/argocd-demo.yaml">
+# ArgoCD Demo Account - Read Only Access
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-rbac-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-rbac-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  policy.default: role:readonly
+  policy.csv: |
+    # Demo user permissions - READ ONLY
+    p, role:demo, applications, get, *, allow
+    p, role:demo, projects, get, *, allow
+    p, role:demo, repositories, get, *, allow
+    p, role:demo, clusters, get, *, allow
+    p, role:demo, certificates, get, *, allow
+    p, role:demo, gpgkeys, get, *, allow
+    
+    # Explicitly deny all write operations
+    p, role:demo, applications, create, *, deny
+    p, role:demo, applications, update, *, deny
+    p, role:demo, applications, delete, *, deny
+    p, role:demo, applications, sync, *, deny
+    p, role:demo, applications, action/*, *, deny
+    p, role:demo, applications, override, *, deny
+    
+    p, role:demo, projects, create, *, deny
+    p, role:demo, projects, update, *, deny
+    p, role:demo, projects, delete, *, deny
+    
+    p, role:demo, repositories, create, *, deny
+    p, role:demo, repositories, update, *, deny
+    p, role:demo, repositories, delete, *, deny
+    
+    # Assign demo user to demo role
+    g, demo, role:demo
 
-# Image configuration
-image:
-  repository: b4bz/homer
-  tag: ""  # Uses chart default
-  pullPolicy: IfNotPresent
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argocd-secret
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-secret
+    app.kubernetes.io/part-of: argocd
+type: Opaque
+stringData:
+  # Demo user account - password: "homelab-readonly"
+  # Generated with: htpasswd -nbBC 10 "" "homelab-readonly" | tr -d ':\n' | sed 's/$2y/$2a/'
+  accounts.demo: "$2a$10$rRyBsGw/1cHPKyInIwbNOeR8tK2N7X8.P5vK9Y8Q6H1mW7P2vN1Fe"
+  accounts.demo.enabled: "true"
 
-# Environment variables
-env:
-  TZ: "Asia/Jakarta"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cmd-params-cm
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-cmd-params-cm
+    app.kubernetes.io/part-of: argocd
+data:
+  # Enable demo account
+  accounts.demo: "login"
+  accounts.demo.enabled: "true"
+</file>
 
-# Service configuration
-service:
-  main:
-    ports:
-      http:
-        port: 8080
-
-# Ingress configuration for external access
-ingress:
-  main:
-    enabled: true
-    className: traefik
-    annotations:
-      external-dns.alpha.kubernetes.io/target: "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
-      external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-      traefik.ingress.kubernetes.io/router.tls: "true"
-    hosts:
-      - host: homer.milenika.dev
-        paths:
-          - path: /
-            pathType: Prefix
-    tls:
-      - secretName: homer-tls
-        hosts:
-          - homer.milenika.dev
-
-# Security context
-securityContext:
-  runAsUser: 1000
-  runAsNonRoot: true
-  runAsGroup: 1000
-
-# Resources
-resources:
-  requests:
-    cpu: 50m
-    memory: 64Mi
-  limits:
-    cpu: 100m
-    memory: 128Mi
-
-# Persistence for assets (configs, icons, etc.)
-persistence:
-  config:
-    enabled: true
-    type: pvc
-    storageClass: local-path
-    accessMode: ReadWriteOnce
-    size: 1Gi
-    mountPath: /www/assets
-
-# ConfigMap for Homer configuration
-configmap:
-  config:
-    enabled: true
-    data:
-      config.yml: |
-        ---
-        # Homepage configuration
-        title: "Mikha's Homelab"
-        subtitle: "LGTM Stack & Services"
-        logo: "logo.png"
-        
-        header: true
-        footer: '<p>Built with <span class="has-text-danger">❤️</span> using <a href="https://bulma.io/">bulma</a>, <a href="https://vuejs.org/">vuejs</a> & <a href="https://fontawesome.com/">font awesome</a></p>'
-        
-        # Theme
-        theme: default
-        colors:
-          light:
-            highlight-primary: "#3367d6"
-            highlight-secondary: "#4285f4"
-            highlight-hover: "#5a95f5"
-            background: "#f5f5f5"
-            card-background: "#ffffff"
-            text: "#363636"
-            text-header: "#ffffff"
-            text-title: "#303030"
-            text-subtitle: "#424242"
-            card-shadow: rgba(0, 0, 0, 0.1)
-            link: "#3273dc"
-            link-hover: "#363636"
-          dark:
-            highlight-primary: "#3367d6"
-            highlight-secondary: "#4285f4"
-            highlight-hover: "#5a95f5"
-            background: "#131313"
-            card-background: "#2b2b2b"
-            text: "#eaeaea"
-            text-header: "#ffffff"
-            text-title: "#fafafa"
-            text-subtitle: "#f5f5f5"
-            card-shadow: rgba(0, 0, 0, 0.4)
-            link: "#3273dc"
-            link-hover: "#ffdd57"
-        
-        # Services
-        services:
-          - name: "Monitoring & Observability"
-            icon: "fas fa-chart-line"
-            items:
-              - name: "Grafana"
-                logo: "https://grafana.com/static/img/menu/grafana2.svg"
-                subtitle: "Metrics, Logs & Traces Visualization"
-                tag: "LGTM"
-                url: "https://grafana.milenika.dev"
-                target: "_blank"
-              - name: "Prometheus"
-                logo: "https://prometheus.io/assets/prometheus_logo_grey.svg"
-                subtitle: "Metrics Collection & Alerting"
-                tag: "metrics"
-                url: "https://prometheus.milenika.dev"
-                target: "_blank"
-              - name: "Loki"
-                logo: "https://grafana.com/static/img/logos/logo-loki.svg"
-                subtitle: "Log Aggregation"
-                tag: "logs"
-                url: "https://loki.milenika.dev"
-                target: "_blank"
-              - name: "Tempo"
-                logo: "https://grafana.com/static/img/logos/logo-tempo.svg"
-                subtitle: "Distributed Tracing"
-                tag: "traces"
-                url: "https://tempo.milenika.dev"
-                target: "_blank"
-          
-          - name: "Infrastructure"
-            icon: "fas fa-server"
-            items:
-              - name: "ArgoCD"
-                logo: "https://argo-cd.readthedocs.io/en/stable/assets/logo.png"
-                subtitle: "GitOps Continuous Delivery"
-                tag: "gitops"
-                url: "https://argocd.milenika.dev"
-                target: "_blank"
-              - name: "Homer Dashboard"
-                logo: "https://github.com/bastienwirtz/homer/raw/main/public/logo.png"
-                subtitle: "This Homepage"
-                tag: "dashboard"
-                url: "https://homer.milenika.dev"
-                target: "_blank"
-        
-        # Welcome message
-        message:
-          style: "is-dark"
-          title: "Welcome to Mikha's Homelab!"
-          icon: "fa fa-grin"
-          content: "This dashboard provides quick access to all your homelab services. Your LGTM observability stack is fully operational with Loki (logs), Grafana (visualization), Tempo (traces), and Prometheus (metrics)."
+<file path="apps/system/demo-accounts-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-accounts
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "15"  # Deploy after monitoring stack
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mikha-22/homelab-gitops
+    targetRevision: HEAD
+    path: apps/monitoring/demo-accounts
+    
+  destination:
+    server: https://kubernetes.default.svc
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
 </file>
 
 <file path="apps/monitoring/namespace/security-headers.yaml">
@@ -277,46 +211,6 @@ spec:
       frame-ancestors 'none';
       base-uri 'self';
       form-action 'self';
-</file>
-
-<file path="apps/system/homer-app.yaml">
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: homer
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "10"  # Deploy after monitoring stack
-spec:
-  project: default
-  # OPTION 1: Use multiple sources (requires ArgoCD 2.6+)
-  sources:
-    # Helm chart source
-    - repoURL: https://djjudas21.github.io/charts/
-      targetRevision: 8.2.4
-      chart: homer
-      helm:
-        releaseName: homer
-        valueFiles:
-          - $values/apps/homer/values.yaml
-    # Values file source
-    - repoURL: https://github.com/mikha-22/homelab-gitops
-      targetRevision: HEAD
-      ref: values
-    
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: homer
-    
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
 </file>
 
 <file path="apps/system/loki-app.yaml">
@@ -832,6 +726,46 @@ prometheusRule:
 podAnnotations:
   prometheus.io/scrape: "true"
   prometheus.io/port: "3101"
+</file>
+
+<file path="apps/system/homer-app.yaml">
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: homer
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"  # Deploy after monitoring stack
+spec:
+  project: default
+  # OPTION 1: Use multiple sources (requires ArgoCD 2.6+)
+  sources:
+    # Helm chart source
+    - repoURL: https://djjudas21.github.io/charts/
+      targetRevision: 8.2.4
+      chart: homer
+      helm:
+        releaseName: homer
+        valueFiles:
+          - $values/apps/homer/values.yaml
+    # Values file source
+    - repoURL: https://github.com/mikha-22/homelab-gitops
+      targetRevision: HEAD
+      ref: values
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: homer
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
 </file>
 
 <file path="apps/system/tempo-app.yaml">
@@ -1410,9 +1344,8 @@ serviceMonitor:
 </file>
 
 <file path="apps/monitoring/prometheus-stack-values.yaml">
-# Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
+# Prometheus Stack Configuration - WITH ANONYMOUS GRAFANA ACCESS
 # Chart Version: 75.9.0
-# WITH INGRESS AND EXTERNAL ACCESS ENABLED
 
 # Global settings
 global:
@@ -1427,7 +1360,7 @@ crds:
 alertmanager:
   enabled: false
 
-# Grafana Configuration - WITH EXTERNAL ACCESS
+# Grafana Configuration - WITH ANONYMOUS ACCESS FOR DEMOS
 grafana:
   enabled: true
   
@@ -1462,13 +1395,12 @@ grafana:
     runAsUser: 472
     fsGroup: 472
   
-  # ENABLE INGRESS FOR EXTERNAL ACCESS (MATCH ARGOCD PATTERN)
+  # ENABLE INGRESS FOR EXTERNAL ACCESS
   ingress:
     enabled: true
     hosts:
       - grafana.milenika.dev
     annotations:
-      # Use same pattern as ArgoCD
       "kubernetes.io/ingress.class": "traefik"
       "external-dns.alpha.kubernetes.io/target": "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
@@ -1477,11 +1409,24 @@ grafana:
         hosts:
           - grafana.milenika.dev
   
-  # Grafana configuration - FOR EXTERNAL ACCESS
+  # Grafana configuration - WITH ANONYMOUS ACCESS
   grafana.ini:
     server:
       root_url: "https://grafana.milenika.dev"
       serve_from_sub_path: false
+    
+    # ENABLE ANONYMOUS ACCESS FOR DEMOS
+    auth.anonymous:
+      enabled: true
+      org_name: "Homelab Demo"
+      org_role: "Viewer"  # Read-only access
+      hide_version: true
+    
+    # Keep login form available for admin access
+    auth:
+      disable_login_form: false
+      disable_signout_menu: false
+    
     security:
       disable_gravatar: true
       cookie_secure: true
@@ -1489,17 +1434,16 @@ grafana:
       strict_transport_security: true
       x_content_type_options: true
       x_xss_protection: true
-    auth:
-      disable_login_form: false
-      disable_signout_menu: false
-    "auth.anonymous":
-      enabled: false
+      allow_embedding: false
+    
     analytics:
       reporting_enabled: false
       check_for_updates: false
+    
     log:
       mode: "console"
       level: "info"
+    
     panels:
       disable_sanitize_html: false
 
@@ -1633,6 +1577,7 @@ resources:
   - tempo-app.yaml
   - promtail-app.yaml
   - homer-app.yaml
+  - demo-accounts-app.yaml  # ADD THIS NEW LINE
   
 # Common labels for all system applications
 labels:

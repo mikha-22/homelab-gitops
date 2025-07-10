@@ -9,6 +9,7 @@ resources:
   - tempo-app.yaml
   - promtail-app.yaml
   - homer-app.yaml
+  - demo-accounts-app.yaml  # ADD THIS NEW LINE
   
 # Common labels for all system applications
 labels:

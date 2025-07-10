@@ -31,7 +31,6 @@ ingress:
       "kubernetes.io/ingress.class": "traefik"  # MATCH your working pattern
       "external-dns.alpha.kubernetes.io/target": "0051fa80-d5c3-4095-b44f-a8f6e77f404f.cfargotunnel.com"
       "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-      # REMOVE the traefik.ingress.kubernetes.io/router.tls - not in your working apps
     hosts:
       - host: homer.milenika.dev
         paths:
@@ -149,7 +148,7 @@ configmap:
                 logo: "https://argo-cd.readthedocs.io/en/stable/assets/logo.png"
                 subtitle: "GitOps Continuous Delivery"
                 tag: "gitops"
-                url: "https://argocd.milenika.dev"
+                url: "https://demo:homelab-readonly@argocd.milenika.dev"
                 target: "_blank"
               - name: "Homer Dashboard"
                 logo: "https://github.com/bastienwirtz/homer/raw/main/public/logo.png"
@@ -175,4 +174,4 @@ configmap:
           style: "is-dark"
           title: "Welcome to Mikha's Homelab!"
           icon: "fa fa-grin"
-          content: "This dashboard provides quick access to all your homelab services. Your LGTM observability stack is fully operational with Loki (logs), Grafana (visualization), Tempo (traces), and Prometheus (metrics)."
+          content: "This dashboard provides quick access to all homelab services. Grafana has anonymous viewing enabled for easy demos. ArgoCD demo access: demo/homelab-readonly"
