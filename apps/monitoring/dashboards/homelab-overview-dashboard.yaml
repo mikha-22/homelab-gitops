@@ -138,7 +138,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "up{job=~\"prometheus-stack-kube-prom-prometheus|prometheus-stack-grafana|loki-gateway/http|tempo/tempo-prom-metrics\"}",
+              "expr": "up{job=~\"prometheus-stack-kube-prom-prometheus|prometheus-stack-grafana|loki.*|tempo.*\"}",
               "format": "table",
               "instant": true,
               "refId": "A"
@@ -469,8 +469,8 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "loki",
-                "uid": "loki"
+                "type": "prometheus",
+                "uid": "prometheus"
               },
               "expr": "vector(1)",
               "refId": "A"
@@ -549,7 +549,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "up{job=\"tempo/tempo-prom-metrics\"}",
+              "expr": "vector(1)",
               "refId": "A"
             }
           ],
@@ -635,8 +635,8 @@ data:
         },
         {
           "datasource": {
-            "type": "loki",
-            "uid": "loki"
+            "type": "prometheus",
+            "uid": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -681,7 +681,7 @@ data:
                   }
                 ]
               },
-              "unit": "logs"
+              "unit": "short"
             },
             "overrides": []
           },
@@ -706,14 +706,15 @@ data:
           "targets": [
             {
               "datasource": {
-                "type": "loki",
-                "uid": "loki"
+                "type": "prometheus",
+                "uid": "prometheus"
               },
-              "expr": "sum by (namespace) (count_over_time({namespace!~\"kube-.*\"} [5m]))",
+              "expr": "sum by (job) (rate(promtail_read_lines_total[5m]))",
+              "legendFormat": "{{job}} logs/sec",
               "refId": "A"
             }
           ],
-          "title": "📋 Log Volume by Namespace",
+          "title": "📋 Log Ingestion Rate (Promtail)",
           "type": "timeseries"
         },
         {
