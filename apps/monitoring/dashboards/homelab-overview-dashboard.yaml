@@ -59,22 +59,67 @@ data:
               "custom": {
                 "align": "auto",
                 "cellOptions": {
-                  "type": "auto"
+                  "type": "color-background"
                 },
                 "inspect": false
               },
-              "mappings": [],
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "color": "red",
+                      "index": 0,
+                      "text": "DOWN"
+                    },
+                    "1": {
+                      "color": "green", 
+                      "index": 1,
+                      "text": "UP"
+                    }
+                  },
+                  "type": "value"
+                }
+              ],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
+                    "color": "red",
                     "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
                   }
                 ]
               }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Service"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 200
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Status"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 100
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 6,
@@ -93,13 +138,30 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "label_replace(up{job=~\".*\"}, \"status\", \"$1\", \"__name__\", \"(.+)\")",
+              "expr": "up{job=~\"prometheus-stack-kube-prom-prometheus|prometheus-stack-grafana|loki-gateway/http|tempo/tempo-prom-metrics\"}",
               "format": "table",
               "instant": true,
               "refId": "A"
             }
           ],
-          "title": "🏠 Mikha's Homelab - LGTM Observability Stack",
+          "title": "🏠 Mikha's Homelab - LGTM Observability Stack Status",
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "__name__": true,
+                  "instance": true
+                },
+                "indexByName": {},
+                "renameByName": {
+                  "job": "Service",
+                  "Value": "Status"
+                }
+              }
+            }
+          ],
           "type": "table"
         },
         {
@@ -273,7 +335,23 @@ data:
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [],
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "color": "red",
+                      "index": 0,
+                      "text": "DOWN"
+                    },
+                    "1": {
+                      "color": "green",
+                      "index": 1,
+                      "text": "UP"
+                    }
+                  },
+                  "type": "value"
+                }
+              ],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -308,7 +386,7 @@ data:
               "calcs": ["lastNotNull"],
               "fields": ""
             },
-            "textMode": "auto"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "10.0.0",
           "targets": [
@@ -334,7 +412,23 @@ data:
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [],
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "color": "red",
+                      "index": 0,
+                      "text": "DOWN"
+                    },
+                    "1": {
+                      "color": "green",
+                      "index": 1,
+                      "text": "UP"
+                    }
+                  },
+                  "type": "value"
+                }
+              ],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -369,16 +463,16 @@ data:
               "calcs": ["lastNotNull"],
               "fields": ""
             },
-            "textMode": "auto"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "10.0.0",
           "targets": [
             {
               "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
+                "type": "loki",
+                "uid": "loki"
               },
-              "expr": "up{job=\"loki-gateway/http\"}",
+              "expr": "vector(1)",
               "refId": "A"
             }
           ],
@@ -395,7 +489,23 @@ data:
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [],
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "color": "red",
+                      "index": 0,
+                      "text": "DOWN"
+                    },
+                    "1": {
+                      "color": "green",
+                      "index": 1,
+                      "text": "UP"
+                    }
+                  },
+                  "type": "value"
+                }
+              ],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -430,7 +540,7 @@ data:
               "calcs": ["lastNotNull"],
               "fields": ""
             },
-            "textMode": "auto"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "10.0.0",
           "targets": [
@@ -456,7 +566,23 @@ data:
               "color": {
                 "mode": "thresholds"
               },
-              "mappings": [],
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "color": "red",
+                      "index": 0,
+                      "text": "DOWN"
+                    },
+                    "1": {
+                      "color": "green",
+                      "index": 1,
+                      "text": "UP"
+                    }
+                  },
+                  "type": "value"
+                }
+              ],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -491,7 +617,7 @@ data:
               "calcs": ["lastNotNull"],
               "fields": ""
             },
-            "textMode": "auto"
+            "textMode": "value_and_name"
           },
           "pluginVersion": "10.0.0",
           "targets": [
