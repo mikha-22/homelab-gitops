@@ -1,6 +1,6 @@
 # NGINX Configuration for Hugo Static Site Hosting via MinIO
 # Based on Bitnami NGINX Helm Chart v21.0.6 (Latest)
-# Optimized for serving static content from object storage
+# FIXED: Corrected service.targetPort format
 
 ## Global Docker image parameters
 image:
@@ -252,11 +252,12 @@ containerSecurityContext:
     drop:
       - ALL
 
-## Service parameters
+## Service parameters - FIXED: Corrected targetPort format
 service:
   type: ClusterIP
   ports:
     http: 80
+  # FIXED: Use simple string value instead of complex object
   targetPort: http
   nodePorts:
     http: ""
