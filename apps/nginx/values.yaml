@@ -1,6 +1,6 @@
 # NGINX Configuration for Hugo Static Site Hosting via MinIO
 # Based on Bitnami NGINX Helm Chart v21.0.6 (Latest)
-# CORRECTED: Reverted targetPort to proper Bitnami format
+# SIMPLE FIX: Just handle root path properly
 
 ## Global Docker image parameters
 image:
@@ -48,31 +48,12 @@ autoscaling:
   targetCPU: 70
   targetMemory: 80
 
-## Custom server block for proxying to MinIO
+## Custom server block for proxying to MinIO - SIMPLE ROOT PATH FIX
 serverBlock: |-
   # Upstream for MinIO S3 API
   upstream minio_s3 {
       server minio.minio.svc.cluster.local:9000;
       keepalive 32;
-  }
-  
-  # Map for setting correct Content-Type for static assets
-  map $uri $content_type_override {
-      ~*\.js$     "application/javascript; charset=utf-8";
-      ~*\.css$    "text/css; charset=utf-8";
-      ~*\.html$   "text/html; charset=utf-8";
-      ~*\.json$   "application/json; charset=utf-8";
-      ~*\.xml$    "application/xml; charset=utf-8";
-      ~*\.ico$    "image/x-icon";
-      ~*\.png$    "image/png";
-      ~*\.jpg$    "image/jpeg";
-      ~*\.jpeg$   "image/jpeg";
-      ~*\.gif$    "image/gif";
-      ~*\.svg$    "image/svg+xml";
-      ~*\.woff$   "font/woff";
-      ~*\.woff2$  "font/woff2";
-      ~*\.ttf$    "font/ttf";
-      default     "";
   }
   
   server {
@@ -100,12 +81,28 @@ serverBlock: |-
           application/atom+xml
           image/svg+xml;
       
-      # Root location - serve Hugo site from MinIO
-      location / {
-          # Try to serve the exact path first, then try with .html, finally fall back to index.html
-          try_files $uri $uri.html $uri/ /index.html;
+      # SIMPLE FIX: Handle root path specifically
+      location = / {
+          proxy_pass http://minio_s3/hugo-static/index.html;
           
-          # Proxy to MinIO hugo-static bucket
+          # Proxy headers
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          
+          # HTTP/1.1 for keepalive
+          proxy_http_version 1.1;
+          proxy_set_header Connection "";
+          
+          # Timeouts
+          proxy_connect_timeout 10s;
+          proxy_send_timeout 30s;
+          proxy_read_timeout 30s;
+      }
+      
+      # Handle all other paths
+      location / {
           proxy_pass http://minio_s3/hugo-static$uri;
           
           # Proxy headers
@@ -126,9 +123,6 @@ serverBlock: |-
           # Cache static assets
           location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
               proxy_pass http://minio_s3/hugo-static$uri;
-              
-              # Override Content-Type if needed
-              add_header Content-Type $content_type_override always;
               
               # Cache headers
               expires 30d;
@@ -228,12 +222,11 @@ containerSecurityContext:
     drop:
       - ALL
 
-## Service parameters - CORRECTED: Back to Bitnami's expected format
+## Service parameters
 service:
   type: ClusterIP
   ports:
     http: 80
-  # CORRECTED: Use the proper Bitnami map format (this was correct originally!)
   targetPort:
     http: http
     https: https
