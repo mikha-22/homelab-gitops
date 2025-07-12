@@ -19,7 +19,7 @@ mode: standalone
 
 ## Root credentials - CHANGE THESE!
 rootUser: admin
-rootPassword: admin  # CHANGE THIS!
+rootPassword: admin123  # CHANGE THIS!
 
 ## Additional environment variables
 environment:
