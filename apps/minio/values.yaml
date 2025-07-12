@@ -25,7 +25,7 @@ rootPassword: admin  # CHANGE THIS!
 environment:
   MINIO_BROWSER_REDIRECT_URL: "https://minio.milenika.dev"
   MINIO_SERVER_URL: "https://minio-api.milenika.dev"
-  MINIO_PROMETHEUS_AUTH_TYPE: "public"
+  # MINIO_PROMETHEUS_AUTH_TYPE: "public"  # REMOVED - chart handles this automatically
 
 ## Persistence configuration
 persistence:
