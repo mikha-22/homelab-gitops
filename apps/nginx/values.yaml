@@ -1,6 +1,6 @@
 # NGINX Configuration for Hugo Static Site Hosting via MinIO
 # Based on Bitnami NGINX Helm Chart v21.0.6 (Latest)
-# FIXED: Root path handling for Hugo static sites
+# CORRECTED: Reverted targetPort to proper Bitnami format
 
 ## Global Docker image parameters
 image:
@@ -48,7 +48,7 @@ autoscaling:
   targetCPU: 70
   targetMemory: 80
 
-## Custom server block for proxying to MinIO - FIXED FOR ROOT PATH
+## Custom server block for proxying to MinIO
 serverBlock: |-
   # Upstream for MinIO S3 API
   upstream minio_s3 {
@@ -100,27 +100,13 @@ serverBlock: |-
           application/atom+xml
           image/svg+xml;
       
-      # FIXED: Root location with proper Hugo site handling
+      # Root location - serve Hugo site from MinIO
       location / {
-          # Set variables for dynamic proxying
-          set $s3_bucket "hugo-static";
-          set $s3_path $uri;
+          # Try to serve the exact path first, then try with .html, finally fall back to index.html
+          try_files $uri $uri.html $uri/ /index.html;
           
-          # Handle root path - serve index.html
-          if ($uri = "/") {
-              set $s3_path "/index.html";
-          }
-          
-          # Handle directory paths - try index.html in that directory
-          if ($uri ~ "^(.+)/$") {
-              set $s3_path "$1/index.html";
-          }
-          
-          # Proxy to MinIO with proper path
-          proxy_pass http://minio_s3/$s3_bucket$s3_path;
-          
-          # Handle 404 from MinIO - try alternative paths
-          error_page 404 = @fallback;
+          # Proxy to MinIO hugo-static bucket
+          proxy_pass http://minio_s3/hugo-static$uri;
           
           # Proxy headers
           proxy_set_header Host $host;
@@ -136,9 +122,6 @@ serverBlock: |-
           proxy_connect_timeout 10s;
           proxy_send_timeout 30s;
           proxy_read_timeout 30s;
-          
-          # Intercept MinIO errors to avoid XML responses
-          proxy_intercept_errors on;
           
           # Cache static assets
           location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
@@ -159,9 +142,6 @@ serverBlock: |-
               proxy_set_header X-Forwarded-Proto $scheme;
               proxy_http_version 1.1;
               proxy_set_header Connection "";
-              
-              # Don't intercept errors for assets
-              proxy_intercept_errors off;
           }
           
           # Special handling for HTML files
@@ -180,32 +160,7 @@ serverBlock: |-
               proxy_set_header X-Forwarded-Proto $scheme;
               proxy_http_version 1.1;
               proxy_set_header Connection "";
-              
-              # Don't intercept errors for HTML
-              proxy_intercept_errors off;
           }
-      }
-      
-      # Fallback location for 404 handling
-      location @fallback {
-          # Try common Hugo patterns
-          set $fallback_path "";
-          
-          # If requesting a directory, try index.html
-          if ($uri ~ "^(.+)$") {
-              set $fallback_path "$1/index.html";
-          }
-          
-          proxy_pass http://minio_s3/hugo-static$fallback_path;
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto $scheme;
-          proxy_http_version 1.1;
-          proxy_set_header Connection "";
-          
-          # If this also fails, return 404
-          proxy_intercept_errors off;
       }
       
       # Health check endpoint
@@ -224,19 +179,6 @@ serverBlock: |-
           allow 172.16.0.0/12;
           allow 192.168.0.0/16;
           deny all;
-      }
-      
-      # Custom 404 page
-      error_page 404 /404.html;
-      location = /404.html {
-          proxy_pass http://minio_s3/hugo-static/404.html;
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto $scheme;
-          proxy_http_version 1.1;
-          proxy_set_header Connection "";
-          internal;
       }
   }
 
@@ -286,10 +228,156 @@ containerSecurityContext:
     drop:
       - ALL
 
-## Service parameters
+## Service parameters - CORRECTED: Back to Bitnami's expected format
 service:
   type: ClusterIP
   ports:
     http: 80
+  # CORRECTED: Use the proper Bitnami map format (this was correct originally!)
   targetPort:
     http: http
+    https: https
+  nodePorts:
+    http: ""
+  clusterIP: ""
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  loadBalancerClass: ""
+  annotations: {}
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  sessionAffinity: None
+  sessionAffinityConfig: {}
+
+## Ingress parameters
+ingress:
+  enabled: true
+  pathType: Prefix
+  apiVersion: ""
+  ingressClassName: "traefik"
+  hostname: hugo.milenika.dev
+  path: /
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "eb69efc6-2d0f-424d-a170-53a8c30c65b7.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
+  tls: true
+  selfSigned: false
+  tlsWwwPrefix: false
+  extraHosts: []
+  extraPaths: []
+  extraTls: []
+  secrets: []
+  extraRules: []
+
+## Health Ingress parameters
+healthIngress:
+  enabled: false
+
+## NetworkPolicy parameters
+networkPolicy:
+  enabled: false
+
+## Prometheus Metrics  
+metrics:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: bitnami/nginx-exporter
+    tag: 1.4.2-debian-12-r6
+    pullPolicy: IfNotPresent
+  
+  containerPorts:
+    metrics: 9113
+  
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  
+  service:
+    port: 9113
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9113"
+      prometheus.io/path: "/metrics"
+  
+  serviceMonitor:
+    enabled: true
+    namespace: ""
+    interval: 30s
+    scrapeTimeout: 10s
+    labels:
+      release: prometheus-stack
+    honorLabels: false
+    jobLabel: ""
+    selector: {}
+    relabelings: []
+    metricRelabelings: []
+  
+  prometheusRule:
+    enabled: false
+
+## Pod annotations
+podAnnotations: {}
+
+## Pod labels
+podLabels:
+  app.kubernetes.io/part-of: homelab-gitops
+  environment: homelab
+  component: static-hosting
+
+## Additional labels for all resources
+commonLabels:
+  app.kubernetes.io/part-of: homelab-gitops
+  environment: homelab
+  component: static-hosting
+
+## Node labels for pod assignment
+nodeSelector: {}
+
+## Tolerations for pod assignment
+tolerations: []
+
+## Affinity for pod assignment
+affinity: {}
+
+## Priority class name
+priorityClassName: ""
+
+## Topology Spread Constraints
+topologySpreadConstraints: []
+
+## Pod lifecycle hooks
+lifecycleHooks: {}
+
+## Extra volumes
+extraVolumes: []
+
+## Extra volume mounts
+extraVolumeMounts: []
+
+## Sidecars to add to the nginx pod
+sidecars: []
+
+## Extra environment variables
+extraEnvVars: []
+
+## ConfigMap with extra environment variables
+extraEnvVarsCM: ""
+
+## Secret with extra environment variables
+extraEnvVarsSecret: ""
+
+## Init containers to add to the nginx pod
+initContainers: []
+
+## ServiceAccount configuration
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+  automountServiceAccountToken: false
