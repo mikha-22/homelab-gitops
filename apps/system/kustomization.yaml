@@ -12,7 +12,8 @@ resources:
   - promtail-app.yaml
   - homer-app.yaml
   - dashboards-app.yaml
-  - minio-app.yaml  # ADD THIS LINE
+  - minio-app.yaml
+  - nginx-app.yaml  # ADD THIS LINE - This was missing!
 
 # Common labels for all system applications
 labels:
