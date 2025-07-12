@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # NGINX is deployed via Helm, so no resources here
+  # This file exists for potential future customizations
+
+labels:
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/part-of: homelab-gitops
+      environment: homelab
+      component: static-hosting
