@@ -10,8 +10,8 @@ metadata:
 spec:
   project: default
   sources:
-    # Source 1: The official Bitnami NGINX Helm chart
-    - repoURL: oci://registry-1.docker.io/bitnamicharts
+    # Source 1: The official Bitnami NGINX Helm chart (using HTTP repo instead of OCI)
+    - repoURL: https://charts.bitnami.com/bitnami
       targetRevision: 21.0.6  # Latest version
       chart: nginx
       helm:
