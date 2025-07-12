@@ -10,7 +10,7 @@ metadata:
 spec:
   project: default
   sources:
-    # Source 1: Use the HTTP-based Bitnami repository (more reliable with ArgoCD)
+    # Source 1: Bitnami NGINX Helm chart (using stable HTTP repo)
     - repoURL: https://charts.bitnami.com/bitnami
       targetRevision: 21.0.6
       chart: nginx
@@ -34,6 +34,7 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
     retry:
       limit: 5
       backoff:
