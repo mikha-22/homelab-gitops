@@ -169,10 +169,10 @@ networkPolicy:
 podDisruptionBudget:
   enabled: false
 
-## Service account
+## Service account - FIXED: Remove empty name
 serviceAccount:
   create: true
-  name: ""
+  # name: ""  # REMOVED - let Helm auto-generate the name
 
 ## Priority class
 priorityClassName: ""
