@@ -191,44 +191,17 @@ resources:
     cpu: 250m
     memory: 256Mi
 
-## Configure the liveness probe
+## Disable custom probes - let chart use defaults
 livenessProbe:
-  enabled: true
-  initialDelaySeconds: 30
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 6
-  successThreshold: 1
-  httpGet:
-    path: /health
-    port: http
-    scheme: HTTP
+  enabled: false
 
-## Configure the readiness probe
+## Disable custom readiness probe  
 readinessProbe:
-  enabled: true
-  initialDelaySeconds: 5
-  periodSeconds: 5
-  timeoutSeconds: 3
-  failureThreshold: 3
-  successThreshold: 1
-  httpGet:
-    path: /health
-    port: http
-    scheme: HTTP
+  enabled: false
 
-## Configure startup probe
+## Disable custom startup probe
 startupProbe:
-  enabled: true
-  initialDelaySeconds: 10
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 30
-  successThreshold: 1
-  httpGet:
-    path: /health
-    port: http
-    scheme: HTTP
+  enabled: false
 
 ## Custom startup probe
 customStartupProbe: {}
