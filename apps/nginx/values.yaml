@@ -202,6 +202,7 @@ livenessProbe:
   httpGet:
     path: /health
     port: http
+    scheme: HTTP
 
 ## Configure the readiness probe
 readinessProbe:
@@ -214,6 +215,7 @@ readinessProbe:
   httpGet:
     path: /health
     port: http
+    scheme: HTTP
 
 ## Configure startup probe
 startupProbe:
@@ -226,6 +228,7 @@ startupProbe:
   httpGet:
     path: /health
     port: http
+    scheme: HTTP
 
 ## Custom startup probe
 customStartupProbe: {}
