@@ -12,6 +12,7 @@ resources:
   - promtail-app.yaml
   - homer-app.yaml
   - dashboards-app.yaml
+  - minio-app.yaml  # ADD THIS LINE
 
 # Common labels for all system applications
 labels:
