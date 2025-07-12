@@ -1,6 +1,6 @@
 # NGINX Configuration for Hugo Static Site Hosting via MinIO
 # Based on Bitnami NGINX Helm Chart v21.0.6 (Latest)
-# FIXED: Corrected service.targetPort format
+# CORRECTED: Reverted targetPort to proper Bitnami format
 
 ## Global Docker image parameters
 image:
@@ -157,7 +157,7 @@ serverBlock: |-
               proxy_set_header Host $host;
               proxy_set_header X-Real-IP $remote_addr;
               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_Set_header X-Forwarded-Proto $scheme;
               proxy_http_version 1.1;
               proxy_set_header Connection "";
           }
@@ -252,13 +252,15 @@ containerSecurityContext:
     drop:
       - ALL
 
-## Service parameters - FIXED: Corrected targetPort format
+## Service parameters - CORRECTED: Back to Bitnami's expected format
 service:
   type: ClusterIP
   ports:
     http: 80
-  # FIXED: Use simple string value instead of complex object
-  targetPort: http
+  # CORRECTED: Use the proper Bitnami map format (this was correct originally!)
+  targetPort:
+    http: http
+    https: https
   nodePorts:
     http: ""
   clusterIP: ""
