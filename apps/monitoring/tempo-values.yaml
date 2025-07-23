@@ -1,5 +1,5 @@
 # Tempo Configuration - Chart Version 1.23.2
-# Minimal configuration for single binary deployment
+# FIXED: Explicit volumeClaimTemplates to match Kubernetes expectations
 
 # Global configuration
 global:
@@ -79,13 +79,28 @@ tempo:
         metrics_generator:
           processors: []
 
-# Persistence configuration
+# EXPLICIT PERSISTENCE CONFIGURATION - Matches what Kubernetes expects
 persistence:
   enabled: true
   storageClassName: local-path
   accessModes:
     - ReadWriteOnce
   size: 10Gi
+
+# EXPLICIT VOLUME CLAIM TEMPLATE - This should match the StatefulSet exactly
+volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: storage
+      creationTimestamp: null
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: local-path
 
 # Service configuration
 service:
@@ -131,7 +146,7 @@ serviceMonitor:
   additionalLabels: {}
   annotations: {}
 
-# Ingress configuration for external access - CORRECTED TO MATCH HOMER
+# Ingress configuration for external access
 ingress:
   enabled: true
   ingressClassName: traefik
@@ -145,8 +160,6 @@ ingress:
     "external-dns.alpha.kubernetes.io/target": "52e6c172-8b5e-4167-b68f-20dd50299c3c.cfargotunnel.com"
     "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
     "traefik.ingress.kubernetes.io/router.middlewares": "monitoring-security-headers@kubernetescrd"
-    # "traefik.ingress.kubernetes.io/router.tls": "true" <-- REMOVED
-  # ADDED: Explicit TLS configuration to match Homer
   tls:
     - secretName: tempo-tls
       hosts:
