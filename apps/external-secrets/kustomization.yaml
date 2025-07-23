@@ -1,0 +1,7 @@
+# Add the test external secret above to your repo
+# Add it to apps/external-secrets/kustomization.yaml:
+
+resources:
+  - minio-external-secret.yaml
+  - grafana-external-secret.yaml
+  - test-cname-external-secret.yaml  # ADD THIS

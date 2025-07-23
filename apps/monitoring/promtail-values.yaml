@@ -1,0 +1,294 @@
+# Promtail Configuration for LGTM Stack - Chart Version 6.17.0
+# Enhanced for tracing integration with Tempo
+
+# Global configuration
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# Promtail configuration
+config:
+  # Enable Promtail config from Helm chart
+  enabled: true
+  
+  # Log level
+  logLevel: info
+  
+  # Log format
+  logFormat: logfmt
+  
+  # Server port
+  serverPort: 3101
+  
+  # Loki client configuration
+  clients:
+    - url: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
+      # Retry configuration
+      backoff_config:
+        min_period: 500ms
+        max_period: 5m
+        max_retries: 10
+      # Batch configuration
+      batchsize: 1048576
+      batchwait: 1s
+      # Timeout
+      timeout: 10s
+      # External labels for better correlation
+      external_labels:
+        cluster: homelab
+        environment: homelab
+  
+  # Positions file
+  positions:
+    filename: /run/promtail/positions.yaml
+  
+  # Scrape configurations
+  scrape_configs:
+    # Kubernetes pod logs with trace extraction
+    - job_name: kubernetes-pods
+      kubernetes_sd_configs:
+        - role: pod
+      pipeline_stages:
+        # Parse container runtime format
+        - cri: {}
+        
+        # Extract trace IDs from logs for correlation with Tempo
+        - regex:
+            expression: '.*trace[_-]?id["\s:=]+(?P<trace_id>[a-fA-F0-9]+).*'
+        
+        # Extract span IDs if present
+        - regex:
+            expression: '.*span[_-]?id["\s:=]+(?P<span_id>[a-fA-F0-9]+).*'
+        
+        # Extract log level
+        - regex:
+            expression: '.*level["\s:=]+(?P<level>(DEBUG|INFO|WARN|ERROR|FATAL)).*'
+        
+        # Label extraction for better filtering
+        - labels:
+            trace_id:
+            span_id:
+            level:
+        
+        # Drop health check logs to reduce noise
+        - drop:
+            expression: '.*health.*check.*'
+            drop_counter_reason: 'health_checks'
+        
+        # Drop metrics endpoints
+        - drop:
+            expression: '.*GET /metrics.*'
+            drop_counter_reason: 'metrics_endpoint'
+            
+      relabel_configs:
+        - source_labels:
+            - __meta_kubernetes_pod_controller_name
+          regex: ([0-9a-z-.]+?)(-[0-9a-f]{8,10})?
+          action: replace
+          target_label: __tmp_controller_name
+        - source_labels:
+            - __meta_kubernetes_pod_label_app_kubernetes_io_name
+            - __meta_kubernetes_pod_label_app
+            - __tmp_controller_name
+            - __meta_kubernetes_pod_name
+          regex: ^;*([^;]+)(;.*)?$
+          action: replace
+          target_label: app
+        - source_labels:
+            - __meta_kubernetes_pod_label_app_kubernetes_io_instance
+            - __meta_kubernetes_pod_label_instance
+          regex: ^;*([^;]+)(;.*)?$
+          action: replace
+          target_label: instance
+        - source_labels:
+            - __meta_kubernetes_pod_label_app_kubernetes_io_component
+            - __meta_kubernetes_pod_label_component
+          regex: ^;*([^;]+)(;.*)?$
+          action: replace
+          target_label: component
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_pod_node_name
+          target_label: node_name
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_namespace
+          target_label: namespace
+        - action: replace
+          replacement: $1
+          separator: /
+          source_labels:
+          - namespace
+          - app
+          target_label: job
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_pod_name
+          target_label: pod
+        - action: replace
+          source_labels:
+          - __meta_kubernetes_pod_container_name
+          target_label: container
+        - action: replace
+          replacement: /var/log/pods/*$1/*.log
+          separator: /
+          source_labels:
+          - __meta_kubernetes_pod_uid
+          - __meta_kubernetes_pod_container_name
+          target_label: __path__
+        # Add cluster and environment labels for multi-cluster setups
+        - action: replace
+          replacement: homelab
+          target_label: cluster
+        - action: replace
+          replacement: homelab
+          target_label: environment
+
+    # System logs with journal integration
+    - job_name: journal
+      journal:
+        max_age: 12h
+        path: /var/log/journal
+        labels:
+          job: systemd-journal
+      pipeline_stages:
+        # Extract trace information from systemd logs if present
+        - regex:
+            expression: '.*trace[_-]?id["\s:=]+(?P<trace_id>[a-fA-F0-9]+).*'
+        - labels:
+            trace_id:
+      relabel_configs:
+        - source_labels: ['__journal__systemd_unit']
+          target_label: 'unit'
+        - source_labels: ['__journal__hostname']
+          target_label: 'hostname'
+        - source_labels: ['__journal_priority_keyword']
+          target_label: 'level'
+        - action: replace
+          replacement: homelab
+          target_label: cluster
+
+# Deployment configuration
+daemonset:
+  enabled: true
+  
+  # Update strategy
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
+# Resource configuration
+resources:
+  limits:
+    cpu: 200m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 64Mi
+
+# Security context
+securityContext:
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+  allowPrivilegeEscalation: false
+
+# Pod security context
+podSecurityContext:
+  runAsUser: 0  # Required for reading log files
+  runAsGroup: 0
+  fsGroup: 0
+  seccompProfile:
+    type: RuntimeDefault
+
+# Service account
+serviceAccount:
+  create: true
+  name: promtail
+  annotations: {}
+
+# RBAC
+rbac:
+  create: true
+  pspEnabled: false
+
+# Node selector and tolerations
+nodeSelector: {}
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+    operator: Exists
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+
+# Volumes and volume mounts
+extraVolumes:
+  - name: tmp
+    emptyDir: {}
+  # Mount journal directory for system logs
+  - name: journal
+    hostPath:
+      path: /var/log/journal
+  - name: machine-id
+    hostPath:
+      path: /etc/machine-id
+
+extraVolumeMounts:
+  - name: tmp
+    mountPath: /tmp
+  - name: journal
+    mountPath: /var/log/journal
+    readOnly: true
+  - name: machine-id
+    mountPath: /etc/machine-id
+    readOnly: true
+
+# Service monitor for Prometheus
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  additionalLabels: {}
+  annotations: {}
+  scrapeTimeout: 10s
+  relabelings: []
+  metricRelabelings: []
+
+# Prometheus rule for LGTM stack
+prometheusRule:
+  enabled: true
+  additionalLabels: {}
+  rules:
+    - alert: PromtailRequestsErrors
+      expr: 100 * sum(rate(promtail_request_duration_seconds_count{status_code=~"5..|4.."}[1m])) by (namespace, job, route, instance) / sum(rate(promtail_request_duration_seconds_count[1m])) by (namespace, job, route, instance) > 10
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Promtail request errors (instance {{ $labels.instance }})
+        description: "The {{ $labels.job }} and {{ $labels.route }} are experiencing errors\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    
+    - alert: PromtailRequestLatency
+      expr: histogram_quantile(0.99, sum(rate(promtail_request_duration_seconds_bucket[5m])) by (le)) > 1
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Promtail request latency (instance {{ $labels.instance }})
+        description: "The {{ $labels.job }} {{ $labels.route }} is experiencing {{ printf \"%.2f\" $value }}s 99th percentile latency\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    
+    - alert: PromtailFileMissing
+      expr: promtail_files_active_total == 0
+      for: 15m
+      labels:
+        severity: warning
+      annotations:
+        summary: Promtail not collecting any logs
+        description: "Promtail instance {{ $labels.instance }} is not collecting any log files"
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3101"

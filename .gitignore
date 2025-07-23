@@ -1,0 +1,58 @@
+# Temporary files
+repomix-output.xml
+*.tmp
+*.temp
+temp/
+.tmp/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Kubernetes secrets (should never be committed)
+*.secret.yaml
+secrets/
+
+# Helm temporary files
+*.tgz
+charts/
+
+# Terraform state (if any)
+*.tfstate
+*.tfstate.backup
+.terraform/
+terraform.tfvars
+
+# Build outputs
+dist/
+build/
+target/
+
+# Logs
+*.log
+logs/
+
+# Backup files
+*.bak
+*.backup
+
+# IDE specific
+.vscode/settings.json
+.idea/
+*.iml
+
+# Local development
+.env
+.env.local
+local-values.yaml
+dev-values.yaml
+
+# ArgoCD generated files
+.argocd-source-*

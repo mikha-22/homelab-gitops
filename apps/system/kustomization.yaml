@@ -1,0 +1,13 @@
+resources:
+  - projects/monitoring-project.yaml
+  - shared-config-app.yaml           # ADD THIS LINE
+  - external-secrets-app.yaml        # ADD THIS LINE
+  - monitoring-namespace-app.yaml
+  - prometheus-app.yaml
+  - loki-app.yaml
+  - tempo-app.yaml
+  - promtail-app.yaml
+  - homer-app.yaml
+  - dashboards-app.yaml
+  - minio-app.yaml
+  - nginx-app.yaml

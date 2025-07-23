@@ -1,0 +1,25 @@
+# apps/shared-config/ingress-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homelab-ingress-config
+  namespace: kube-system
+  labels:
+    app.kubernetes.io/name: homelab-config
+    app.kubernetes.io/part-of: homelab-gitops
+data:
+  # Cloudflare tunnel CNAME (will be updated by terraform)
+  cloudflare-cname: "52e6c172-8b5e-4167-b68f-20dd50299c3c.cfargotunnel.com"
+  
+  # Standard ingress annotations
+  ingress-annotations: |
+    external-dns.alpha.kubernetes.io/target: "52e6c172-8b5e-4167-b68f-20dd50299c3c.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
+  
+  # TLS configuration template
+  tls-config: |
+    tls:
+      - secretName: "app-tls"
+        hosts:
+          - "app.milenika.dev"

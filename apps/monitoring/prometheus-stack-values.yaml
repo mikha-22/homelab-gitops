@@ -1,0 +1,275 @@
+# Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
+# Chart Version: 75.9.0
+# WITH INGRESS AND ANONYMOUS GRAFANA ACCESS ENABLED
+# FIXED: additionalDataSources (uppercase S) and proper service URLs
+
+# Global settings
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# CRDs configuration
+crds:
+  enabled: true
+
+# Disable AlertManager for simplified homelab setup
+alertmanager:
+  enabled: false
+
+# Grafana Configuration - WITH ANONYMOUS ACCESS AND CORRECTED LGTM DATASOURCES
+grafana:
+  enabled: true
+  
+  # Admin credentials - will use generated password
+  adminUser: admin
+  adminPassword: null
+
+  admin:
+    existingSecret: grafana-admin-secret
+    userKey: admin-user
+    passwordKey: admin-password
+  # DISABLE the problematic init container
+  initChownData:
+    enabled: false
+  
+  # Persistence
+  persistence:
+    enabled: true
+    type: pvc
+    storageClassName: local-path
+    size: 10Gi
+    accessModes:
+      - ReadWriteOnce
+  
+  # Resource management
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  # SIMPLIFIED security context
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 472
+    fsGroup: 472
+  
+  # CORRECTED INGRESS CONFIGURATION
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      "external-dns.alpha.kubernetes.io/target": "52e6c172-8b5e-4167-b68f-20dd50299c3c.cfargotunnel.com"
+      "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+    hosts:
+      - grafana.milenika.dev
+    path: /
+    pathType: Prefix
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - grafana.milenika.dev
+  
+  # Grafana configuration
+  grafana.ini:
+    server:
+      root_url: "https://grafana.milenika.dev"
+      serve_from_sub_path: false
+    security:
+      disable_gravatar: true
+      cookie_secure: true
+      cookie_samesite: "strict"
+      strict_transport_security: true
+      x_content_type_options: true
+      x_xss_protection: true
+    auth:
+      disable_login_form: false
+      disable_signout_menu: false
+    "auth.anonymous":
+      enabled: true
+      org_name: "Main Org."
+      org_role: "Viewer"
+      hide_version: true
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+    log:
+      mode: "console"
+      level: "info"
+    panels:
+      disable_sanitize_html: false
+
+  # FIXED: additionalDataSources (uppercase 'S') - NOT additionalDatasources
+  additionalDataSources:
+    # Loki for Logs
+    - name: Loki
+      type: loki
+      access: proxy
+      url: http://loki-gateway.monitoring.svc.cluster.local
+      isDefault: false
+      version: 1
+      editable: true
+      jsonData:
+        # Enable trace to logs correlation
+        derivedFields:
+          - datasourceUid: tempo
+            matcherRegex: "trace[_-]?id[\"\\s:=]+([a-fA-F0-9]+)"
+            name: TraceID
+            url: "$${__value.raw}"
+        
+    # Tempo for Traces  
+    - name: Tempo
+      type: tempo
+      access: proxy
+      url: http://tempo.monitoring.svc.cluster.local:3200
+      uid: tempo
+      isDefault: false
+      version: 1
+      editable: true
+      jsonData:
+        # Enable trace to logs correlation
+        tracesToLogs:
+          datasourceUid: loki
+          tags: ['job', 'instance', 'pod', 'namespace']
+          mappedTags:
+            - key: 'service.name'
+              value: 'service'
+            - key: 'service.namespace' 
+              value: 'namespace'
+          mapTagNamesEnabled: false
+          spanStartTimeShift: '1h'
+          spanEndTimeShift: '1h'
+        # Enable service map
+        serviceMap:
+          datasourceUid: prometheus
+        # Enable node graph
+        nodeGraph:
+          enabled: true
+        # Search configuration
+        search:
+          hide: false
+        # Loki search
+        lokiSearch:
+          datasourceUid: loki
+
+  # Sidecar configuration for automatic dashboard/datasource discovery
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+      label: grafana_dashboard
+      labelValue: "1"
+      folder: /tmp/dashboards
+      provider:
+        foldersFromFilesStructure: true
+    datasources:
+      enabled: true
+      searchNamespace: ALL
+      label: grafana_datasource
+      labelValue: "1"
+      # IMPORTANT: Don't mark any additional datasource as default
+      # The Prometheus datasource from the chart is already default
+      defaultDatasourceEnabled: true
+
+# Prometheus Configuration
+prometheus:
+  enabled: true
+  prometheusSpec:
+    retention: 15d
+    retentionSize: 20GB
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      fsGroup: 2000
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 30Gi
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
+    podMonitorNamespaceSelector: {}
+    ruleNamespaceSelector: {}
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+
+# Prometheus Operator
+prometheusOperator:
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+
+# Node Exporter
+nodeExporter:
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 100Mi
+    requests:
+      cpu: 100m
+      memory: 50Mi
+
+# Kube State Metrics  
+kubeStateMetrics:
+  enabled: true
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+
+# Default monitoring rules
+defaultRules:
+  create: true
+  rules:
+    alertmanager: false
+    etcd: true
+    configReloaders: true
+    general: true
+    k8s: true
+    kubeApiserverAvailability: true
+    kubeApiserverBurnrate: true
+    kubeApiserverHistogram: true
+    kubeApiserverSlos: true
+    kubelet: true
+    kubeProxy: true
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
+
+# Cleanup settings
+cleanPrometheusOperatorObjectNames: true

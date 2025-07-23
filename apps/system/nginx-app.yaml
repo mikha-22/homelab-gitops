@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nginx-static
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "15"
+spec:
+  project: default
+  sources:
+    # Source 1: Bitnami NGINX Helm chart (using stable HTTP repo)
+    - repoURL: https://charts.bitnami.com/bitnami
+      targetRevision: 21.0.6
+      chart: nginx
+      helm:
+        releaseName: nginx-static
+        valueFiles:
+          - $values/apps/nginx/values.yaml
+    # Source 2: Your Git repository with values
+    - repoURL: https://github.com/mikha-22/homelab-gitops
+      targetRevision: HEAD
+      ref: values
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nginx
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 5m
+
+  # Ignore differences in replica count during autoscaling
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

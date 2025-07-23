@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: minio
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: default
+  sources:
+    # Source 1: The official MinIO community Helm chart
+    - repoURL: https://charts.min.io/
+      targetRevision: 5.4.0
+      chart: minio
+      helm:
+        releaseName: minio
+        valueFiles:
+          # This tells Helm to get its values from the 'values' source below
+          - $values/apps/minio/values.yaml
+    # Source 2: Your Git repository with values
+    - repoURL: https://github.com/mikha-22/homelab-gitops
+      targetRevision: HEAD
+      ref: values
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: minio
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 5m
+
+  # Ignore differences in replica count during autoscaling
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

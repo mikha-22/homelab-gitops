@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: monitoring
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  description: "Homelab LGTM Stack - Loki, Grafana, Tempo, ProMetheus"
+  
+  # Source repositories
+  sourceRepos:
+    - 'https://github.com/mikha-22/homelab-gitops'
+    - 'https://prometheus-community.github.io/helm-charts'
+    - 'https://grafana.github.io/helm-charts'
+  
+  # Deployment destinations - ADD kube-system for Prometheus components
+  destinations:
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+    - namespace: kube-system  # ADD THIS - Prometheus needs to create services here
+      server: https://kubernetes.default.svc
+  
+  # Cluster resource permissions
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+    - group: policy
+      kind: PodSecurityPolicy
+    - group: security.openshift.io
+      kind: SecurityContextConstraints
+  
+  # Namespace resource permissions
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  
+  # RBAC configuration
+  roles:
+    - name: monitoring-admin
+      description: Full access to LGTM monitoring resources
+      policies:
+        - p, proj:monitoring:monitoring-admin, applications, *, monitoring/*, allow
+        - p, proj:monitoring:monitoring-admin, repositories, *, *, allow
+      groups:
+        - homelab:monitoring-admins

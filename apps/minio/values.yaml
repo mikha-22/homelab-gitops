@@ -1,0 +1,138 @@
+# apps/minio/values.yaml - UPDATED TO USE EXTERNAL SECRETS
+# MinIO Community Chart Configuration
+# Credentials managed by External Secrets Operator
+
+## Set default image, imageTag, and imagePullPolicy
+image:
+  repository: quay.io/minio/minio
+  tag: RELEASE.2025-06-13T11-33-47Z
+  pullPolicy: IfNotPresent
+
+## MinIO client image for bucket creation
+mcImage:
+  repository: quay.io/minio/mc
+  tag: RELEASE.2025-05-21T01-59-54Z
+  pullPolicy: IfNotPresent
+
+## MinIO mode - standalone for homelab
+mode: standalone
+
+## REMOVED: Root credentials (now managed by External Secrets)
+# rootUser and rootPassword are now provided by the minio-secret
+
+## Use existing secret created by External Secrets
+existingSecret: minio-secret
+
+## Additional environment variables
+environment:
+  MINIO_BROWSER_REDIRECT_URL: "https://minio.milenika.dev"
+  MINIO_SERVER_URL: "https://minio-api.milenika.dev"
+
+## Persistence configuration
+persistence:
+  enabled: true
+  storageClass: local-path
+  accessMode: ReadWriteOnce
+  size: 20Gi
+
+## Service for MinIO API
+service:
+  type: ClusterIP
+  port: 9000
+
+## Service for MinIO Console (Web UI)
+consoleService:
+  type: ClusterIP
+  port: 9001
+
+## Ingress for MinIO API (S3 API)
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  annotations:
+    "external-dns.alpha.kubernetes.io/target": "52e6c172-8b5e-4167-b68f-20dd50299c3c.cfargotunnel.com"
+    "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+  path: /
+  hosts:
+    - minio-api.milenika.dev
+  tls:
+    - secretName: minio-api-tls
+      hosts:
+        - minio-api.milenika.dev
+
+## Ingress for MinIO Console (Web UI)
+consoleIngress:
+  enabled: true
+  ingressClassName: traefik
+  annotations:
+    "external-dns.alpha.kubernetes.io/target": "52e6c172-8b5e-4167-b68f-20dd50299c3c.cfargotunnel.com"
+    "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+    "traefik.ingress.kubernetes.io/router.middlewares": "monitoring-security-headers@kubernetescrd"
+  path: /
+  hosts:
+    - minio.milenika.dev
+  tls:
+    - secretName: minio-console-tls
+      hosts:
+        - minio.milenika.dev
+
+## Auto-create buckets for Hugo static hosting
+buckets:
+  - name: hugo-static
+    policy: download  # Public read access for static hosting
+    purge: false
+    versioning: false
+
+## Users for GitHub Actions - CREDENTIALS FROM EXTERNAL SECRETS
+users:
+  - accessKey: hugo-access
+    existingSecret: minio-secret
+    existingSecretKey: hugo-secret-key
+
+## Resource limits for homelab
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 250m
+  limits:
+    memory: 1Gi
+    cpu: 500m
+
+## Security contexts
+securityContext:
+  enabled: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+## Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+## Metrics for Prometheus monitoring
+metrics:
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      release: prometheus-stack
+    interval: 30s
+    scrapeTimeout: 10s
+
+## Pod annotations for monitoring
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9000"
+  prometheus.io/path: "/minio/v2/metrics/cluster"
+
+## Service account
+serviceAccount:
+  create: true
+
+## Additional labels
+additionalLabels:
+  app.kubernetes.io/part-of: homelab-gitops
+  environment: homelab
+  component: object-storage

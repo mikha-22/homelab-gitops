@@ -1,0 +1,195 @@
+# Tempo Configuration - Chart Version 1.23.2
+# Minimal configuration for single binary deployment
+
+# Global configuration
+global:
+  image:
+    tag: "2.8.0"
+
+# Tempo configuration
+tempo:
+  repository: grafana/tempo
+  pullPolicy: IfNotPresent
+  
+  # Resource management
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  
+  # Tempo configuration for single binary
+  config: |
+    multitenancy_enabled: false
+    usage_report:
+      reporting_enabled: false
+    compactor:
+      compaction:
+        block_retention: 1h
+    distributor:
+      receivers:
+        jaeger:
+          protocols:
+            thrift_http:
+              endpoint: 0.0.0.0:14268
+            grpc:
+              endpoint: 0.0.0.0:14250
+            thrift_binary:
+              endpoint: 0.0.0.0:6832
+            thrift_compact:
+              endpoint: 0.0.0.0:6831
+        zipkin:
+          endpoint: 0.0.0.0:9411
+        otlp:
+          protocols:
+            http:
+              endpoint: 0.0.0.0:4318
+            grpc:
+              endpoint: 0.0.0.0:4317
+        opencensus:
+          endpoint: 0.0.0.0:55678
+    ingester:
+      max_block_duration: 5m
+    server:
+      http_listen_port: 3200
+      log_level: info
+    storage:
+      trace:
+        backend: local
+        wal:
+          path: /var/tempo/wal
+        local:
+          path: /var/tempo/blocks
+        pool:
+          max_workers: 100
+          queue_depth: 10000
+    querier:
+      frontend_worker:
+        frontend_address: tempo-query-frontend:9095
+    query_frontend:
+      search:
+        duration_slo: 5s
+        throughput_bytes_slo: 1.073741824e+09
+      trace_by_id:
+        duration_slo: 5s
+    overrides:
+      defaults:
+        metrics_generator:
+          processors: []
+
+# Persistence configuration
+persistence:
+  enabled: true
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 10Gi
+
+# Service configuration
+service:
+  type: ClusterIP
+  ports:
+    - name: tempo-prom-metrics
+      port: 3200
+      targetPort: 3200
+    - name: tempo-jaeger-thrift-http
+      port: 14268
+      targetPort: 14268
+    - name: tempo-jaeger-grpc
+      port: 14250
+      targetPort: 14250
+    - name: tempo-jaeger-thrift-binary
+      port: 6832
+      targetPort: 6832
+      protocol: UDP
+    - name: tempo-jaeger-thrift-compact
+      port: 6831
+      targetPort: 6831
+      protocol: UDP
+    - name: tempo-zipkin
+      port: 9411
+      targetPort: 9411
+    - name: tempo-otlp-legacy
+      port: 55680
+      targetPort: 55680
+    - name: tempo-otlp-http
+      port: 4318
+      targetPort: 4318
+    - name: tempo-otlp-grpc
+      port: 4317
+      targetPort: 4317
+    - name: tempo-opencensus
+      port: 55678
+      targetPort: 55678
+
+# ServiceMonitor for Prometheus integration
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  additionalLabels: {}
+  annotations: {}
+
+# Ingress configuration for external access - CORRECTED TO MATCH HOMER
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  hosts:
+    - host: tempo.milenika.dev
+      paths:
+        - path: /
+          pathType: Prefix
+  annotations:
+    "kubernetes.io/ingress.class": "traefik"
+    "external-dns.alpha.kubernetes.io/target": "52e6c172-8b5e-4167-b68f-20dd50299c3c.cfargotunnel.com"
+    "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+    "traefik.ingress.kubernetes.io/router.middlewares": "monitoring-security-headers@kubernetescrd"
+    # "traefik.ingress.kubernetes.io/router.tls": "true" <-- REMOVED
+  # ADDED: Explicit TLS configuration to match Homer
+  tls:
+    - secretName: tempo-tls
+      hosts:
+        - tempo.milenika.dev
+
+# Extra volumes for temporary storage
+extraVolumes:
+  - name: tmp
+    emptyDir: {}
+
+extraVolumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+# Basic settings
+nodeSelector: {}
+tolerations: []
+affinity: {}
+replicas: 1
+
+# Update strategy
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+
+# Health check probes
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 3200
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+livenessProbe:
+  httpGet:
+    path: /ready
+    port: 3200
+  initialDelaySeconds: 30
+  periodSeconds: 15
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3200"
+  prometheus.io/path: "/metrics"

@@ -1,0 +1,44 @@
+# apps/system/prometheus-app.yaml (FIXED)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-stack
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: monitoring
+  sources:
+    # Source 1: Prometheus Community Helm chart
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      targetRevision: 75.9.0
+      chart: kube-prometheus-stack
+      helm:
+        releaseName: prometheus-stack
+        valueFiles:
+          - $values/apps/monitoring/prometheus-stack-values.yaml
+    # Source 2: Git repository with values
+    - repoURL: https://github.com/mikha-22/homelab-gitops
+      targetRevision: HEAD
+      ref: values
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - Validate=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 5m
