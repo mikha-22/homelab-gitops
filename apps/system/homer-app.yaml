@@ -75,8 +75,7 @@ spec:
                 logo: "logo.png"
                 
                 header: true
-                footer: '<p>Built with <span class="has-text-danger">❤️</span> using <a href="https://bulma.io/">bulma</a>, <a href="https://vuejs.org/">vuejs</a> & <a href="https://fontawesome.com/">font awesome</a></p>'
-                
+                                
                 theme: default
                 colors:
                   light:
@@ -154,7 +153,7 @@ spec:
                         tag: "kubernetes"
                         url: "https://github.com/mikha-22/homelab-gitops"
                         target: "_blank"
-                      - name: "Infrastructure as Code"
+                      - name: "IaC Repository"
                         logo: "https://github.com/fluidicon.png"
                         subtitle: "Terraform & Automation"
                         tag: "terraform"
