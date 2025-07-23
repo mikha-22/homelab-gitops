@@ -43,3 +43,16 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 5m
+
+  # ADD THIS: Ignore differences in StatefulSet volumeClaimTemplates
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /spec/volumeClaimTemplates/0/metadata/creationTimestamp
+        - /spec/volumeClaimTemplates/0/status
+    - group: apps
+      kind: StatefulSet
+      jqPathExpressions:
+        - '.spec.volumeClaimTemplates[]?.metadata.creationTimestamp'
+        - '.spec.volumeClaimTemplates[]?.status'
