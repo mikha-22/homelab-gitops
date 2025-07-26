@@ -137,7 +137,7 @@ spec:
                         tag: "gitops"
                         url: "https://argocd.milenika.dev"
                         target: "_blank"
-                      - name: "Hugo Site" # ADDED THIS SERVICE
+                      - name: "Hugo Site"
                         logo: "https://gohugo.io/img/hugo-logo-wide.svg"
                         subtitle: "Personal blog"
                         tag: "website"
@@ -165,7 +165,7 @@ spec:
                         tag: "terraform"
                         url: "https://github.com/mikha-22/homelab-iac"
                         target: "_blank"
-                      - name: "Hugo Site Repository" # ADDED THIS REPO
+                      - name: "Hugo Site Repository"
                         logo: "https://github.com/fluidicon.png"
                         subtitle: "Hugo source code and CI/CD"
                         tag: "hugo"
