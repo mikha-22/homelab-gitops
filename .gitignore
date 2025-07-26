@@ -56,3 +56,6 @@ dev-values.yaml
 
 # ArgoCD generated files
 .argocd-source-*
+
+# Ansible sensitive files
+*/inventory.yml
