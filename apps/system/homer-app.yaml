@@ -138,7 +138,7 @@ spec:
                         url: "https://argocd.milenika.dev"
                         target: "_blank"
                       - name: "Hugo Site"
-                        logo: "https://gohugo.io/img/hugo-logo-wide.svg"
+                        logo: "https://gohugo.io/images/hugo-logo-wide.svg" # UPDATED URL
                         subtitle: "Personal blog"
                         tag: "website"
                         url: "https://hugo.milenika.dev"
