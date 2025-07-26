@@ -137,6 +137,12 @@ spec:
                         tag: "gitops"
                         url: "https://argocd.milenika.dev"
                         target: "_blank"
+                      - name: "Hugo Site" # ADDED THIS SERVICE
+                        logo: "https://gohugo.io/img/hugo-logo-wide.svg"
+                        subtitle: "Personal blog"
+                        tag: "website"
+                        url: "https://hugo.milenika.dev"
+                        target: "_blank"
                       - name: "Homer Dashboard"
                         logo: "https://github.com/bastienwirtz/homer/raw/main/public/logo.png"
                         subtitle: "This Homepage"
@@ -159,17 +165,23 @@ spec:
                         tag: "terraform"
                         url: "https://github.com/mikha-22/homelab-iac"
                         target: "_blank"
-                
+                      - name: "Hugo Site Repository" # ADDED THIS REPO
+                        logo: "https://github.com/fluidicon.png"
+                        subtitle: "Hugo source code and CI/CD"
+                        tag: "hugo"
+                        url: "https://github.com/mikha-22/hugo-site"
+                        target: "_blank"
+
                 message:
                   style: "is-dark"
                   title: "Welcome to Mikha's Homelab!"
                   icon: "fa fa-grin"
                   content: "This dashboard provides quick access to all your homelab services. Your LGTM observability stack is fully operational with Loki (logs), Grafana (visualization), Tempo (traces), and Prometheus (metrics)."
-    
+
   destination:
     server: https://kubernetes.default.svc
     namespace: homer
-    
+  
   syncPolicy:
     automated:
       prune: true
