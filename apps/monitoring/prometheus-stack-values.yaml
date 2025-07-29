@@ -1,7 +1,7 @@
 # Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
 # Chart Version: 75.9.0
 # WITH INGRESS AND ANONYMOUS GRAFANA ACCESS ENABLED
-# FIXED: additionalDataSources (uppercase S) and proper service URLs
+# IMPROVED: Added pod cleanup and failure prevention configurations
 
 # Global settings
 global:
@@ -16,7 +16,7 @@ crds:
 alertmanager:
   enabled: false
 
-# Grafana Configuration - WITH ANONYMOUS ACCESS AND CORRECTED LGTM DATASOURCES
+# Grafana Configuration - IMPROVED WITH BETTER FAILURE HANDLING
 grafana:
   enabled: true
   
@@ -28,6 +28,16 @@ grafana:
     existingSecret: grafana-admin-secret
     userKey: admin-user
     passwordKey: admin-password
+    
+  # IMPROVEMENT 1: Fix deployment strategy for RWO volumes
+  deploymentStrategy:
+    type: Recreate  # Prevents multiple pods from trying to mount RWO volume
+    
+  # IMPROVEMENT 2: Add pod disruption budget
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 0  # Allow complete shutdown if needed during node drain
+  
   # DISABLE the problematic init container
   initChownData:
     enabled: false
@@ -41,7 +51,7 @@ grafana:
     accessModes:
       - ReadWriteOnce
   
-  # Resource management
+  # IMPROVEMENT 3: Better resource management
   resources:
     limits:
       cpu: 500m
@@ -55,6 +65,25 @@ grafana:
     runAsNonRoot: true
     runAsUser: 472
     fsGroup: 472
+    
+  # IMPROVEMENT 4: Faster failure detection and recovery
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: 3000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3  # Kill pod after 3 failures (30 seconds)
+    
+  readinessProbe:
+    httpGet:
+      path: /api/health
+      port: 3000
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3  # Mark unready after 3 failures (15 seconds)
   
   # CORRECTED INGRESS CONFIGURATION
   ingress:
