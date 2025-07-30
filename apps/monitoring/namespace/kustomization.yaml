@@ -10,3 +10,4 @@ labels:
     pairs:
       app.kubernetes.io/part-of: homelab-gitops
       environment: homelab
+  - ../manifests/loki-servicemonitor.yaml
