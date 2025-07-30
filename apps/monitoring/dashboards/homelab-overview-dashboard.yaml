@@ -72,7 +72,7 @@ data:
                       "text": "DOWN"
                     },
                     "1": {
-                      "color": "green", 
+                      "color": "green",
                       "index": 1,
                       "text": "UP"
                     }
@@ -172,7 +172,10 @@ data:
                   "__name__": true,
                   "instance": true
                 },
-                "indexByName": {},
+                "indexByName": {
+                  "Status": 0,
+                  "Service": 1
+                },
                 "renameByName": {
                   "job": "Service",
                   "Value": "Status"
@@ -290,12 +293,17 @@ data:
             "legend": {
               "displayMode": "table",
               "placement": "right",
-              "values": ["value", "percent"]
+              "values": [
+                "value",
+                "percent"
+              ]
             },
             "pieType": "pie",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "tooltip": {
@@ -387,7 +395,9 @@ data:
           "id": 3,
           "options": {
             "legend": {
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "displayMode": "table",
               "placement": "bottom"
             },
@@ -477,7 +487,9 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "textMode": "value_and_name"
@@ -554,7 +566,9 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "textMode": "value_and_name"
@@ -566,7 +580,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "vector(1)",
+              "expr": "up{job=~\"loki.*\"}",
               "refId": "A"
             }
           ],
@@ -631,7 +645,9 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "textMode": "value_and_name"
@@ -643,7 +659,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "vector(1)",
+              "expr": "up{job=~\"tempo.*\"}",
               "refId": "A"
             }
           ],
@@ -708,7 +724,9 @@ data:
             "orientation": "auto",
             "reduceOptions": {
               "values": false,
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "fields": ""
             },
             "textMode": "value_and_name"
@@ -788,7 +806,9 @@ data:
           "id": 8,
           "options": {
             "legend": {
-              "calcs": ["sum"],
+              "calcs": [
+                "sum"
+              ],
               "displayMode": "table",
               "placement": "bottom"
             },
@@ -872,7 +892,9 @@ data:
           "id": 9,
           "options": {
             "legend": {
-              "calcs": ["lastNotNull"],
+              "calcs": [
+                "lastNotNull"
+              ],
               "displayMode": "table",
               "placement": "bottom"
             },
@@ -908,7 +930,11 @@ data:
       "refresh": "30s",
       "schemaVersion": 38,
       "style": "dark",
-      "tags": ["homelab", "overview", "lgtm"],
+      "tags": [
+        "homelab",
+        "overview",
+        "lgtm"
+      ],
       "templating": {
         "list": []
       },
@@ -918,8 +944,8 @@ data:
       },
       "timepicker": {},
       "timezone": "Asia/Jakarta",
-      "title": "Homelab Overview - LGTM Stack",
+      "title": "Milenika's Homelab - LGTM Stack",
       "uid": "homelab-overview",
-      "version": 1,
+      "version": 2,
       "weekStart": ""
     }

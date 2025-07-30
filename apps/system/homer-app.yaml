@@ -117,15 +117,15 @@ spec:
                         target: "_blank"
                       - name: "Prometheus"
                         logo: "https://raw.githubusercontent.com/prometheus/prometheus/main/documentation/images/prometheus-logo.svg"
-                        subtitle: "Metrics Collection & Alerting, Available to view in Grafana"
+                        subtitle: "View in Grafana, Metrics & Alerting"
                         tag: "metrics"
                       - name: "Loki"
                         logo: "https://grafana.com/static/img/logos/logo-loki.svg"
-                        subtitle: "Log Aggregation, Available to view in Grafana"
+                        subtitle: "View in Grafana, Log Aggregation"
                         tag: "logs"
                       - name: "Tempo"
                         logo: "https://grafana.com/static/assets/img/blog/tempo.png"
-                        subtitle: "Distributed Tracing, Available to view in Grafana"
+                        subtitle: "View in Grafana, Tracing"
                         tag: "traces"
                         class: "unclickable" # Added a class to target with CSS
                         # This item is unclickable because it does not have a "url" property.
