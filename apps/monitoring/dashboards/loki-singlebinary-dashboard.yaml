@@ -104,7 +104,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "prometheus"
               },
               "expr": "sum(rate(loki_distributor_lines_received_total{job=\"loki\"}[1m]))",
               "refId": "A"
@@ -171,7 +171,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "prometheus"
               },
               "expr": "sum(rate(loki_distributor_bytes_received_total{job=\"loki\"}[1m]))",
               "refId": "A"
@@ -183,7 +183,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -238,7 +238,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "prometheus"
               },
               "expr": "sum(rate(loki_ingester_client_request_duration_seconds_count{job=\"loki\", operation=~\"/logproto.Querier/.*\"}[1m]))",
               "refId": "A"
@@ -250,7 +250,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -305,7 +305,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "prometheus"
               },
               "expr": "sum(loki_ingester_memory_streams{job=\"loki\"})",
               "refId": "A"
@@ -317,7 +317,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -392,7 +392,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "prometheus"
               },
               "expr": "sum by (namespace) (rate(loki_distributor_lines_received_total{job=\"loki\"}[5m]))",
               "legendFormat": "{{namespace}}",
@@ -405,7 +405,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -480,7 +480,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "prometheus"
               },
               "expr": "histogram_quantile(0.50, sum(rate(loki_ingester_client_request_duration_seconds_bucket{job=\"loki\", operation=~\"/logproto.Querier/.*\"}[5m])) by (le))",
               "legendFormat": "p50",
@@ -489,7 +489,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "prometheus"
               },
               "expr": "histogram_quantile(0.95, sum(rate(loki_ingester_client_request_duration_seconds_bucket{job=\"loki\", operation=~\"/logproto.Querier/.*\"}[5m])) by (le))",
               "legendFormat": "p95",
@@ -498,7 +498,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "prometheus"
               },
               "expr": "histogram_quantile(0.99, sum(rate(loki_ingester_client_request_duration_seconds_bucket{job=\"loki\", operation=~\"/logproto.Querier/.*\"}[5m])) by (le))",
               "legendFormat": "p99",
@@ -524,7 +524,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -590,7 +590,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "prometheus"
               },
               "expr": "sum(rate(container_cpu_usage_seconds_total{pod=~\"loki-.*\",container!=\"POD\",container!=\"\"}[5m])) by (pod)",
               "legendFormat": "{{pod}}",
@@ -603,7 +603,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "fieldConfig": {
             "defaults": {
@@ -669,7 +669,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "prometheus"
               },
               "expr": "sum(container_memory_working_set_bytes{pod=~\"loki-.*\",container!=\"POD\",container!=\"\"}) by (pod)",
               "legendFormat": "{{pod}}",
