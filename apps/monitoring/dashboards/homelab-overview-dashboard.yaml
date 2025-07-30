@@ -168,7 +168,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "up{job=~\"prometheus-stack-kube-prom-prometheus|prometheus-stack-grafana|loki|tempo.*\"}",
+              "expr": "up{job=~\"prometheus-stack-kube-prom-prometheus|prometheus-stack-grafana|loki|tempo.*|promtail-metrics|minio|nginx-static\"}",
               "format": "table",
               "instant": true,
               "refId": "A"
