@@ -55,11 +55,6 @@ ingress:
   path: /
   hosts:
     - minio-api.milenika.dev
-  tls:
-    - secretName: minio-api-tls
-      hosts:
-        - minio-api.milenika.dev
-
 ## Ingress for MinIO Console (Web UI)
 consoleIngress:
   enabled: true
