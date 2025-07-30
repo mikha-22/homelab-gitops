@@ -1,6 +1,7 @@
 # Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
 # Chart Version: 75.9.0
-# FIXED: Added dashboard provider configuration
+# UPDATED: Latest 2025-compatible dashboards for current software versions
+# Loki 3.5.0, Tempo 2.8, July 30, 2025
 
 # Global settings
 global:
@@ -15,7 +16,7 @@ crds:
 alertmanager:
   enabled: false
 
-# Grafana Configuration - FIXED WITH DASHBOARD PROVIDER
+# Grafana Configuration with LATEST 2025 DASHBOARDS
 grafana:
   enabled: true
   
@@ -125,64 +126,74 @@ grafana:
     panels:
       disable_sanitize_html: false
 
-  # FIXED: Dashboard configuration with proper provider
+  # UPDATED: Latest 2025-compatible dashboards
   dashboards:
     default:
-      # LGTM Stack Dashboards
-      loki-operational:
-        gnetId: 13407
+      # LGTM Stack - Latest Compatible Versions
+      loki-dashboard:
+        gnetId: 13186
         revision: 1
-        datasource: Prometheus
+        datasource: 
+          - name: "DS_PROMETHEUS"
+            value: "Prometheus"
+          - name: "DS_LOKI"
+            value: "Loki"
         
-      loki-logs:
-        gnetId: 12019
+      loki-stack-monitoring:
+        gnetId: 14055
         revision: 1
-        datasource: Loki
+        datasource:
+          - name: "DS_PROMETHEUS"
+            value: "Prometheus"
+          - name: "DS_LOKI"
+            value: "Loki"
         
-      tempo-operational:
-        gnetId: 16958
+      logging-dashboard-v2:
+        gnetId: 18042
         revision: 1
-        datasource: Prometheus
+        datasource:
+          - name: "DS_LOKI"
+            value: "Loki"
         
       # Enhanced Kubernetes Monitoring
       kubernetes-cluster-monitoring:
         gnetId: 7249
         revision: 1
-        datasource: Prometheus
+        datasource: "Prometheus"
         
       kubernetes-deployment:
         gnetId: 8588
         revision: 1
-        datasource: Prometheus
+        datasource: "Prometheus"
+        
+      kubernetes-pods:
+        gnetId: 6417
+        revision: 1
+        datasource: "Prometheus"
         
       # Enhanced Node Monitoring  
       node-exporter-full:
         gnetId: 1860
         revision: 31
-        datasource: Prometheus
+        datasource: "Prometheus"
         
       node-exporter-server-metrics:
         gnetId: 405
         revision: 8
-        datasource: Prometheus
+        datasource: "Prometheus"
         
-      # NGINX & Infrastructure
+      # Infrastructure Monitoring
       nginx-ingress-controller:
         gnetId: 9614
         revision: 1
-        datasource: Prometheus
-        
-      kubernetes-pods:
-        gnetId: 6417
-        revision: 1
-        datasource: Prometheus
+        datasource: "Prometheus"
         
       minio-dashboard:
         gnetId: 13502
         revision: 10
-        datasource: Prometheus
+        datasource: "Prometheus"
 
-  # CRITICAL FIX: Add dashboard providers configuration
+  # Dashboard providers configuration
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
