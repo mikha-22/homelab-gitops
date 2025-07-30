@@ -30,6 +30,7 @@ grafana:
     passwordKey: admin-password
     
   # IMPROVEMENT 1: Fix deployment strategy for RWO volumes
+  # Note: When using Recreate, do NOT specify rollingUpdate parameters
   deploymentStrategy:
     type: Recreate  # Prevents multiple pods from trying to mount RWO volume
     

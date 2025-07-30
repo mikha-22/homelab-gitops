@@ -162,7 +162,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "🏠 Mikha's Homelab - LGTM Observability Stack Status",
+          "title": "Milenika's Homelab - LGTM Observability Stack Status",
           "transformations": [
             {
               "id": "organize",
@@ -313,7 +313,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "📦 Pods by Namespace",
+          "title": "Pods by Namespace",
           "type": "piechart"
         },
         {
@@ -416,7 +416,7 @@ data:
               "refId": "B"
             }
           ],
-          "title": "🖥️ System Resources",
+          "title": "System Resources",
           "type": "timeseries"
         },
         {
@@ -493,7 +493,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "📊 Prometheus",
+          "title": "Prometheus",
           "type": "stat"
         },
         {
@@ -570,7 +570,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "📝 Loki",
+          "title": "Loki",
           "type": "stat"
         },
         {
@@ -647,7 +647,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "🔍 Tempo",
+          "title": "Tempo",
           "type": "stat"
         },
         {
@@ -724,7 +724,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "📈 Grafana",
+          "title": "Grafana",
           "type": "stat"
         },
         {
@@ -808,7 +808,7 @@ data:
               "refId": "A"
             }
           ],
-          "title": "📋 Log Ingestion Rate (Promtail)",
+          "title": "Log Ingestion Rate (Promtail)",
           "type": "timeseries"
         },
         {
@@ -901,7 +901,7 @@ data:
               "refId": "B"
             }
           ],
-          "title": "🌐 Network Traffic",
+          "title": "Network Traffic",
           "type": "timeseries"
         }
       ],
@@ -918,7 +918,7 @@ data:
       },
       "timepicker": {},
       "timezone": "Asia/Jakarta",
-      "title": "🏠 Homelab Overview - LGTM Stack",
+      "title": "Homelab Overview - LGTM Stack",
       "uid": "homelab-overview",
       "version": 1,
       "weekStart": ""
