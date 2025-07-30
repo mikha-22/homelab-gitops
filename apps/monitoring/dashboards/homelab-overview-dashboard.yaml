@@ -49,9 +49,93 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 10
+                  },
+                  {
+                    "color": "red",
+                    "value": 50
+                  }
+                ]
+              },
+              "unit": "Qps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 18,
+            "y": 28
+          },
+          "id": 13,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "sum(rate(loki_query_frontend_queries_total[1m]))",
+              "refId": "A"
+            }
+          ],
+          "title": "Loki Query Rate",
+          "type": "stat"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": [
+        "homelab",
+        "overview",
+        "lgtm"
+      ],
+      "templating": {
+        "list": []
+      },
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "timepicker": {},
+      "timezone": "Asia/Jakarta",
+      "title": "Milenika's Homelab - LGTM Stack",
+      "uid": "homelab-overview",
+      "version": 2,
+      "weekStart": ""
+    }": {
             "defaults": {
               "color": {
                 "mode": "thresholds"
@@ -99,7 +183,7 @@ data:
                 "properties": [
                   {
                     "id": "custom.width",
-                    "value": 200
+                    "value": 300
                   }
                 ]
               },
@@ -118,51 +202,53 @@ data:
                     "value": {
                       "type": "color-background"
                     }
-                  },
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Namespace"
+                },
+                "properties": [
                   {
-                    "id": "thresholds",
-                    "value": {
-                      "mode": "absolute",
-                      "steps": [
-                        {
-                          "color": "red",
-                          "value": null
-                        },
-                        {
-                          "color": "green",
-                          "value": 1
-                        }
-                      ]
-                    }
+                    "id": "custom.width",
+                    "value": 150
                   }
                 ]
               }
             ]
           },
           "gridPos": {
-            "h": 6,
+            "h": 8,
             "w": 24,
             "x": 0,
             "y": 0
           },
           "id": 1,
           "options": {
-            "showHeader": true
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": false,
+                "displayName": "Status"
+              }
+            ]
           },
-          "pluginVersion": "10.0.0",
+          "pluginVersion": "10.4.1",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "up{job=~\"prometheus-stack-kube-prom-prometheus|prometheus-stack-grafana|loki.*|tempo.*\"}",
+              "expr": "up{job=~\"prometheus-stack-kube-prom-prometheus|prometheus-stack-grafana|loki.*|tempo.*|minio.*|nginx.*\"}",
               "format": "table",
               "instant": true,
               "refId": "A"
             }
           ],
-          "title": "Milenika's Homelab - LGTM Observability Stack Status",
+          "title": "Milenika's Homelab - Service Status",
           "transformations": [
             {
               "id": "organize",
@@ -173,12 +259,14 @@ data:
                   "instance": true
                 },
                 "indexByName": {
-                  "Status": 0,
-                  "Service": 1
+                  "Value": 0,
+                  "job": 1,
+                  "namespace": 2
                 },
                 "renameByName": {
                   "job": "Service",
-                  "Value": "Status"
+                  "Value": "Status",
+                  "namespace": "Namespace"
                 }
               }
             }
@@ -188,7 +276,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -204,89 +292,13 @@ data:
               },
               "mappings": []
             },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "{namespace=\"monitoring\"}"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "mode": "fixed",
-                      "fixedColor": "blue"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "{namespace=\"argocd\"}"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "mode": "fixed",
-                      "fixedColor": "green"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "{namespace=\"cloudflared\"}"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "mode": "fixed",
-                      "fixedColor": "orange"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "{namespace=\"external-dns\"}"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "mode": "fixed",
-                      "fixedColor": "purple"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "{namespace=\"homer\"}"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "mode": "fixed",
-                      "fixedColor": "yellow"
-                    }
-                  }
-                ]
-              }
-            ]
+            "overrides": []
           },
           "gridPos": {
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 6
+            "y": 8
           },
           "id": 2,
           "options": {
@@ -315,9 +327,9 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "sum by (namespace) (kube_pod_info{namespace!~\"kube-.*\"})",
+              "expr": "sum by (namespace) (kube_pod_info{namespace!~\"kube-.*|default\"})",
               "refId": "A"
             }
           ],
@@ -327,7 +339,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -390,13 +402,14 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 6
+            "y": 8
           },
           "id": 3,
           "options": {
             "legend": {
               "calcs": [
-                "lastNotNull"
+                "lastNotNull",
+                "max"
               ],
               "displayMode": "table",
               "placement": "bottom"
@@ -410,20 +423,29 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "100 - (avg(irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+              "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
               "legendFormat": "CPU Usage",
               "refId": "A"
             },
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
               "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
               "legendFormat": "Memory Usage",
               "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "100 - ((node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"}) * 100)",
+              "legendFormat": "Disk Usage (/)",
+              "refId": "C"
             }
           ],
           "title": "System Resources",
@@ -432,7 +454,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -477,7 +499,7 @@ data:
             "h": 4,
             "w": 6,
             "x": 0,
-            "y": 14
+            "y": 16
           },
           "id": 4,
           "options": {
@@ -494,12 +516,12 @@ data:
             },
             "textMode": "value_and_name"
           },
-          "pluginVersion": "10.0.0",
+          "pluginVersion": "10.4.1",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
               "expr": "up{job=\"prometheus-stack-kube-prom-prometheus\"}",
               "refId": "A"
@@ -511,7 +533,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -556,7 +578,7 @@ data:
             "h": 4,
             "w": 6,
             "x": 6,
-            "y": 14
+            "y": 16
           },
           "id": 5,
           "options": {
@@ -573,12 +595,12 @@ data:
             },
             "textMode": "value_and_name"
           },
-          "pluginVersion": "10.0.0",
+          "pluginVersion": "10.4.1",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
               "expr": "up{job=~\"loki.*\"}",
               "refId": "A"
@@ -590,7 +612,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -635,7 +657,7 @@ data:
             "h": 4,
             "w": 6,
             "x": 12,
-            "y": 14
+            "y": 16
           },
           "id": 6,
           "options": {
@@ -652,12 +674,12 @@ data:
             },
             "textMode": "value_and_name"
           },
-          "pluginVersion": "10.0.0",
+          "pluginVersion": "10.4.1",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
               "expr": "up{job=~\"tempo.*\"}",
               "refId": "A"
@@ -669,7 +691,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -714,7 +736,7 @@ data:
             "h": 4,
             "w": 6,
             "x": 18,
-            "y": 14
+            "y": 16
           },
           "id": 7,
           "options": {
@@ -731,12 +753,12 @@ data:
             },
             "textMode": "value_and_name"
           },
-          "pluginVersion": "10.0.0",
+          "pluginVersion": "10.4.1",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
               "expr": "up{job=\"prometheus-stack-grafana\"}",
               "refId": "A"
@@ -748,7 +770,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -760,7 +782,7 @@ data:
                 "axisPlacement": "auto",
                 "barAlignment": 0,
                 "drawStyle": "bars",
-                "fillOpacity": 100,
+                "fillOpacity": 80,
                 "gradientMode": "none",
                 "hideFrom": {
                   "legend": false,
@@ -793,7 +815,7 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "lps"
             },
             "overrides": []
           },
@@ -801,40 +823,41 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 18
+            "y": 20
           },
           "id": 8,
           "options": {
             "legend": {
               "calcs": [
-                "sum"
+                "sum",
+                "lastNotNull"
               ],
               "displayMode": "table",
               "placement": "bottom"
             },
             "tooltip": {
               "mode": "multi",
-              "sort": "none"
+              "sort": "desc"
             }
           },
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "sum by (job) (rate(promtail_read_lines_total[5m]))",
-              "legendFormat": "{{job}} logs/sec",
+              "expr": "sum by (namespace) (rate(loki_distributor_lines_received_total[5m]))",
+              "legendFormat": "{{namespace}}",
               "refId": "A"
             }
           ],
-          "title": "Log Ingestion Rate (Promtail)",
+          "title": "Log Ingestion Rate (Loki)",
           "type": "timeseries"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -887,13 +910,14 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 18
+            "y": 20
           },
           "id": 9,
           "options": {
             "legend": {
               "calcs": [
-                "lastNotNull"
+                "lastNotNull",
+                "max"
               ],
               "displayMode": "table",
               "placement": "bottom"
@@ -907,45 +931,229 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "sum(rate(node_network_receive_bytes_total{device!~\"lo|veth.*\"}[5m]))",
+              "expr": "sum(rate(node_network_receive_bytes_total{device!~\"lo|veth.*|docker.*|cni.*\"}[5m]))",
               "legendFormat": "Network In",
               "refId": "A"
             },
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "sum(rate(node_network_transmit_bytes_total{device!~\"lo|veth.*\"}[5m]))",
+              "expr": "sum(rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|docker.*|cni.*\"}[5m]))",
               "legendFormat": "Network Out",
               "refId": "B"
             }
           ],
           "title": "Network Traffic",
           "type": "timeseries"
-        }
-      ],
-      "refresh": "30s",
-      "schemaVersion": 38,
-      "style": "dark",
-      "tags": [
-        "homelab",
-        "overview",
-        "lgtm"
-      ],
-      "templating": {
-        "list": []
-      },
-      "time": {
-        "from": "now-1h",
-        "to": "now"
-      },
-      "timepicker": {},
-      "timezone": "Asia/Jakarta",
-      "title": "Milenika's Homelab - LGTM Stack",
-      "uid": "homelab-overview",
-      "version": 2,
-      "weekStart": ""
-    }
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1000
+                  },
+                  {
+                    "color": "red",
+                    "value": 5000
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 28
+          },
+          "id": 10,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "prometheus_tsdb_head_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Prometheus Series",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 100
+                  },
+                  {
+                    "color": "red",
+                    "value": 1000
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 28
+          },
+          "id": 11,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "sum(loki_ingester_streams_created_total) - sum(loki_ingester_streams_removed_total)",
+              "refId": "A"
+            }
+          ],
+          "title": "Loki Active Streams",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 0.1
+                  },
+                  {
+                    "color": "red",
+                    "value": 1
+                  }
+                ]
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 12,
+            "y": 28
+          },
+          "id": 12,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "center",
+            "orientation": "auto",
+            "reduceOptions": {
+              "values": false,
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": ""
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "histogram_quantile(0.99, sum(rate(loki_query_frontend_query_duration_seconds_bucket[5m])) by (le))",
+              "refId": "A"
+            }
+          ],
+          "title": "Loki Query Latency (p99)",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "fieldConfig

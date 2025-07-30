@@ -36,29 +36,22 @@ data:
       "liveNow": false,
       "panels": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "collapsed": false,
           "gridPos": {
-            "h": 8,
+            "h": 1,
             "w": 24,
             "x": 0,
             "y": 0
           },
           "id": 10,
-          "options": {
-            "showOutline": false
-          },
-          "pluginVersion": "10.4.1",
-          "targets": [],
+          "panels": [],
           "title": "Ingestion Performance",
           "type": "row"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -72,6 +65,14 @@ data:
                   {
                     "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1000
+                  },
+                  {
+                    "color": "red",
+                    "value": 10000
                   }
                 ]
               },
@@ -83,7 +84,7 @@ data:
             "h": 4,
             "w": 6,
             "x": 0,
-            "y": 8
+            "y": 1
           },
           "id": 4,
           "options": {
@@ -105,9 +106,9 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "sum(rate(loki_distributor_lines_received_total[1m]))",
+              "expr": "sum(rate(loki_distributor_lines_received_total{job=~\"loki.*\"}[1m]))",
               "refId": "A"
             }
           ],
@@ -117,7 +118,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -131,6 +132,14 @@ data:
                   {
                     "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1048576
+                  },
+                  {
+                    "color": "red",
+                    "value": 10485760
                   }
                 ]
               },
@@ -142,7 +151,7 @@ data:
             "h": 4,
             "w": 6,
             "x": 6,
-            "y": 8
+            "y": 1
           },
           "id": 14,
           "options": {
@@ -164,9 +173,9 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "sum(rate(loki_distributor_bytes_received_total[1m]))",
+              "expr": "sum(rate(loki_distributor_bytes_received_total{job=~\"loki.*\"}[1m]))",
               "refId": "A"
             }
           ],
@@ -176,7 +185,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -231,7 +240,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 8
+            "y": 1
           },
           "id": 2,
           "options": {
@@ -251,7 +260,7 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
               "expr": "sum by (namespace) (rate(loki_distributor_lines_received_total{job=~\"loki.*\"}[5m]))",
               "legendFormat": "{{namespace}}",
@@ -264,7 +273,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -278,6 +287,14 @@ data:
                   {
                     "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1000
+                  },
+                  {
+                    "color": "red",
+                    "value": 10000
                   }
                 ]
               },
@@ -289,7 +306,7 @@ data:
             "h": 4,
             "w": 12,
             "x": 0,
-            "y": 12
+            "y": 5
           },
           "id": 12,
           "options": {
@@ -311,9 +328,9 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "sum(loki_ingester_streams_created_total) - sum(loki_ingester_streams_removed_total)",
+              "expr": "sum(loki_ingester_streams_created_total{job=~\"loki.*\"}) - sum(loki_ingester_streams_removed_total{job=~\"loki.*\"})",
               "refId": "A"
             }
           ],
@@ -321,29 +338,22 @@ data:
           "type": "stat"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "collapsed": false,
           "gridPos": {
-            "h": 8,
+            "h": 1,
             "w": 24,
             "x": 0,
-            "y": 16
+            "y": 9
           },
           "id": 9,
-          "options": {
-            "showOutline": false
-          },
-          "pluginVersion": "10.4.1",
-          "targets": [],
+          "panels": [],
           "title": "Query Performance",
           "type": "row"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -357,10 +367,18 @@ data:
                   {
                     "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 10
+                  },
+                  {
+                    "color": "red",
+                    "value": 100
                   }
                 ]
               },
-              "unit": "Qps"
+              "unit": "reqps"
             },
             "overrides": []
           },
@@ -368,7 +386,7 @@ data:
             "h": 4,
             "w": 6,
             "x": 0,
-            "y": 24
+            "y": 10
           },
           "id": 6,
           "options": {
@@ -390,9 +408,9 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "sum(rate(loki_query_frontend_queries_total[1m]))",
+              "expr": "sum(rate(loki_query_frontend_queries_total{job=~\"loki.*\"}[1m]))",
               "refId": "A"
             }
           ],
@@ -402,7 +420,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -416,6 +434,14 @@ data:
                   {
                     "color": "green",
                     "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
                   }
                 ]
               },
@@ -427,7 +453,7 @@ data:
             "h": 4,
             "w": 6,
             "x": 6,
-            "y": 24
+            "y": 10
           },
           "id": 8,
           "options": {
@@ -449,9 +475,9 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "histogram_quantile(0.99, sum(rate(loki_query_frontend_query_duration_seconds_bucket[5m])) by (le))",
+              "expr": "histogram_quantile(0.99, sum(rate(loki_query_frontend_query_duration_seconds_bucket{job=~\"loki.*\"}[5m])) by (le))",
               "refId": "A"
             }
           ],
@@ -461,7 +487,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -516,7 +542,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 24
+            "y": 10
           },
           "id": 16,
           "options": {
@@ -536,27 +562,27 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "histogram_quantile(0.50, sum(rate(loki_query_frontend_query_duration_seconds_bucket[5m])) by (le))",
+              "expr": "histogram_quantile(0.50, sum(rate(loki_query_frontend_query_duration_seconds_bucket{job=~\"loki.*\"}[5m])) by (le))",
               "legendFormat": "p50",
               "refId": "A"
             },
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "histogram_quantile(0.95, sum(rate(loki_query_frontend_query_duration_seconds_bucket[5m])) by (le))",
+              "expr": "histogram_quantile(0.95, sum(rate(loki_query_frontend_query_duration_seconds_bucket{job=~\"loki.*\"}[5m])) by (le))",
               "legendFormat": "p95",
               "refId": "B"
             },
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "histogram_quantile(0.99, sum(rate(loki_query_frontend_query_duration_seconds_bucket[5m])) by (le))",
+              "expr": "histogram_quantile(0.99, sum(rate(loki_query_frontend_query_duration_seconds_bucket{job=~\"loki.*\"}[5m])) by (le))",
               "legendFormat": "p99",
               "refId": "C"
             }
@@ -565,29 +591,22 @@ data:
           "type": "timeseries"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "collapsed": false,
           "gridPos": {
-            "h": 8,
+            "h": 1,
             "w": 24,
             "x": 0,
-            "y": 32
+            "y": 18
           },
           "id": 11,
-          "options": {
-            "showOutline": false
-          },
-          "pluginVersion": "10.4.1",
-          "targets": [],
+          "panels": [],
           "title": "Loki Internals",
           "type": "row"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -633,7 +652,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 40
+            "y": 19
           },
           "id": 18,
           "options": {
@@ -653,9 +672,9 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "sum(rate(container_cpu_usage_seconds_total{pod=~\"loki-single-binary.*\"}[5m])) by (pod)",
+              "expr": "sum(rate(container_cpu_usage_seconds_total{pod=~\"loki-single-binary.*\",container!=\"POD\",container!=\"\"}[5m])) by (pod)",
               "legendFormat": "{{pod}}",
               "refId": "A"
             }
@@ -666,7 +685,7 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "prometheus"
+            "uid": "${DS_PROMETHEUS}"
           },
           "fieldConfig": {
             "defaults": {
@@ -712,7 +731,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 40
+            "y": 19
           },
           "id": 20,
           "options": {
@@ -732,9 +751,9 @@ data:
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "sum(container_memory_working_set_bytes{pod=~\"loki-single-binary.*\"}) by (pod)",
+              "expr": "sum(container_memory_working_set_bytes{pod=~\"loki-single-binary.*\",container!=\"POD\",container!=\"\"}) by (pod)",
               "legendFormat": "{{pod}}",
               "refId": "A"
             }
@@ -764,4 +783,3 @@ data:
       "version": 1,
       "weekStart": ""
     }
-
