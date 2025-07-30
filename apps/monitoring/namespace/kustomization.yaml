@@ -4,7 +4,6 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - security-headers.yaml
-  - ../manifests/loki-servicemonitor.yaml
 
 labels:
   - includeSelectors: true
