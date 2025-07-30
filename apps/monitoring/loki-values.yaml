@@ -168,6 +168,7 @@ monitoring:
 # ServiceMonitor for Prometheus integration
 serviceMonitor:
   enabled: true
-  namespace: monitoring
   interval: 30s
   scrapeTimeout: 10s
+  additionalLabels:
+    release: prometheus-stack
