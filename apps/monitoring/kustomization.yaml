@@ -4,8 +4,6 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - security-headers.yaml
-  - ../loki-servicemonitor.yaml  # ADD THIS LINE
-
 labels:
   - includeSelectors: true
     pairs:
