@@ -182,11 +182,3 @@ monitoring:
       requests:
         cpu: 25m
         memory: 32Mi
-
-# ServiceMonitor for Prometheus integration
-serviceMonitor:
-  enabled: true
-  labels:
-    release: prometheus-stack
-  interval: 30s
-  annotations: {}
