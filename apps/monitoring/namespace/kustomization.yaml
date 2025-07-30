@@ -4,10 +4,10 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - security-headers.yaml
+  - ../manifests/loki-servicemonitor.yaml
 
 labels:
   - includeSelectors: true
     pairs:
       app.kubernetes.io/part-of: homelab-gitops
       environment: homelab
-  - ../manifests/loki-servicemonitor.yaml
