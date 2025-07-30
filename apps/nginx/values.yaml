@@ -4,11 +4,11 @@
 
 ## Global Docker image parameters
 image:
-  registry: docker.io
-  repository: bitnami/nginx
-  tag: 1.27.3-debian-12-r1  # Latest stable NGINX 1.27.3
-  pullPolicy: IfNotPresent
-  pullSecrets: []
+  registry: docker.io
+  repository: bitnami/nginx
+  tag: 1.27.3-debian-12-r1  # Latest stable NGINX 1.27.3
+  pullPolicy: IfNotPresent
+  pullSecrets: []
 
 ## Force target Kubernetes version (to silence chart warnings)
 kubeVersion: ""
@@ -26,10 +26,10 @@ replicaCount: 2
 
 ## Update strategy
 updateStrategy:
-  type: RollingUpdate
-  rollingUpdate:
-    maxUnavailable: 1
-    maxSurge: 1
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 1
 
 ## Pod Management Policy
 ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies
@@ -37,149 +37,149 @@ podManagementPolicy: Parallel
 
 ## Pod Disruption Budget configuration
 pdb:
-  create: true
-  minAvailable: 1
+  create: true
+  minAvailable: 1
 
 ## Autoscaling configuration
 autoscaling:
-  enabled: false
-  minReplicas: 2
-  maxReplicas: 6
-  targetCPU: 70
-  targetMemory: 80
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPU: 70
+  targetMemory: 80
 
 ## Custom server block for proxying to MinIO - SIMPLE ROOT PATH FIX
 serverBlock: |-
-  # Upstream for MinIO S3 API
-  upstream minio_s3 {
-      server minio.minio.svc.cluster.local:9000;
-      keepalive 32;
-  }
-  
-  server {
-      listen 8080;
-      server_name _;
-      
-      # Security headers
-      add_header X-Content-Type-Options "nosniff" always;
-      add_header X-Frame-Options "SAMEORIGIN" always;
-      add_header X-XSS-Protection "1; mode=block" always;
-      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-      
-      # Gzip compression for better performance
-      gzip on;
-      gzip_vary on;
-      gzip_min_length 1024;
-      gzip_types
-          text/plain
-          text/css
-          text/xml
-          text/javascript
-          application/javascript
-          application/json
-          application/xml+rss
-          application/atom+xml
-          image/svg+xml;
-      
-      # SIMPLEST FIX: Just rewrite root to index.html
-      location / {
-          # Rewrite root path to index.html
-          rewrite ^/$ /index.html last;
-          
-          # Serve all files from MinIO
-          proxy_pass http://minio_s3/hugo-static$uri;
-          
-          # Proxy headers
-          proxy_set_header Host $host;
-          proxy_set_header X-Real-IP $remote_addr;
-          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto $scheme;
-          
-          # HTTP/1.1 for keepalive
-          proxy_http_version 1.1;
-          proxy_set_header Connection "";
-          
-          # Timeouts
-          proxy_connect_timeout 10s;
-          proxy_send_timeout 30s;
-          proxy_read_timeout 30s;
-          
-          # Cache static assets
-          location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-              proxy_pass http://minio_s3/hugo-static$uri;
-              
-              # Cache headers
-              expires 30d;
-              add_header Cache-Control "public, no-transform, immutable";
-              add_header Vary "Accept-Encoding";
-              
-              # Same proxy headers
-              proxy_set_header Host $host;
-              proxy_set_header X-Real-IP $remote_addr;
-              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-              proxy_set_header X-Forwarded-Proto $scheme;
-              proxy_http_version 1.1;
-              proxy_set_header Connection "";
-          }
-          
-          # Special handling for HTML files
-          location ~* \.html$ {
-              proxy_pass http://minio_s3/hugo-static$uri;
-              
-              # No caching for HTML files
-              expires -1;
-              add_header Cache-Control "no-cache, no-store, must-revalidate";
-              add_header Pragma "no-cache";
-              
-              # Same proxy headers
-              proxy_set_header Host $host;
-              proxy_set_header X-Real-IP $remote_addr;
-              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-              proxy_set_header X-Forwarded-Proto $scheme;
-              proxy_http_version 1.1;
-              proxy_set_header Connection "";
-          }
-      }
-      
-      # Health check endpoint
-      location /health {
-          access_log off;
-          return 200 "healthy\n";
-          add_header Content-Type text/plain;
-      }
-      
-      # Nginx status for monitoring
-      location /nginx_status {
-          stub_status on;
-          access_log off;
-          allow 127.0.0.1;
-          allow 10.0.0.0/8;
-          allow 172.16.0.0/12;
-          allow 192.168.0.0/16;
-          deny all;
-      }
-  }
+  # Upstream for MinIO S3 API
+  upstream minio_s3 {
+      server minio.minio.svc.cluster.local:9000;
+      keepalive 32;
+  }
+  
+  server {
+      listen 8080;
+      server_name _;
+      
+      # Security headers
+      add_header X-Content-Type-Options "nosniff" always;
+      add_header X-Frame-Options "SAMEORIGIN" always;
+      add_header X-XSS-Protection "1; mode=block" always;
+      add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+      
+      # Gzip compression for better performance
+      gzip on;
+      gzip_vary on;
+      gzip_min_length 1024;
+      gzip_types
+          text/plain
+          text/css
+          text/xml
+          text/javascript
+          application/javascript
+          application/json
+          application/xml+rss
+          application/atom+xml
+          image/svg+xml;
+      
+      # SIMPLEST FIX: Just rewrite root to index.html
+      location / {
+          # Rewrite root path to index.html
+          rewrite ^/$ /index.html last;
+          
+          # Serve all files from MinIO
+          proxy_pass http://minio_s3/hugo-static$uri;
+          
+          # Proxy headers
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          
+          # HTTP/1.1 for keepalive
+          proxy_http_version 1.1;
+          proxy_set_header Connection "";
+          
+          # Timeouts
+          proxy_connect_timeout 10s;
+          proxy_send_timeout 30s;
+          proxy_read_timeout 30s;
+          
+          # Cache static assets
+          location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+              proxy_pass http://minio_s3/hugo-static$uri;
+              
+              # Cache headers
+              expires 30d;
+              add_header Cache-Control "public, no-transform, immutable";
+              add_header Vary "Accept-Encoding";
+              
+              # Same proxy headers
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_http_version 1.1;
+              proxy_set_header Connection "";
+          }
+          
+          # Special handling for HTML files
+          location ~* \.html$ {
+              proxy_pass http://minio_s3/hugo-static$uri;
+              
+              # No caching for HTML files
+              expires -1;
+              add_header Cache-Control "no-cache, no-store, must-revalidate";
+              add_header Pragma "no-cache";
+              
+              # Same proxy headers
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_http_version 1.1;
+              proxy_set_header Connection "";
+          }
+      }
+      
+      # Health check endpoint
+      location /health {
+          access_log off;
+          return 200 "healthy\n";
+          add_header Content-Type text/plain;
+      }
+      
+      # Nginx status for monitoring
+      location /status { # <-- CORRECTED PATH
+          stub_status on;
+          access_log off;
+          allow 127.0.0.1;
+          allow 10.0.0.0/8;
+          allow 172.16.0.0/12;
+          allow 192.168.0.0/16;
+          deny all;
+      }
+  }
 
 ## Resource limits
 resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 250m
-    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
 
 ## Disable custom probes - let chart use defaults
 livenessProbe:
-  enabled: false
+  enabled: false
 
-## Disable custom readiness probe  
+## Disable custom readiness probe  
 readinessProbe:
-  enabled: false
+  enabled: false
 
 ## Disable custom startup probe
 startupProbe:
-  enabled: false
+  enabled: false
 
 ## Custom startup probe
 customStartupProbe: {}
@@ -188,131 +188,131 @@ customReadinessProbe: {}
 
 ## Pod Security Context
 podSecurityContext:
-  enabled: true
-  fsGroup: 1001
-  fsGroupChangePolicy: "OnRootMismatch"
-  seccompProfile:
-    type: RuntimeDefault
+  enabled: true
+  fsGroup: 1001
+  fsGroupChangePolicy: "OnRootMismatch"
+  seccompProfile:
+    type: RuntimeDefault
 
 ## Container Security Context
 containerSecurityContext:
-  enabled: true
-  runAsUser: 1001
-  runAsGroup: 1001
-  runAsNonRoot: true
-  readOnlyRootFilesystem: false
-  allowPrivilegeEscalation: false
-  capabilities:
-    drop:
-      - ALL
+  enabled: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  runAsNonRoot: true
+  readOnlyRootFilesystem: false
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
 
 ## Service parameters
 service:
-  type: ClusterIP
-  ports:
-    http: 80
-  targetPort:
-    http: http
-    https: https
-  nodePorts:
-    http: ""
-  clusterIP: ""
-  loadBalancerIP: ""
-  loadBalancerSourceRanges: []
-  loadBalancerClass: ""
-  annotations: {}
-  externalTrafficPolicy: Cluster
-  internalTrafficPolicy: Cluster
-  sessionAffinity: None
-  sessionAffinityConfig: {}
+  type: ClusterIP
+  ports:
+    http: 80
+  targetPort:
+    http: http
+    https: https
+  nodePorts:
+    http: ""
+  clusterIP: ""
+  loadBalancerIP: ""
+  loadBalancerSourceRanges: []
+  loadBalancerClass: ""
+  annotations: {}
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  sessionAffinity: None
+  sessionAffinityConfig: {}
 
 ## Ingress parameters
 ingress:
-  enabled: true
-  pathType: Prefix
-  apiVersion: ""
-  ingressClassName: "traefik"
-  hostname: hugo.milenika.dev
-  path: /
-  annotations:
-    external-dns.alpha.kubernetes.io/target: "52e6c172-8b5e-4167-b68f-20dd50299c3c.cfargotunnel.com"
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-    traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
-  tls: true
-  selfSigned: false
-  tlsWwwPrefix: false
-  extraHosts: []
-  extraPaths: []
-  extraTls: []
-  secrets: []
-  extraRules: []
+  enabled: true
+  pathType: Prefix
+  apiVersion: ""
+  ingressClassName: "traefik"
+  hostname: hugo.milenika.dev
+  path: /
+  annotations:
+    external-dns.alpha.kubernetes.io/target: "52e6c172-8b5e-4167-b68f-20dd50299c3c.cfargotunnel.com"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
+  tls: true
+  selfSigned: false
+  tlsWwwPrefix: false
+  extraHosts: []
+  extraPaths: []
+  extraTls: []
+  secrets: []
+  extraRules: []
 
 ## Health Ingress parameters
 healthIngress:
-  enabled: false
+  enabled: false
 
 ## NetworkPolicy parameters
 networkPolicy:
-  enabled: false
+  enabled: false
 
-## Prometheus Metrics  
+## Prometheus Metrics  
 metrics:
-  enabled: true
-  
-  image:
-    registry: docker.io
-    repository: bitnami/nginx-exporter
-    tag: 1.4.2-debian-12-r6
-    pullPolicy: IfNotPresent
-  
-  containerPorts:
-    metrics: 9113
-  
-  resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
-      cpu: 50m
-      memory: 64Mi
-  
-  service:
-    port: 9113
-    annotations:
-      prometheus.io/scrape: "true"
-      prometheus.io/port: "9113"
-      prometheus.io/path: "/metrics"
-  
-  serviceMonitor:
-    enabled: true
-    namespace: ""
-    interval: 30s
-    scrapeTimeout: 10s
-    labels:
-      release: prometheus-stack
-    honorLabels: false
-    jobLabel: ""
-    selector: {}
-    relabelings: []
-    metricRelabelings: []
-  
-  prometheusRule:
-    enabled: false
+  enabled: true
+  
+  image:
+    registry: docker.io
+    repository: bitnami/nginx-exporter
+    tag: 1.4.2-debian-12-r6
+    pullPolicy: IfNotPresent
+  
+  containerPorts:
+    metrics: 9113
+  
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  
+  service:
+    port: 9113
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9113"
+      prometheus.io/path: "/metrics"
+  
+  serviceMonitor:
+    enabled: true
+    namespace: ""
+    interval: 30s
+    scrapeTimeout: 10s
+    labels:
+      release: prometheus-stack
+    honorLabels: false
+    jobLabel: ""
+    selector: {}
+    relabelings: []
+    metricRelabelings: []
+  
+  prometheusRule:
+    enabled: false
 
 ## Pod annotations
 podAnnotations: {}
 
 ## Pod labels
 podLabels:
-  app.kubernetes.io/part-of: homelab-gitops
-  environment: homelab
-  component: static-hosting
+  app.kubernetes.io/part-of: homelab-gitops
+  environment: homelab
+  component: static-hosting
 
 ## Additional labels for all resources
 commonLabels:
-  app.kubernetes.io/part-of: homelab-gitops
-  environment: homelab
-  component: static-hosting
+  app.kubernetes.io/part-of: homelab-gitops
+  environment: homelab
+  component: static-hosting
 
 ## Node labels for pod assignment
 nodeSelector: {}
@@ -355,7 +355,7 @@ initContainers: []
 
 ## ServiceAccount configuration
 serviceAccount:
-  create: true
-  name: ""
-  annotations: {}
-  automountServiceAccountToken: false
+  create: true
+  name: ""
+  annotations: {}
+  automountServiceAccountToken: false
