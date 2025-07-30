@@ -4,3 +4,4 @@
 resources:
   - minio-external-secret.yaml
   - grafana-external-secret.yaml
+  - test-cname-external-secret.yaml  # ADD THIS
