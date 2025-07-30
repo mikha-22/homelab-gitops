@@ -33,6 +33,7 @@ grafana:
   # Note: When using Recreate, do NOT specify rollingUpdate parameters
   deploymentStrategy:
     type: Recreate  # Prevents multiple pods from trying to mount RWO volume
+    rollingUpdate: null
     
   # IMPROVEMENT 2: Add pod disruption budget
   podDisruptionBudget:
