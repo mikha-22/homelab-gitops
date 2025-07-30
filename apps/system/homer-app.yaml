@@ -76,7 +76,7 @@ spec:
                 
                 header: true
                                 
-                theme: default
+                theme: dark # Changed from 'default' to 'dark' to enable a two-state toggle
                 colors:
                   light:
                     highlight-primary: "#3367d6"
@@ -127,6 +127,8 @@ spec:
                         logo: "https://grafana.com/static/assets/img/blog/tempo.png"
                         subtitle: "Distributed Tracing, Available to view in Grafana"
                         tag: "traces"
+                        class: "unclickable" # Added a class to target with CSS
+                        # This item is unclickable because it does not have a "url" property.
                   
                   - name: "Infrastructure"
                     icon: "fas fa-server"
@@ -176,7 +178,15 @@ spec:
                   style: "is-dark"
                   title: "Welcome to Mikha's Homelab!"
                   icon: "fa fa-grin"
-                  content: "This dashboard provides quick access to all your homelab services. Your LGTM observability stack is fully operational with Loki (logs), Grafana (visualization), Tempo (traces), and Prometheus (metrics)."
+                  content: |
+                    This dashboard provides quick access to all your homelab services. Your LGTM observability stack is fully operational with Loki (logs), Grafana (visualization), Tempo (traces), and Prometheus (metrics).
+                    <style>
+                      .service-item.unclickable:hover {
+                        transform: none !important;
+                        box-shadow: none !important;
+                        cursor: default !important;
+                      }
+                    </style>
 
   destination:
     server: https://kubernetes.default.svc
