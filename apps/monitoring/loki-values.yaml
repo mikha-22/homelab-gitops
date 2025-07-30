@@ -1,174 +1,40 @@
-# Loki Configuration - Chart Version 6.30.1
-# Based on OFFICIAL Grafana documentation for monolithic deployment
-# Reference: https://grafana.com/docs/loki/latest/setup/install/helm/install-monolithic/
+# Add this section to your existing loki-values.yaml
 
-# Loki configuration - following official example
-loki:
-  auth_enabled: false  # CRITICAL: Disable auth for single-tenant homelab
-  
-  commonConfig:
-    replication_factor: 1  # CRITICAL: Must be 1 for single replica
-  
-  schemaConfig:
-    configs:
-      - from: "2024-04-01"
-        store: tsdb
-        object_store: filesystem  # Using filesystem for homelab
-        schema: v13
-        index:
-          prefix: loki_index_
-          period: 24h
-  
-  pattern_ingester:
+# Enable official Loki dashboards
+monitoring:
+  dashboards:
     enabled: true
+    labels:
+      grafana_dashboard: "1"
+    annotations:
+      grafana_folder: "Loki"
   
-  limits_config:
-    allow_structured_metadata: true
-    volume_enabled: true
-    retention_period: 7d  # 7 days for homelab
-  
-  ruler:
-    enable_api: true
-  
-  # Storage configuration for filesystem (homelab)
-  storage:
-    type: filesystem
-    bucketNames:
-      chunks: chunks
-      ruler: ruler
-      admin: admin
-  
-  # Additional homelab-specific limits
-  limits_config:
-    allow_structured_metadata: true
-    volume_enabled: true
-    retention_period: 7d
-    ingestion_rate_mb: 16
-    ingestion_burst_size_mb: 32
-    max_query_length: 12000h
-    reject_old_samples: true
-    reject_old_samples_max_age: 168h
-
-# Disable MinIO (we're using filesystem)
-minio:
-  enabled: false
-
-# CRITICAL: Set deployment mode
-deploymentMode: SingleBinary
-
-# Single binary configuration
-singleBinary:
-  replicas: 1
-  
-  # Resources for homelab
-  resources:
-    limits:
-      cpu: 1000m
-      memory: 2Gi
-    requests:
-      cpu: 500m
-      memory: 1Gi
-  
-  # Persistence for filesystem storage
-  persistence:
+  # ServiceMonitor is already enabled in your config, this is just for reference
+  serviceMonitor:
     enabled: true
-    storageClass: local-path
-    accessModes:
-      - ReadWriteOnce
-    size: 30Gi
+    labels:
+      release: prometheus-stack
+    interval: 30s
+    annotations: {}
 
-# CRITICAL: Zero out replica counts of other deployment modes
-backend:
-  replicas: 0
-read:
-  replicas: 0
-write:
-  replicas: 0
-
-ingester:
-  replicas: 0
-querier:
-  replicas: 0
-queryFrontend:
-  replicas: 0
-queryScheduler:
-  replicas: 0
-distributor:
-  replicas: 0
-compactor:
-  replicas: 0
-indexGateway:
-  replicas: 0
-bloomCompactor:
-  replicas: 0
-bloomGateway:
-  replicas: 0
-
-# Gateway configuration (NGINX reverse proxy)
-gateway:
+# If you want the full monitoring suite
+lokiCanary:
   enabled: true
-  replicas: 1
-  
   resources:
     limits:
-      cpu: 100m
-      memory: 128Mi
-    requests:
       cpu: 50m
       memory: 64Mi
-  
-  # Ingress configuration - CORRECTED TO MATCH HOMER
-  ingress:
-    enabled: true
-    hosts:
-      - host: loki.milenika.dev
-        paths:
-          - path: /
-            pathType: Prefix
-    annotations:
-      "kubernetes.io/ingress.class": "traefik"
-      "external-dns.alpha.kubernetes.io/target": "52e6c172-8b5e-4167-b68f-20dd50299c3c.cfargotunnel.com"
-      "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-      # "traefik.ingress.kubernetes.io/router.tls": "true" <-- REMOVED
-    # ADDED: Explicit TLS configuration to match Homer
-    tls:
-      - secretName: loki-gateway-tls
-        hosts:
-          - loki.milenika.dev
+    requests:
+      cpu: 25m
+      memory: 32Mi
 
-# Disable test
-test:
-  enabled: false
-
-# Reduce cache memory for homelab
-chunksCache:
-  enabled: true
-  allocatedMemory: 500  # Reduced from default 8GB
-
-resultsCache:
-  enabled: true
-  allocatedMemory: 300  # Reduced from default
-
-# Disable self-monitoring for simplicity
+# Self-monitoring (optional - can be heavy for homelab)
 monitoring:
+  dashboards:
+    enabled: true
+    labels:
+      grafana_dashboard: "1"
   selfMonitoring:
-    enabled: false
+    enabled: false  # Keep this disabled for homelab
     grafanaAgent:
       installOperator: false
-  lokiCanary:
-    enabled: true  # Keep canary for health checks
-    resources:
-      limits:
-        cpu: 50m
-        memory: 64Mi
-      requests:
-        cpu: 25m
-        memory: 32Mi
-
-# ServiceMonitor for Prometheus integration
-serviceMonitor:
-  enabled: true  # This should work now!
-  labels:
-    release: prometheus-stack
-  interval: 30s
-  annotations: {}
