@@ -259,10 +259,6 @@ networkPolicy:
 metrics:
   enabled: true
   
-  # ADD THIS BLOCK to tell the exporter where to find the status page
-  extraArgs:
-    scrape-uri: "http://127.0.0.1:8080/nginx_status"
-
   image:
     registry: docker.io
     repository: bitnami/nginx-exporter

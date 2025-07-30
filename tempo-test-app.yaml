@@ -1,0 +1,41 @@
+# tempo-test-app.yaml (CORRECTED)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tempo-test-app
+  namespace: default
+  labels:
+    app: tempo-test-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tempo-test-app
+  template:
+    metadata:
+      labels:
+        app: tempo-test-app
+    spec:
+      containers:
+      - name: tns-app
+        image: grafana/tns-app:latest
+        ports:
+        # CORRECTED PORT
+        - containerPort: 80
+        env:
+          - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+            value: "http://tempo.monitoring.svc.cluster.local:4317"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tempo-test-app
+  namespace: default
+spec:
+  selector:
+    app: tempo-test-app
+  ports:
+    - protocol: TCP
+      # CORRECTED PORT
+      port: 80
+      targetPort: 80
