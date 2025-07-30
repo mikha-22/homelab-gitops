@@ -168,7 +168,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "up{job=~\"prometheus-stack-kube-prom-prometheus|prometheus-stack-grafana|loki-single-binary|tempo.*\"}",
+              "expr": "up{job=~\"prometheus-stack-kube-prom-prometheus|prometheus-stack-grafana|loki|tempo.*\"}",
               "format": "table",
               "instant": true,
               "refId": "A"
@@ -594,7 +594,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "up{job=\"loki-single-binary\"}",
+              "expr": "up{job=\"loki\"}",
               "refId": "A"
             }
           ],
