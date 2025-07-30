@@ -5,6 +5,7 @@ kind: Kustomization
 
 resources:
   - homelab-overview-dashboard.yaml
+  - loki-singlebinary-dashboard.yaml
 
 labels:
   - includeSelectors: true
