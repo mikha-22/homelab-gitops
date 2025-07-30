@@ -1,8 +1,6 @@
 # Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
 # Chart Version: 75.9.0
-# WITH INGRESS AND ANONYMOUS GRAFANA ACCESS ENABLED
-# IMPROVED: Added pod cleanup and failure prevention configurations
-# UPDATED: Added automatic dashboard imports for LGTM stack
+# FIXED: Added dashboard provider configuration
 
 # Global settings
 global:
@@ -17,11 +15,11 @@ crds:
 alertmanager:
   enabled: false
 
-# Grafana Configuration - IMPROVED WITH BETTER FAILURE HANDLING + DASHBOARDS
+# Grafana Configuration - FIXED WITH DASHBOARD PROVIDER
 grafana:
   enabled: true
   
-  # Admin credentials - will use generated password
+  # Admin credentials
   adminUser: admin
   adminPassword: null
 
@@ -30,12 +28,12 @@ grafana:
     userKey: admin-user
     passwordKey: admin-password
     
-  # IMPROVEMENT 2: Add pod disruption budget
+  # Pod disruption budget
   podDisruptionBudget:
     enabled: true
-    minAvailable: 0  # Allow complete shutdown if needed during node drain
+    minAvailable: 0
   
-  # DISABLE the problematic init container
+  # Disable problematic init container
   initChownData:
     enabled: false
   
@@ -48,7 +46,7 @@ grafana:
     accessModes:
       - ReadWriteOnce
   
-  # IMPROVEMENT 3: Better resource management
+  # Resource management
   resources:
     limits:
       cpu: 500m
@@ -57,13 +55,13 @@ grafana:
       cpu: 250m
       memory: 256Mi
   
-  # SIMPLIFIED security context
+  # Security context
   securityContext:
     runAsNonRoot: true
     runAsUser: 472
     fsGroup: 472
     
-  # IMPROVEMENT 4: Faster failure detection and recovery
+  # Health probes
   livenessProbe:
     httpGet:
       path: /api/health
@@ -71,7 +69,7 @@ grafana:
     initialDelaySeconds: 30
     periodSeconds: 10
     timeoutSeconds: 5
-    failureThreshold: 3  # Kill pod after 3 failures (30 seconds)
+    failureThreshold: 3
     
   readinessProbe:
     httpGet:
@@ -80,9 +78,9 @@ grafana:
     initialDelaySeconds: 5
     periodSeconds: 5
     timeoutSeconds: 3
-    failureThreshold: 3  # Mark unready after 3 failures (15 seconds)
+    failureThreshold: 3
   
-  # CORRECTED INGRESS CONFIGURATION
+  # Ingress configuration
   ingress:
     enabled: true
     ingressClassName: traefik
@@ -127,7 +125,7 @@ grafana:
     panels:
       disable_sanitize_html: false
 
-  # NEW: Automatically download popular dashboards from grafana.com
+  # FIXED: Dashboard configuration with proper provider
   dashboards:
     default:
       # LGTM Stack Dashboards
@@ -168,27 +166,40 @@ grafana:
         revision: 8
         datasource: Prometheus
         
-      # NGINX & Ingress Monitoring (for your Hugo site)
+      # NGINX & Infrastructure
       nginx-ingress-controller:
         gnetId: 9614
         revision: 1
         datasource: Prometheus
         
-      # Container & Pod Monitoring
       kubernetes-pods:
         gnetId: 6417
         revision: 1
         datasource: Prometheus
         
-      # MinIO Monitoring (for your object storage)
       minio-dashboard:
         gnetId: 13502
         revision: 10
         datasource: Prometheus
 
-  # FIXED: additionalDataSources (uppercase 'S') - NOT additionalDatasources
+  # CRITICAL FIX: Add dashboard providers configuration
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        updateIntervalSeconds: 10
+        allowUiUpdates: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+  # Additional datasources
   additionalDataSources:
-    # Loki for Logs
     - name: Loki
       type: loki
       access: proxy
@@ -197,14 +208,12 @@ grafana:
       version: 1
       editable: true
       jsonData:
-        # Enable trace to logs correlation
         derivedFields:
           - datasourceUid: tempo
             matcherRegex: "trace[_-]?id[\"\\s:=]+([a-fA-F0-9]+)"
             name: TraceID
             url: "$${__value.raw}"
         
-    # Tempo for Traces  
     - name: Tempo
       type: tempo
       access: proxy
@@ -214,7 +223,6 @@ grafana:
       version: 1
       editable: true
       jsonData:
-        # Enable trace to logs correlation
         tracesToLogs:
           datasourceUid: loki
           tags: ['job', 'instance', 'pod', 'namespace']
@@ -226,20 +234,16 @@ grafana:
           mapTagNamesEnabled: false
           spanStartTimeShift: '1h'
           spanEndTimeShift: '1h'
-        # Enable service map
         serviceMap:
           datasourceUid: prometheus
-        # Enable node graph
         nodeGraph:
           enabled: true
-        # Search configuration
         search:
           hide: false
-        # Loki search
         lokiSearch:
           datasourceUid: loki
 
-  # Sidecar configuration for automatic dashboard/datasource discovery
+  # Sidecar configuration
   sidecar:
     dashboards:
       enabled: true
@@ -254,8 +258,6 @@ grafana:
       searchNamespace: ALL
       label: grafana_datasource
       labelValue: "1"
-      # IMPORTANT: Don't mark any additional datasource as default
-      # The Prometheus datasource from the chart is already default
       defaultDatasourceEnabled: true
 
 # Prometheus Configuration
