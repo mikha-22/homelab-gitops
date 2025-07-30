@@ -167,8 +167,8 @@ monitoring:
 
 # ServiceMonitor for Prometheus integration
 serviceMonitor:
-  enabled: true
-  interval: 30s
-  scrapeTimeout: 10s
-  additionalLabels:
+  enabled: true  # This should work now!
+  labels:
     release: prometheus-stack
+  interval: 30s
+  annotations: {}
