@@ -240,7 +240,7 @@ data:
                 "type": "prometheus",
                 "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "sum(rate(loki_request_duration_seconds_count{job=\"loki\", route=~\"loki_api_v1_query.*\"}[1m]))",
+              "expr": "sum(rate(loki_ingester_client_request_duration_seconds_count{job=\"loki\", operation=~\"/logproto.Querier/.*\"}[1m]))",
               "refId": "A"
             }
           ],
@@ -307,7 +307,7 @@ data:
                 "type": "prometheus",
                 "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "sum(loki_ingester_streams{job=\"loki\"})",
+              "expr": "sum(loki_ingester_memory_streams{job=\"loki\"})",
               "refId": "A"
             }
           ],
@@ -482,7 +482,7 @@ data:
                 "type": "prometheus",
                 "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "histogram_quantile(0.50, sum(rate(loki_request_duration_seconds_bucket{job=\"loki\", route=~\"loki_api_v1_query.*\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.50, sum(rate(loki_ingester_client_request_duration_seconds_bucket{job=\"loki\", operation=~\"/logproto.Querier/.*\"}[5m])) by (le))",
               "legendFormat": "p50",
               "refId": "A"
             },
@@ -491,7 +491,7 @@ data:
                 "type": "prometheus",
                 "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "histogram_quantile(0.95, sum(rate(loki_request_duration_seconds_bucket{job=\"loki\", route=~\"loki_api_v1_query.*\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.95, sum(rate(loki_ingester_client_request_duration_seconds_bucket{job=\"loki\", operation=~\"/logproto.Querier/.*\"}[5m])) by (le))",
               "legendFormat": "p95",
               "refId": "B"
             },
@@ -500,7 +500,7 @@ data:
                 "type": "prometheus",
                 "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "histogram_quantile(0.99, sum(rate(loki_request_duration_seconds_bucket{job=\"loki\", route=~\"loki_api_v1_query.*\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.99, sum(rate(loki_ingester_client_request_duration_seconds_bucket{job=\"loki\", operation=~\"/logproto.Querier/.*\"}[5m])) by (le))",
               "legendFormat": "p99",
               "refId": "C"
             }
