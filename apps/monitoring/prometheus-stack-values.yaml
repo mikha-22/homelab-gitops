@@ -2,6 +2,7 @@
 # Chart Version: 75.9.0
 # WITH INGRESS AND ANONYMOUS GRAFANA ACCESS ENABLED
 # IMPROVED: Added pod cleanup and failure prevention configurations
+# UPDATED: Added automatic dashboard imports for LGTM stack
 
 # Global settings
 global:
@@ -16,7 +17,7 @@ crds:
 alertmanager:
   enabled: false
 
-# Grafana Configuration - IMPROVED WITH BETTER FAILURE HANDLING
+# Grafana Configuration - IMPROVED WITH BETTER FAILURE HANDLING + DASHBOARDS
 grafana:
   enabled: true
   
@@ -125,6 +126,65 @@ grafana:
       level: "info"
     panels:
       disable_sanitize_html: false
+
+  # NEW: Automatically download popular dashboards from grafana.com
+  dashboards:
+    default:
+      # LGTM Stack Dashboards
+      loki-operational:
+        gnetId: 13407
+        revision: 1
+        datasource: Prometheus
+        
+      loki-logs:
+        gnetId: 12019
+        revision: 1
+        datasource: Loki
+        
+      tempo-operational:
+        gnetId: 16958
+        revision: 1
+        datasource: Prometheus
+        
+      # Enhanced Kubernetes Monitoring
+      kubernetes-cluster-monitoring:
+        gnetId: 7249
+        revision: 1
+        datasource: Prometheus
+        
+      kubernetes-deployment:
+        gnetId: 8588
+        revision: 1
+        datasource: Prometheus
+        
+      # Enhanced Node Monitoring  
+      node-exporter-full:
+        gnetId: 1860
+        revision: 31
+        datasource: Prometheus
+        
+      node-exporter-server-metrics:
+        gnetId: 405
+        revision: 8
+        datasource: Prometheus
+        
+      # NGINX & Ingress Monitoring (for your Hugo site)
+      nginx-ingress-controller:
+        gnetId: 9614
+        revision: 1
+        datasource: Prometheus
+        
+      # Container & Pod Monitoring
+      kubernetes-pods:
+        gnetId: 6417
+        revision: 1
+        datasource: Prometheus
+        
+      # MinIO Monitoring (for your object storage)
+      minio-dashboard:
+        gnetId: 13502
+        revision: 10
+        datasource: Prometheus
 
   # FIXED: additionalDataSources (uppercase 'S') - NOT additionalDatasources
   additionalDataSources:
