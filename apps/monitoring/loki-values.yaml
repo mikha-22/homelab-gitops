@@ -59,6 +59,10 @@ deploymentMode: SingleBinary
 # Single binary configuration
 singleBinary:
   replicas: 1
+  #Serbice Label for ServiceMonitoring log scraping
+  service:
+    labels:
+      app.kubernetes.io/component: single-binary
   
   # Resources for homelab
   resources:
