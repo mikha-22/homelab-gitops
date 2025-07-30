@@ -5,6 +5,8 @@ kind: Kustomization
 
 resources:
   - homelab-overview-dashboard.yaml
+  - loki-dashboard.yaml
+  - prometheus-dashboard.yaml
 
 labels:
   - includeSelectors: true
