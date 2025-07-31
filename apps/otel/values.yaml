@@ -1,135 +1,54 @@
-# apps/otel/values.yaml
-# OpenTelemetry Collector configuration for homelab LGTM stack integration
-
-# REQUIRED: Deployment mode
+# Replace your apps/otel/values.yaml with this minimal version:
 mode: deployment
 
-# Image configuration
 image:
   repository: otel/opentelemetry-collector-contrib
   tag: "0.131.0"
   pullPolicy: IfNotPresent
 
-# Replica count
-replicaCount: 2
+replicaCount: 1
 
-# Resource configuration
 resources:
   limits:
-    cpu: 1000m
-    memory: 1Gi
-  requests:
     cpu: 500m
     memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
 
-# OpenTelemetry Collector configuration
 config:
   receivers:
-    # OTLP receivers for modern applications
     otlp:
       protocols:
         grpc:
           endpoint: 0.0.0.0:4317
         http:
           endpoint: 0.0.0.0:4318
-    
-    # Jaeger receivers for legacy compatibility
-    jaeger:
-      protocols:
-        grpc:
-          endpoint: 0.0.0.0:14250
-        thrift_http:
-          endpoint: 0.0.0.0:14268
-    
-    # Zipkin receiver
-    zipkin:
-      endpoint: 0.0.0.0:9411
 
   processors:
-    # Batch processor for efficiency
     batch:
-      timeout: 1s
-      send_batch_size: 1024
-    
-    # Resource processor to add cluster/environment labels
-    resource:
-      attributes:
-        - key: cluster
-          value: homelab
-          action: upsert
-        - key: environment  
-          value: homelab
-          action: upsert
-    
-    # Memory limiter to prevent OOM
-    memory_limiter:
-      limit_mib: 400
-      spike_limit_mib: 100
-      check_interval: 5s
 
   exporters:
-    # Tempo exporter for traces
+    # Send traces to Tempo
     otlp/tempo:
       endpoint: http://tempo.monitoring.svc.cluster.local:4317
       tls:
         insecure: true
     
-    # Loki exporter for logs
-    loki:
-      endpoint: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
-    
-    # Prometheus exporter for metrics
-    prometheus:
-      endpoint: "0.0.0.0:8889"
-    
-    # Debug exporter for troubleshooting
+    # Debug to console for now
     debug:
       verbosity: basic
 
   extensions:
-    # Health check extension
     health_check:
-      endpoint: 0.0.0.0:13133
-    
-    # Memory ballast for performance
-    memory_ballast:
-      size_mib: 64
 
   service:
-    extensions: [health_check, memory_ballast]
+    extensions: [health_check]
     pipelines:
-      # Traces pipeline
       traces:
-        receivers: [otlp, jaeger, zipkin]
-        processors: [memory_limiter, resource, batch]
+        receivers: [otlp]
+        processors: [batch]
         exporters: [otlp/tempo, debug]
-      
-      # Metrics pipeline  
-      metrics:
-        receivers: [otlp]
-        processors: [memory_limiter, resource, batch]
-        exporters: [prometheus]
-      
-      # Logs pipeline
-      logs:
-        receivers: [otlp]
-        processors: [memory_limiter, resource, batch]
-        exporters: [loki, debug]
 
-# Service monitor for Prometheus
-serviceMonitor:
-  enabled: true
-  additionalLabels:
-    release: prometheus-stack
-
-# Pod annotations
-podAnnotations:
-  prometheus.io/scrape: "true"
-  prometheus.io/port: "8888"
-  prometheus.io/path: "/metrics"
-
-# Additional labels
 additionalLabels:
   app.kubernetes.io/part-of: homelab-gitops
-  environment: homelab
-  component: telemetry-collector
