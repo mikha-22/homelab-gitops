@@ -288,3 +288,34 @@ defaultRules:
 
 # Cleanup settings
 cleanPrometheusOperatorObjectNames: true
+# Disable trackTimestampsStaleness globally to fix schema error
+kubeStateMetrics:
+  enabled: true
+  serviceMonitor:
+    trackTimestampsStaleness: false
+
+nodeExporter:
+  enabled: true
+  serviceMonitor:
+    trackTimestampsStaleness: false
+
+# Also disable for any other ServiceMonitors that might have it
+kubelet:
+  serviceMonitor:
+    trackTimestampsStaleness: false
+
+kubeControllerManager:
+  serviceMonitor:
+    trackTimestampsStaleness: false
+
+kubeScheduler:
+  serviceMonitor:
+    trackTimestampsStaleness: false
+
+kubeProxy:
+  serviceMonitor:
+    trackTimestampsStaleness: false
+
+kubeEtcd:
+  serviceMonitor:
+    trackTimestampsStaleness: false
