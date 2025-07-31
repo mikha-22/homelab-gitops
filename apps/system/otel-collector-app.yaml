@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: otel-collector
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    # Sync after the core monitoring stack is ready
+    argocd.argoproj.io/sync-wave: "6" 
+spec:
+  project: monitoring
+  sources:
+    - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+      chart: opentelemetry-collector
+      targetRevision: 0.82.0 # Pinning to a specific chart version
+      helm:
+        releaseName: otel-collector
+        valueFiles:
+          - $values/apps/otel-collector/values.yaml
+    - repoURL: https://github.com/mikha-22/homelab-gitops # Your repo
+      targetRevision: HEAD
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - CreateNamespace=false # The namespace already exists
+      - ServerSideApply=true
