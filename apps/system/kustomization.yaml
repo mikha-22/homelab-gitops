@@ -11,4 +11,3 @@ resources:
   - dashboards-app.yaml
   - minio-app.yaml
   - nginx-app.yaml
-  - otel-collector-app.yaml
