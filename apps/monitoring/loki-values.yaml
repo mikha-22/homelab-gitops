@@ -1,8 +1,3 @@
-# Loki Configuration - Chart Version 6.30.1
-# SIMPLE UPDATE: Just enable dashboards + self-monitoring
-# Keep existing filesystem storage
-
-# Loki configuration - following official example
 loki:
   auth_enabled: false  # CRITICAL: Disable auth for single-tenant homelab
   

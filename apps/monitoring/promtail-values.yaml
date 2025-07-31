@@ -1,6 +1,3 @@
-# Promtail Configuration for LGTM Stack - Chart Version 6.17.0
-# Enhanced for tracing integration with Tempo
-
 # Global configuration
 global:
   imageRegistry: ""

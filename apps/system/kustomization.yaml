@@ -1,7 +1,7 @@
 resources:
   - projects/monitoring-project.yaml
-  - shared-config-app.yaml           # ADD THIS LINE
-  - external-secrets-app.yaml        # ADD THIS LINE
+  - shared-config-app.yaml
+  - external-secrets-app.yaml
   - monitoring-namespace-app.yaml
   - prometheus-app.yaml
   - loki-app.yaml

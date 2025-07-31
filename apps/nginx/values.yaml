@@ -1,7 +1,3 @@
-# NGINX Configuration for Hugo Static Site Hosting via MinIO
-# Based on Bitnami NGINX Helm Chart v21.0.6 (Latest)
-# SIMPLE FIX: Just handle root path properly
-
 ## Global Docker image parameters
 image:
   registry: docker.io

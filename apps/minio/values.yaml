@@ -1,7 +1,3 @@
-# apps/minio/values.yaml - UPDATED TO USE EXTERNAL SECRETS
-# MinIO Community Chart Configuration
-# Credentials managed by External Secrets Operator
-
 ## Set default image, imageTag, and imagePullPolicy
 image:
   repository: quay.io/minio/minio

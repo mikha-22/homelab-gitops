@@ -1,8 +1,3 @@
-# Prometheus Stack Configuration - PROMETHEUS + GRAFANA ONLY
-# Chart Version: 75.9.0
-# WITH INGRESS AND ANONYMOUS GRAFANA ACCESS ENABLED
-# IMPROVED: Added pod cleanup and failure prevention configurations
-
 # Global settings
 global:
   imageRegistry: ""
