@@ -1,20 +1,8 @@
-# Replace your apps/otel/values.yaml with this minimal version:
 mode: deployment
 
 image:
   repository: otel/opentelemetry-collector-contrib
   tag: "0.131.0"
-  pullPolicy: IfNotPresent
-
-replicaCount: 1
-
-resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
-  requests:
-    cpu: 100m
-    memory: 128Mi
 
 config:
   receivers:
@@ -29,26 +17,17 @@ config:
     batch:
 
   exporters:
-    # Send traces to Tempo
+    debug:
+      verbosity: basic
+    
     otlp/tempo:
       endpoint: http://tempo.monitoring.svc.cluster.local:4317
       tls:
         insecure: true
-    
-    # Debug to console for now
-    debug:
-      verbosity: basic
-
-  extensions:
-    health_check:
 
   service:
-    extensions: [health_check]
     pipelines:
       traces:
         receivers: [otlp]
         processors: [batch]
-        exporters: [otlp/tempo, debug]
-
-additionalLabels:
-  app.kubernetes.io/part-of: homelab-gitops
+        exporters: [debug, otlp/tempo]
