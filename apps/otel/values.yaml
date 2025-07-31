@@ -1,0 +1,270 @@
+# apps/otel/values.yaml
+# OpenTelemetry Collector configuration for homelab LGTM stack integration
+
+# Deployment mode - use Deployment for simplicity
+mode: deployment
+
+# Image configuration
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: "0.131.0"
+  pullPolicy: IfNotPresent
+
+# Replica count
+replicaCount: 2
+
+# Resource configuration
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# Service configuration
+service:
+  enabled: true
+  type: ClusterIP
+  ports:
+    otlp-grpc:
+      enabled: true
+      containerPort: 4317
+      servicePort: 4317
+      protocol: TCP
+    otlp-http:
+      enabled: true
+      containerPort: 4318
+      servicePort: 4318
+      protocol: TCP
+    jaeger-grpc:
+      enabled: true
+      containerPort: 14250
+      servicePort: 14250
+      protocol: TCP
+    jaeger-thrift-http:
+      enabled: true
+      containerPort: 14268
+      servicePort: 14268
+      protocol: TCP
+    zipkin:
+      enabled: true
+      containerPort: 9411
+      servicePort: 9411
+      protocol: TCP
+    metrics:
+      enabled: true
+      containerPort: 8888
+      servicePort: 8888
+      protocol: TCP
+
+# Ingress for external OTLP access (optional)
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  annotations:
+    "external-dns.alpha.kubernetes.io/target": "52e6c172-8b5e-4167-b68f-20dd50299c3c.cfargotunnel.com"
+    "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+    "traefik.ingress.kubernetes.io/router.middlewares": "monitoring-security-headers@kubernetescrd"
+  hosts:
+    - host: otel.milenika.dev
+      paths:
+        - path: /
+          pathType: Prefix
+          port: 4318  # HTTP endpoint
+  tls:
+    - secretName: otel-tls
+      hosts:
+        - otel.milenika.dev
+
+# OpenTelemetry Collector configuration
+config:
+  receivers:
+    # OTLP receivers for modern applications
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+          cors:
+            allowed_origins:
+              - "https://grafana.milenika.dev"
+              - "https://otel.milenika.dev"
+    
+    # Jaeger receivers for legacy compatibility
+    jaeger:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:14250
+        thrift_http:
+          endpoint: 0.0.0.0:14268
+    
+    # Zipkin receiver
+    zipkin:
+      endpoint: 0.0.0.0:9411
+    
+    # Prometheus receiver to scrape collector metrics
+    prometheus:
+      config:
+        scrape_configs:
+          - job_name: 'otel-collector'
+            scrape_interval: 10s
+            static_configs:
+              - targets: ['0.0.0.0:8888']
+
+  processors:
+    # Batch processor for efficiency
+    batch:
+      timeout: 1s
+      send_batch_size: 1024
+      send_batch_max_size: 2048
+    
+    # Resource processor to add cluster/environment labels
+    resource:
+      attributes:
+        - key: cluster
+          value: homelab
+          action: upsert
+        - key: environment  
+          value: homelab
+          action: upsert
+        - key: collector.name
+          value: otel-collector
+          action: upsert
+    
+    # Memory limiter to prevent OOM
+    memory_limiter:
+      limit_mib: 400
+      spike_limit_mib: 100
+      check_interval: 5s
+
+  exporters:
+    # Tempo exporter for traces
+    otlp/tempo:
+      endpoint: http://tempo.monitoring.svc.cluster.local:4317
+      tls:
+        insecure: true
+      headers:
+        X-Scope-OrgID: "homelab"
+    
+    # Loki exporter for logs
+    loki:
+      endpoint: http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
+      labels:
+        attributes:
+          cluster: "cluster"
+          environment: "environment"
+          service.name: "service_name"
+          service.namespace: "service_namespace"
+        resource:
+          cluster: "cluster"
+          environment: "environment"
+      format: json
+    
+    # Prometheus exporter for metrics
+    prometheus:
+      endpoint: "0.0.0.0:8889"
+      const_labels:
+        cluster: homelab
+        environment: homelab
+    
+    # Debug exporter for troubleshooting
+    debug:
+      verbosity: basic
+      sampling_initial: 5
+      sampling_thereafter: 200
+
+  extensions:
+    # Health check extension
+    health_check:
+      endpoint: 0.0.0.0:13133
+    
+    # pprof extension for debugging
+    pprof:
+      endpoint: 0.0.0.0:1777
+    
+    # Memory ballast for performance
+    memory_ballast:
+      size_mib: 64
+
+  service:
+    extensions: [health_check, pprof, memory_ballast]
+    pipelines:
+      # Traces pipeline
+      traces:
+        receivers: [otlp, jaeger, zipkin]
+        processors: [memory_limiter, resource, batch]
+        exporters: [otlp/tempo, debug]
+      
+      # Metrics pipeline  
+      metrics:
+        receivers: [otlp, prometheus]
+        processors: [memory_limiter, resource, batch]
+        exporters: [prometheus]
+      
+      # Logs pipeline
+      logs:
+        receivers: [otlp]
+        processors: [memory_limiter, resource, batch]
+        exporters: [loki, debug]
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 10001
+  runAsUser: 10001
+  runAsGroup: 10001
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# Network policy
+networkPolicy:
+  enabled: false
+
+# Service monitor for Prometheus
+serviceMonitor:
+  enabled: true
+  metricsEndpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+  additionalLabels:
+    release: prometheus-stack
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8888"
+  prometheus.io/path: "/metrics"
+
+# Node selector and tolerations
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Additional labels
+additionalLabels:
+  app.kubernetes.io/part-of: homelab-gitops
+  environment: homelab
+  component: telemetry-collector
