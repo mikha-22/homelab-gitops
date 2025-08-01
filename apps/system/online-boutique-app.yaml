@@ -1,4 +1,4 @@
-# apps/system/online-boutique-app.yaml
+# apps/system/online-boutique-app.yaml - CORRECTED VERSION
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -12,9 +12,8 @@ spec:
   project: default
   source:
     repoURL: https://github.com/GoogleCloudPlatform/microservices-demo
-    targetRevision: v0.10.1
-    path: kubernetes-manifests
-    # Remove kustomize section and use plain manifests
+    targetRevision: v0.10.1  # Use a specific stable release
+    path: release  # Point to the release directory that contains kubernetes-manifests.yaml
     
   destination:
     server: https://kubernetes.default.svc
@@ -33,3 +32,48 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 5m
+
+  # Ignore replica differences during autoscaling
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+
+---
+# Alternative approach using the main branch (latest)
+# Uncomment this if you prefer the latest version instead of v0.10.1
+#
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: online-boutique
+#   namespace: argocd
+#   finalizers:
+#     - resources-finalizer.argocd.argoproj.io
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "20"
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://github.com/GoogleCloudPlatform/microservices-demo
+#     targetRevision: main  # Use main branch for latest
+#     path: release
+#     
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: online-boutique
+#     
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#       - ServerSideApply=true
+#     retry:
+#       limit: 5
+#       backoff:
+#         duration: 5s
+#         factor: 2
+#         maxDuration: 5m
