@@ -12,3 +12,4 @@ resources:
   - dashboards-app.yaml
   - minio-app.yaml
   - nginx-app.yaml
+  - online-boutique-app.yaml
