@@ -1,4 +1,4 @@
-# apps/otel/values.yaml - UPDATED TO USE HTTP ENDPOINT
+# apps/otel/values.yaml - CORRECTED FOR GRPC PROTOCOL
 mode: deployment
 
 image:
@@ -24,10 +24,10 @@ config:
       verbosity: detailed
     
     otlp/tempo:
-      endpoint: http://tempo.monitoring.svc.cluster.local:4318  # CHANGED: Use HTTP port 4318
+      endpoint: http://tempo.monitoring.svc.cluster.local:4317  # BACK to gRPC port 4317
       tls:
         insecure: true
-      headers: {}  # ADD: Explicit headers for HTTP
+      # Removed headers - not needed for gRPC
 
   service:
     telemetry:
