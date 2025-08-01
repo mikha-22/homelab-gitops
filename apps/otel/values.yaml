@@ -1,3 +1,4 @@
+# apps/otel/values.yaml - ADD VERBOSE LOGGING
 mode: deployment
 
 image:
@@ -20,7 +21,7 @@ config:
 
   exporters:
     debug:
-      verbosity: basic
+      verbosity: detailed  # CHANGED: More verbose
     
     otlp/tempo:
       endpoint: http://tempo.monitoring.svc.cluster.local:4317
@@ -28,6 +29,9 @@ config:
         insecure: true
 
   service:
+    telemetry:
+      logs:
+        level: debug  # ADD: Enable debug logging
     pipelines:
       traces:
         receivers: [otlp]
