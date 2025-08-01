@@ -66,10 +66,8 @@ tempo:
         max_workers: 100
         queue_depth: 10000
   
-  # FIXED: Enable search functionality - correct format
+  # FIXED: Enable search functionality - correct format for single binary
   querier:
-    frontend_worker:
-      frontend_address: tempo-query-frontend:9095
     max_concurrent_queries: 20
   
   # FIXED: Enable query frontend with search
