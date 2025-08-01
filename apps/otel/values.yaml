@@ -1,4 +1,4 @@
-# apps/otel/values.yaml - ADD VERBOSE LOGGING
+# apps/otel/values.yaml - UPDATED TO USE HTTP ENDPOINT
 mode: deployment
 
 image:
@@ -21,17 +21,18 @@ config:
 
   exporters:
     debug:
-      verbosity: detailed  # CHANGED: More verbose
+      verbosity: detailed
     
     otlp/tempo:
-      endpoint: http://tempo.monitoring.svc.cluster.local:4317
+      endpoint: http://tempo.monitoring.svc.cluster.local:4318  # CHANGED: Use HTTP port 4318
       tls:
         insecure: true
+      headers: {}  # ADD: Explicit headers for HTTP
 
   service:
     telemetry:
       logs:
-        level: debug  # ADD: Enable debug logging
+        level: debug  # Enable debug logging
     pipelines:
       traces:
         receivers: [otlp]
