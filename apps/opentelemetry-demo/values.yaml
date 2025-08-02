@@ -1,0 +1,217 @@
+# OpenTelemetry Demo Helm values - customized for your homelab LGTM stack
+
+# Global settings
+global:
+  domain: milenika.dev
+
+# Configure OpenTelemetry Collector to send data to your existing stack
+opentelemetry-collector:
+  enabled: true
+  config:
+    exporters:
+      # Send traces to your Tempo instance
+      otlp/tempo:
+        endpoint: http://tempo.monitoring.svc.cluster.local:4317
+        tls:
+          insecure: true
+      
+      # Send metrics to your Prometheus
+      prometheus/remote-write:
+        endpoint: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+        remote_write_queue:
+          enabled: true
+      
+      # Send logs to your Loki
+      loki:
+        endpoint: http://loki-gateway.monitoring.svc.cluster.local:3100/loki/api/v1/push
+        
+      # Keep debug for troubleshooting
+      debug:
+        verbosity: normal
+        
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch, memory_limiter]
+          exporters: [otlp/tempo, debug]
+        metrics:
+          receivers: [otlp]
+          processors: [batch, memory_limiter]
+          exporters: [prometheus/remote-write, debug]
+        logs:
+          receivers: [otlp]
+          processors: [batch, memory_limiter]
+          exporters: [loki, debug]
+
+# Configure individual demo services
+components:
+  # Frontend configuration
+  frontend:
+    resources:
+      limits:
+        memory: 200Mi
+        cpu: 200m
+      requests:
+        memory: 100Mi
+        cpu: 100m
+
+  # Frontend proxy with ingress for external access
+  frontendProxy:
+    enabled: true
+    resources:
+      limits:
+        memory: 100Mi
+        cpu: 100m
+      requests:
+        memory: 50Mi
+        cpu: 50m
+    service:
+      type: ClusterIP
+    ingress:
+      enabled: true
+      ingressClassName: traefik
+      annotations:
+        external-dns.alpha.kubernetes.io/target: "52e6c172-8b5e-4167-b68f-20dd50299c3c.cfargotunnel.com"
+        external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+        traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
+      hosts:
+        - host: otel-demo.milenika.dev
+          paths:
+            - path: /
+              pathType: Prefix
+              port: 8080
+      tls:
+        - secretName: otel-demo-tls
+          hosts:
+            - otel-demo.milenika.dev
+
+  # Other services - reduce resource usage for homelab
+  adService:
+    resources:
+      limits:
+        memory: 300Mi
+        cpu: 200m
+      requests:
+        memory: 180Mi
+        cpu: 100m
+
+  cartService:
+    resources:
+      limits:
+        memory: 200Mi
+        cpu: 200m
+      requests:
+        memory: 160Mi
+        cpu: 100m
+
+  checkoutService:
+    resources:
+      limits:
+        memory: 200Mi
+        cpu: 200m
+      requests:
+        memory: 100Mi
+        cpu: 100m
+
+  currencyService:
+    resources:
+      limits:
+        memory: 200Mi
+        cpu: 200m
+      requests:
+        memory: 100Mi
+        cpu: 100m
+
+  emailService:
+    resources:
+      limits:
+        memory: 200Mi
+        cpu: 200m
+      requests:
+        memory: 100Mi
+        cpu: 100m
+
+  paymentService:
+    resources:
+      limits:
+        memory: 200Mi
+        cpu: 200m
+      requests:
+        memory: 100Mi
+        cpu: 100m
+
+  productCatalogService:
+    resources:
+      limits:
+        memory: 200Mi
+        cpu: 200m
+      requests:
+        memory: 100Mi
+        cpu: 100m
+
+  recommendationService:
+    resources:
+      limits:
+        memory: 500Mi  # This one needs more memory
+        cpu: 200m
+      requests:
+        memory: 200Mi
+        cpu: 100m
+
+  shippingService:
+    resources:
+      limits:
+        memory: 200Mi
+        cpu: 200m
+      requests:
+        memory: 100Mi
+        cpu: 100m
+
+  # Load generator - reduce load for homelab
+  loadGenerator:
+    enabled: true
+    resources:
+      limits:
+        memory: 200Mi
+        cpu: 200m
+      requests:
+        memory: 100Mi
+        cpu: 100m
+    env:
+      - name: LOCUST_WEB_PORT
+        value: "8089"
+      - name: LOCUST_USERS
+        value: "5"  # Reduced load
+      - name: LOCUST_SPAWN_RATE
+        value: "1"  # Slower spawn rate
+      - name: LOCUST_HOST
+        value: "http://frontend:8080"
+
+# Disable components we don't need (you already have these)
+jaeger:
+  enabled: false
+
+prometheus:
+  enabled: false
+  
+grafana:
+  enabled: false
+  
+opensearch:
+  enabled: false
+
+# Enable the in-memory cache (Valkey/Redis)
+valkey:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+  master:
+    resources:
+      limits:
+        memory: 100Mi
+        cpu: 100m
+      requests:
+        memory: 50Mi
+        cpu: 50m

@@ -6,7 +6,7 @@ resources:
   - homelab-overview-dashboard.yaml
   - loki-singlebinary-dashboard.yaml
   - prometheus-dashboard.yaml
-  - online-boutique-dashboard.yaml  # ADD THIS
+  - opentelemetry-demo-dashboard.yaml
 
 labels:
   - includeSelectors: true

@@ -1,19 +1,15 @@
-# apps/online-boutique/kustomization.yaml - SIMPLE & WORKING
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-resources:
-  - ingress.yaml
+# OpenTelemetry Demo is deployed via Helm, so no direct resources
+# This file exists for potential future customizations
 
 labels:
   - includeSelectors: true
     pairs:
       app.kubernetes.io/part-of: homelab-gitops
       environment: homelab
-      component: microservices-demo
-      
-commonAnnotations:
-  deployed-by: argocd
+      component: opentelemetry-demo
 
 # Set the namespace for all resources
-namespace: online-boutique
+namespace: otel-demo

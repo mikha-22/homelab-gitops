@@ -15,10 +15,9 @@ resources:
   - otel-app.yaml               # wave: 3
   - promtail-app.yaml           # wave: 4
   - dashboards-app.yaml         # wave: 5
+  - opentelemetry-demo-app.yaml           # ADD THIS LINE
   
   # Applications (10+ sync waves)
   - homer-app.yaml              # wave: 10
   - minio-app.yaml              # wave: 10
   - nginx-app.yaml              # wave: 15
-  - online-boutique-app.yaml    # wave: 20 (NOW SIMPLE VERSION!)
-  - online-boutique-ingress-app.yaml  # wave: 21 (ADD THIS LINE)

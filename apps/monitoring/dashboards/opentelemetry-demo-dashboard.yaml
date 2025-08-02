@@ -1,15 +1,14 @@
-# apps/monitoring/dashboards/online-boutique-dashboard.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: online-boutique-dashboard
+  name: opentelemetry-demo-dashboard
   namespace: monitoring
   labels:
     grafana_dashboard: "1"
-    app.kubernetes.io/name: online-boutique-dashboard
+    app.kubernetes.io/name: opentelemetry-demo-dashboard
     app.kubernetes.io/part-of: homelab-gitops
 data:
-  online-boutique.json: |
+  opentelemetry-demo.json: |
     {
       "annotations": {
         "list": [
@@ -39,10 +38,10 @@ data:
           "keepTime": false,
           "tags": [],
           "targetBlank": true,
-          "title": "Online Boutique",
-          "tooltip": "Visit the Online Boutique application",
+          "title": "OpenTelemetry Demo",
+          "tooltip": "Visit the OpenTelemetry Astronomy Shop",
           "type": "link",
-          "url": "https://boutique.milenika.dev"
+          "url": "https://otel-demo.milenika.dev"
         }
       ],
       "liveNow": false,
@@ -57,7 +56,7 @@ data:
           },
           "id": 10,
           "panels": [],
-          "title": "Online Boutique - Microservices Health & Performance",
+          "title": "OpenTelemetry Demo - Service Health & Performance",
           "type": "row"
         },
         {
@@ -142,13 +141,13 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "up{namespace=\"online-boutique\"}",
+              "expr": "up{namespace=\"otel-demo\"}",
               "format": "table",
               "instant": true,
               "refId": "A"
             }
           ],
-          "title": "Online Boutique - Microservices Status",
+          "title": "OpenTelemetry Demo - Service Status",
           "transformations": [
             {
               "id": "organize",
@@ -162,12 +161,12 @@ data:
                 "indexByName": {
                   "Value": 0,
                   "pod": 1,
-                  "container": 2
+                  "service_name": 2
                 },
                 "renameByName": {
                   "Value": "Status",
                   "pod": "Pod",
-                  "container": "Service"
+                  "service_name": "Service"
                 }
               }
             }
@@ -175,233 +174,71 @@ data:
           "type": "table"
         },
         {
-          "collapsed": false,
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 100
+                  },
+                  {
+                    "color": "red",
+                    "value": 1000
+                  }
+                ]
+              },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
           "gridPos": {
-            "h": 1,
-            "w": 24,
+            "h": 4,
+            "w": 6,
             "x": 0,
             "y": 9
           },
-          "id": 11,
-          "panels": [],
-          "title": "Resource Usage & Performance",
-          "type": "row"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "smooth",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "unit": "cores"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 10
-          },
-          "id": 3,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "table",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"online-boutique\",container!=\"POD\",container!=\"\"}[5m])) by (container)",
-              "legendFormat": "{{container}}",
-              "refId": "A"
-            }
-          ],
-          "title": "CPU Usage by Service",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "smooth",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "unit": "bytes"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 10
-          },
           "id": 4,
           "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "table",
-              "placement": "bottom"
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "none"
-            }
-          },
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "prometheus"
-              },
-              "expr": "sum(container_memory_working_set_bytes{namespace=\"online-boutique\",container!=\"POD\",container!=\"\"}) by (container)",
-              "legendFormat": "{{container}}",
-              "refId": "A"
-            }
-          ],
-          "title": "Memory Usage by Service",
-          "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "mappings": []
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 18
-          },
-          "id": 2,
-          "options": {
-            "legend": {
-              "displayMode": "table",
-              "placement": "right",
-              "values": [
-                "value"
-              ]
-            },
-            "pieType": "pie",
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
             "reduceOptions": {
-              "values": false,
               "calcs": [
                 "lastNotNull"
               ],
-              "fields": ""
+              "fields": "",
+              "values": false
             },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
+            "textMode": "auto"
           },
+          "pluginVersion": "10.4.1",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (container) (up{namespace=\"online-boutique\"})",
+              "expr": "sum(rate(http_server_requests_total{namespace=\"otel-demo\"}[5m]))",
               "refId": "A"
             }
           ],
-          "title": "Service Distribution",
-          "type": "piechart"
+          "title": "HTTP Requests/sec",
+          "type": "stat"
         },
         {
           "datasource": {
@@ -411,74 +248,198 @@ data:
           "fieldConfig": {
             "defaults": {
               "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "smooth",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
+                "mode": "thresholds"
               },
               "mappings": [],
-              "unit": "short"
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
+                  }
+                ]
+              },
+              "unit": "s"
             },
             "overrides": []
           },
           "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 18
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 9
           },
           "id": 6,
           "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom"
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
             },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "none"
-            }
+            "textMode": "auto"
           },
+          "pluginVersion": "10.4.1",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"online-boutique\"}) by (pod)",
-              "legendFormat": "{{pod}} Restarts",
+              "expr": "histogram_quantile(0.95, sum(rate(http_server_duration_bucket{namespace=\"otel-demo\"}[5m])) by (le))",
               "refId": "A"
             }
           ],
-          "title": "Pod Restart Count",
-          "type": "timeseries"
+          "title": "HTTP P95 Latency",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 5
+                  },
+                  {
+                    "color": "red",
+                    "value": 15
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 12,
+            "y": 9
+          },
+          "id": 8,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(rate(http_server_requests_total{namespace=\"otel-demo\",status_code=~\"4..|5..\"}[5m])) / sum(rate(http_server_requests_total{namespace=\"otel-demo\"}[5m])) * 100",
+              "refId": "A"
+            }
+          ],
+          "title": "HTTP Error Rate",
+          "type": "stat"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 100
+                  },
+                  {
+                    "color": "red",
+                    "value": 1000
+                  }
+                ]
+              },
+              "unit": "spans/sec"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 18,
+            "y": 9
+          },
+          "id": 12,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "expr": "sum(rate(traces_spans_total{namespace=\"otel-demo\"}[5m]))",
+              "refId": "A"
+            }
+          ],
+          "title": "Traces Generated/sec",
+          "type": "stat"
         }
       ],
       "refresh": "30s",
@@ -486,9 +447,9 @@ data:
       "style": "dark",
       "tags": [
         "homelab",
-        "microservices",
-        "online-boutique",
-        "lgtm"
+        "opentelemetry",
+        "demo",
+        "tracing"
       ],
       "templating": {
         "list": []
@@ -499,8 +460,8 @@ data:
       },
       "timepicker": {},
       "timezone": "browser",
-      "title": "Online Boutique - Microservices Demo",
-      "uid": "online-boutique-microservices",
+      "title": "OpenTelemetry Demo - Astronomy Shop",
+      "uid": "opentelemetry-demo",
       "version": 1,
       "weekStart": ""
     }

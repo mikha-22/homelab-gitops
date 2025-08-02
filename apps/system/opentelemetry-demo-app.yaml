@@ -1,8 +1,7 @@
-# apps/system/online-boutique-app.yaml - SIMPLE VERSION WITHOUT ISTIO
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: online-boutique
+  name: opentelemetry-demo
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -10,16 +9,23 @@ metadata:
     argocd.argoproj.io/sync-wave: "20"  # Deploy after all infrastructure
 spec:
   project: default
-  source:
-    repoURL: https://github.com/GoogleCloudPlatform/microservices-demo
-    targetRevision: v0.10.1  # Use stable version
-    path: release
-    directory:
-      include: "kubernetes-manifests.yaml"  # ONLY basic Kubernetes manifests
+  sources:
+    # Source 1: OpenTelemetry Demo Helm chart
+    - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+      targetRevision: 0.32.6  # Latest stable version
+      chart: opentelemetry-demo
+      helm:
+        releaseName: otel-demo
+        valueFiles:
+          - $values/apps/opentelemetry-demo/values.yaml
+    # Source 2: Your Git repository with values
+    - repoURL: https://github.com/mikha-22/homelab-gitops
+      targetRevision: HEAD
+      ref: values
     
   destination:
     server: https://kubernetes.default.svc
-    namespace: online-boutique
+    namespace: otel-demo
     
   syncPolicy:
     automated:
