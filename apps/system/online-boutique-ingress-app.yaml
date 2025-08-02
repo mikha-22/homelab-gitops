@@ -1,0 +1,34 @@
+# apps/system/online-boutique-ingress-app.yaml - NEW FILE
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: online-boutique-ingress
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "21"  # Deploy after the main application
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mikha-22/homelab-gitops
+    targetRevision: HEAD
+    path: apps/online-boutique
+    
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: online-boutique
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false  # Namespace already exists
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 5m

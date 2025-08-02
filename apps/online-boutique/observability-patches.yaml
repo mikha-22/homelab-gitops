@@ -1,0 +1,52 @@
+# apps/online-boutique/observability-patches.yaml
+# Patch the existing Online Boutique deployments for LGTM observability
+
+# Patch frontend deployment to add OTEL environment variables
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: online-boutique
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: server
+        env:
+        # Add OTEL tracing configuration
+        - name: ENABLE_TRACING
+          value: "1"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector.monitoring.svc.cluster.local:4318"
+        - name: OTEL_SERVICE_NAME
+          value: "frontend"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.name=frontend,service.version=v0.10.1,deployment.environment=homelab"
+---
+# ServiceMonitor for Prometheus scraping
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: online-boutique
+  namespace: online-boutique
+  labels:
+    app.kubernetes.io/name: online-boutique
+    app.kubernetes.io/part-of: online-boutique
+    release: prometheus-stack  # Important for Prometheus discovery
+spec:
+  selector:
+    matchLabels:
+      app: frontend  # Match the frontend service specifically
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics
+    scheme: http
+  namespaceSelector:
+    matchNames:
+    - online-boutique

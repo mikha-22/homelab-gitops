@@ -1,15 +1,24 @@
+# apps/system/kustomization.yaml - ADD ONE LINE AT THE END
 resources:
+  # Projects (must be first)
   - projects/monitoring-project.yaml
-  - shared-config-app.yaml
-  - external-secrets-app.yaml
-  - monitoring-namespace-app.yaml
-  - prometheus-app.yaml
-  - loki-app.yaml
-  - tempo-app.yaml
-  - otel-app.yaml
-  - promtail-app.yaml
-  - homer-app.yaml
-  - dashboards-app.yaml
-  - minio-app.yaml
-  - nginx-app.yaml
-  - online-boutique-app.yaml
+  
+  # Infrastructure (-2 to 0 sync waves)
+  - shared-config-app.yaml       # wave: -2
+  - external-secrets-app.yaml    # wave: -1
+  
+  # Monitoring Stack (0 to 5 sync waves)
+  - monitoring-namespace-app.yaml # wave: 0
+  - prometheus-app.yaml          # wave: 1
+  - loki-app.yaml               # wave: 2
+  - tempo-app.yaml              # wave: 3
+  - otel-app.yaml               # wave: 3
+  - promtail-app.yaml           # wave: 4
+  - dashboards-app.yaml         # wave: 5
+  
+  # Applications (10+ sync waves)
+  - homer-app.yaml              # wave: 10
+  - minio-app.yaml              # wave: 10
+  - nginx-app.yaml              # wave: 15
+  - online-boutique-app.yaml    # wave: 20 (NOW SIMPLE VERSION!)
+  - online-boutique-ingress-app.yaml  # wave: 21 (ADD THIS LINE)
