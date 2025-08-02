@@ -1,4 +1,4 @@
-# apps/online-boutique/ingress.yaml - FIXED
+# apps/online-boutique/ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -21,7 +21,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: frontend  # Point to the ClusterIP frontend service, not frontend-external
+                name: frontend  # ClusterIP service, not the LoadBalancer
                 port:
                   number: 80
   tls:

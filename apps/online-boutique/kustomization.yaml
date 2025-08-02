@@ -1,4 +1,4 @@
-# apps/online-boutique/kustomization.yaml - FIXED
+# apps/online-boutique/kustomization.yaml - REMOVE LOADBALANCER
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -18,14 +18,10 @@ commonAnnotations:
 # Set the namespace for all resources
 namespace: online-boutique
 
-# Fix the LoadBalancer service to be ClusterIP
+# Remove the problematic LoadBalancer service entirely
 patches:
 - target:
     kind: Service
     name: frontend-external
   patch: |-
-    - op: replace
-      path: /spec/type
-      value: ClusterIP
-    - op: remove
-      path: /status
+    $patch: delete
