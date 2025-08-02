@@ -1,9 +1,10 @@
-# apps/online-boutique/kustomization.yaml - FIXED DELETE PATCH
+# apps/online-boutique/kustomization.yaml - WITH OBSERVABILITY
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
   - ingress.yaml
+  - observability-patches.yaml  # Add observability patches
 
 labels:
   - includeSelectors: true
@@ -25,3 +26,28 @@ patches:
     name: frontend-external
   patch: |
     $patch: delete
+
+# Strategic merge patches to add observability to existing deployments
+patchesStrategicMerge:
+- |-
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: frontend
+  spec:
+    template:
+      metadata:
+        annotations:
+          prometheus.io/scrape: "true"
+          prometheus.io/port: "8080"
+          prometheus.io/path: "/metrics"
+      spec:
+        containers:
+        - name: server
+          env:
+          - name: ENABLE_TRACING
+            value: "1"
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: "http://otel-collector.monitoring.svc.cluster.local:4318"
+          - name: OTEL_SERVICE_NAME
+            value: "frontend"

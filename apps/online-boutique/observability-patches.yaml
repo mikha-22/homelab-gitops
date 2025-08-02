@@ -1,7 +1,7 @@
 # apps/online-boutique/observability-patches.yaml
-# Patch the existing Online Boutique deployments for LGTM observability
+# Add OTEL tracing and monitoring to Online Boutique services
 
-# Patch frontend deployment to add OTEL environment variables
+# Patch frontend deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,7 +18,7 @@ spec:
       containers:
       - name: server
         env:
-        # Add OTEL tracing configuration
+        # Enable distributed tracing
         - name: ENABLE_TRACING
           value: "1"
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
@@ -27,8 +27,89 @@ spec:
           value: "frontend"
         - name: OTEL_RESOURCE_ATTRIBUTES
           value: "service.name=frontend,service.version=v0.10.1,deployment.environment=homelab"
+        # Enhanced logging for better log correlation
+        - name: LOG_LEVEL
+          value: "info"
 ---
-# ServiceMonitor for Prometheus scraping
+# Patch productcatalogservice deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productcatalogservice
+  namespace: online-boutique
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3550"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: server
+        env:
+        - name: ENABLE_TRACING
+          value: "1"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector.monitoring.svc.cluster.local:4318"
+        - name: OTEL_SERVICE_NAME
+          value: "productcatalogservice"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.name=productcatalogservice,service.version=v0.10.1,deployment.environment=homelab"
+---
+# Patch cartservice deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cartservice
+  namespace: online-boutique
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "7070"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: server
+        env:
+        - name: ENABLE_TRACING
+          value: "1"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector.monitoring.svc.cluster.local:4318"
+        - name: OTEL_SERVICE_NAME
+          value: "cartservice"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.name=cartservice,service.version=v0.10.1,deployment.environment=homelab"
+---
+# Patch checkoutservice deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkoutservice
+  namespace: online-boutique
+spec:
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5050"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: server
+        env:
+        - name: ENABLE_TRACING
+          value: "1"
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector.monitoring.svc.cluster.local:4318"
+        - name: OTEL_SERVICE_NAME
+          value: "checkoutservice"
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: "service.name=checkoutservice,service.version=v0.10.1,deployment.environment=homelab"
+---
+# ServiceMonitor for Prometheus to scrape Online Boutique metrics
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -36,14 +117,18 @@ metadata:
   namespace: online-boutique
   labels:
     app.kubernetes.io/name: online-boutique
-    app.kubernetes.io/part-of: online-boutique
+    app.kubernetes.io/part-of: homelab-gitops
     release: prometheus-stack  # Important for Prometheus discovery
 spec:
   selector:
     matchLabels:
-      app: frontend  # Match the frontend service specifically
+      app: frontend  # Will match multiple services with app labels
   endpoints:
   - port: http
+    interval: 30s
+    path: /metrics
+    scheme: http
+  - port: grpc
     interval: 30s
     path: /metrics
     scheme: http
