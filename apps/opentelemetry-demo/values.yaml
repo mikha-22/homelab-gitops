@@ -15,8 +15,8 @@ opentelemetry-collector:
         tls:
           insecure: true
       
-      # Send metrics to your Prometheus
-      prometheus/remote-write:
+      # Send metrics to your Prometheus - FIXED: exporter name
+      prometheusremotewrite:
         endpoint: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
         remote_write_queue:
           enabled: true
@@ -38,7 +38,7 @@ opentelemetry-collector:
         metrics:
           receivers: [otlp]
           processors: [batch, memory_limiter]
-          exporters: [prometheus/remote-write, debug]
+          exporters: [prometheusremotewrite, debug]  # FIXED: exporter name
         logs:
           receivers: [otlp]
           processors: [batch, memory_limiter]
@@ -46,7 +46,7 @@ opentelemetry-collector:
 
 # Configure individual demo services
 components:
-  # Frontend configuration
+  # Frontend configuration - ADDED: browser telemetry config
   frontend:
     resources:
       limits:
@@ -55,6 +55,9 @@ components:
       requests:
         memory: 100Mi
         cpu: 100m
+    envOverrides:
+      - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+        value: https://otel-demo.milenika.dev/otlp-http/v1/traces
 
   # Frontend proxy with ingress for external access
   frontendProxy:
