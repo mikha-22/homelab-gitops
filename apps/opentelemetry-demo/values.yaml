@@ -191,17 +191,6 @@ components:
       - name: LOCUST_HOST
         value: "http://frontend:8080"
 
-  # Enable the in-memory cache (valkey-cart) 
-  valkey-cart:
-    enabled: true
-    resources:
-      limits:
-        memory: 100Mi
-        cpu: 100m
-      requests:
-        memory: 50Mi
-        cpu: 50m
-
 # Disable components we don't need (you already have these)
 jaeger:
   enabled: false
