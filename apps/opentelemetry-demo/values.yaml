@@ -172,7 +172,7 @@ components:
         cpu: 100m
 
   # Load generator - reduce load for homelab
-  loadGenerator:
+  loadgenerator:
     enabled: true
     resources:
       limits:
@@ -204,8 +204,8 @@ grafana:
 opensearch:
   enabled: false
 
-# Enable the in-memory cache (Valkey/Redis)
-valkey:
+# Enable the in-memory cache (Redis)
+redis:
   enabled: true
   architecture: standalone
   auth:
