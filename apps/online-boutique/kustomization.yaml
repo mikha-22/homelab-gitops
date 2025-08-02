@@ -1,10 +1,9 @@
-# apps/online-boutique/kustomization.yaml - UPDATED
+# apps/online-boutique/kustomization.yaml - SIMPLIFIED
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
   - ingress.yaml
-  - observability-patches.yaml  # Add observability patches
 
 labels:
   - includeSelectors: true
@@ -16,17 +15,5 @@ labels:
 commonAnnotations:
   deployed-by: argocd
 
-# Add namespace to all resources
+# Set the namespace for all resources
 namespace: online-boutique
-
-# Strategic merge patches to add observability to existing workloads
-patchesStrategicMerge:
-- |-
-  apiVersion: v1
-  kind: Service
-  metadata:
-    name: frontend
-    annotations:
-      prometheus.io/scrape: "true"
-      prometheus.io/port: "80"
-      prometheus.io/path: "/metrics"
