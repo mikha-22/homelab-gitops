@@ -10,6 +10,11 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   project: monitoring
+  ignoreDifferences:
+    - group: monitoring.coreos.com
+      kind: ServiceMonitor
+      jqPathExpressions:
+        - .spec.endpoints[].trackTimestampsStaleness
   sources:
     # Source 1: Prometheus Community Helm chart
     - repoURL: https://prometheus-community.github.io/helm-charts

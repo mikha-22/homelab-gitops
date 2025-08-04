@@ -74,7 +74,7 @@ singleBinary:
     storageClass: local-path
     accessModes:
       - ReadWriteOnce
-    size: 30Gi
+    size: 10Gi
 
 # CRITICAL: Zero out replica counts of other deployment modes
 backend:

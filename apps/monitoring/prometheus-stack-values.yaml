@@ -187,8 +187,8 @@ grafana:
 prometheus:
   enabled: true
   prometheusSpec:
-    retention: 15d
-    retentionSize: 20GB
+    retention: 7d
+    retentionSize: 9Gi
     resources:
       limits:
         cpu: 2000m
@@ -207,7 +207,7 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 30Gi
+              storage: 10Gi
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false

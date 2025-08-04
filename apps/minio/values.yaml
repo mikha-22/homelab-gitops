@@ -29,7 +29,7 @@ persistence:
   enabled: true
   storageClass: local-path
   accessMode: ReadWriteOnce
-  size: 20Gi
+  size: 5Gi
 
 ## Service for MinIO API
 service:
