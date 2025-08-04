@@ -3,8 +3,7 @@ resources:
   # Projects (must be first)
   - projects/monitoring-project.yaml
   
-  # Infrastructure (-2 to 0 sync waves)
-  - shared-config-app.yaml       # wave: -2
+  # Infrastructure (-1 to 0 sync waves)
   - external-secrets-app.yaml    # wave: -1
   
   # Monitoring Stack (0 to 5 sync waves)
