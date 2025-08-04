@@ -163,7 +163,7 @@ ingress:
           pathType: Prefix
   annotations:
     "kubernetes.io/ingress.class": "traefik"
-    "external-dns.alpha.kubernetes.io/target": "52e6c172-8b5e-4167-b68f-20dd50299c3c.cfargotunnel.com"
+    "external-dns.alpha.kubernetes.io/target": "e0995bb5-0641-44ba-9ac6-533e678117a2.cfargotunnel.com"
     "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
     "traefik.ingress.kubernetes.io/router.middlewares": "monitoring-security-headers@kubernetescrd"
   tls:
