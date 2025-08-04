@@ -75,7 +75,7 @@ buckets:
     purge: false
     versioning: false
 
-## Policies for users - ADDED THIS SECTION
+## Policies for users - UPDATED THIS SECTION
 policies:
   - name: hugo-policy
     statements:
@@ -87,6 +87,8 @@ policies:
           - "s3:PutObject"
           - "s3:DeleteObject"
           - "s3:ListBucket"
+          - "s3:PutBucketPolicy"
+          - "s3:GetBucketPolicy"
 
 ## Users for GitHub Actions - CREDENTIALS FROM EXTERNAL SECRETS
 users:
