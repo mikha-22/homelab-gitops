@@ -51,6 +51,7 @@ ingress:
   path: /
   hosts:
     - minio-api.milenika.dev
+
 ## Ingress for MinIO Console (Web UI)
 consoleIngress:
   enabled: true
@@ -74,11 +75,25 @@ buckets:
     purge: false
     versioning: false
 
+## Policies for users - ADDED THIS SECTION
+policies:
+  - name: hugo-policy
+    statements:
+      - resources:
+          - "arn:aws:s3:::hugo-static"
+          - "arn:aws:s3:::hugo-static/*"
+        actions:
+          - "s3:GetObject"
+          - "s3:PutObject"
+          - "s3:DeleteObject"
+          - "s3:ListBucket"
+
 ## Users for GitHub Actions - CREDENTIALS FROM EXTERNAL SECRETS
 users:
   - accessKey: hugo-access
     existingSecret: minio-secret
     existingSecretKey: hugo-secret-key
+    policy: hugo-policy  # ADDED THIS LINE
 
 ## Resource limits for homelab
 resources:
