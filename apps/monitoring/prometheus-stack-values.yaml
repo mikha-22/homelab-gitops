@@ -188,7 +188,7 @@ prometheus:
   enabled: true
   prometheusSpec:
     retention: 7d
-    retentionSize: 9Gi
+    retentionSize: 9GB
     resources:
       limits:
         cpu: 2000m
