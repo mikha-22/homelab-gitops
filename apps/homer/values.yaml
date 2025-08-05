@@ -1,0 +1,170 @@
+# apps/homer/values.yaml
+env:
+  TZ: "Asia/Jakarta"
+
+service:
+  main:
+    ports:
+      http:
+        port: 8080
+
+ingress:
+  main:
+    enabled: true
+    annotations:
+      "kubernetes.io/ingress.class": "traefik"
+      "external-dns.alpha.kubernetes.io/target": "e0995bb5-0641-44ba-9ac6-533e678117a2.cfargotunnel.com"
+      "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+    hosts:
+      - host: homer.milenika.dev
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: homer-tls
+        hosts:
+          - homer.milenika.dev
+
+securityContext:
+  runAsUser: 1000
+  runAsNonRoot: true
+  runAsGroup: 1000
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+persistence:
+  config:
+    enabled: true
+    type: pvc
+    storageClass: local-path
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    mountPath: /www/assets
+
+configmap:
+  config:
+    enabled: true
+    data:
+      config.yml: |
+        ---
+        title: "Milenika's Homelab"
+        subtitle: "LGTM Stack & Services"
+        logo: "logo.png"
+        
+        header: true
+                                
+        theme: dark
+        colors:
+          light:
+            highlight-primary: "#3367d6"
+            highlight-secondary: "#4285f4"
+            highlight-hover: "#5a95f5"
+            background: "#f5f5f5"
+            card-background: "#ffffff"
+            text: "#363636"
+            text-header: "#ffffff"
+            text-title: "#303030"
+            text-subtitle: "#424242"
+            card-shadow: rgba(0, 0, 0, 0.1)
+            link: "#3273dc"
+            link-hover: "#363636"
+          dark:
+            highlight-primary: "#3367d6"
+            highlight-secondary: "#4285f4"
+            highlight-hover: "#5a95f5"
+            background: "#131313"
+            card-background: "#2b2b2b"
+            text: "#eaeaea"
+            text-header: "#ffffff"
+            text-title: "#fafafa"
+            text-subtitle: "#f5f5f5"
+            card-shadow: rgba(0, 0, 0, 0.4)
+            link: "#3273dc"
+            link-hover: "#ffdd57"
+        
+        # Use the footer to inject custom HTML/CSS
+        footer: '<style>.service-item.unclickable:hover { transform: none !important; box-shadow: none !important; cursor: default !important; }</style>'
+
+        services:
+          - name: "Monitoring & Observability"
+            icon: "fas fa-chart-line"
+            items:
+              - name: "Grafana"
+                logo: "https://grafana.com/static/img/menu/grafana2.svg"
+                subtitle: "Metrics, Logs & Traces Visualization, Anonymous access enabled"
+                tag: "LGTM"
+                url: "https://grafana.milenika.dev/d/homelab-overview/homelab-overview-lgtm-stack"
+                target: "_blank"
+              - name: "Prometheus"
+                logo: "https://raw.githubusercontent.com/prometheus/prometheus/main/documentation/images/prometheus-logo.svg"
+                subtitle: "Metrics & Alerting Dashboard"
+                tag: "metrics"
+                url: "https://grafana.milenika.dev/d/ca95702b-91ba-49a9-a780-c353b01a5596/prometheus-overview"
+                target: "_blank"
+              - name: "Loki"
+                logo: "https://grafana.com/static/img/logos/logo-loki.svg"
+                subtitle: "Log Aggregation Dashboard"
+                tag: "logs"
+                url: "https://grafana.milenika.dev/d/loki-singlebinary-homelab/loki-singlebinary-homelab"
+                target: "_blank"
+              - name: "Tempo"
+                logo: "https://grafana.com/static/assets/img/blog/tempo.png"
+                subtitle: "No dashboard available"
+                tag: "traces"
+                class: "unclickable"
+          
+          - name: "Infrastructure"
+            icon: "fas fa-server"
+            items:
+              - name: "ArgoCD"
+                logo: "https://argo-cd.readthedocs.io/en/stable/assets/logo.png"
+                subtitle: "GitOps Continuous Delivery, Anonymous access enabled"
+                tag: "gitops"
+                url: "https://argocd.milenika.dev"
+                target: "_blank"
+              - name: "Hugo Site"
+                logo: "https://gohugo.io/images/hugo-logo-wide.svg"
+                subtitle: "Personal blog"
+                tag: "website"
+                url: "https://hugo.milenika.dev"
+                target: "_blank"
+              - name: "Homer Dashboard"
+                logo: "https://github.com/bastienwirtz/homer/raw/main/public/logo.png"
+                subtitle: "This Homepage"
+                tag: "dashboard"
+                url: "https://homer.milenika.dev"
+                target: "_blank"
+          
+          - name: "Source Code"
+            icon: "fab fa-github"
+            items:
+              - name: "GitOps Repository"
+                logo: "https://github.com/fluidicon.png"
+                subtitle: "Homelab GitOps configurations"
+                tag: "kubernetes"
+                url: "https://github.com/mikha-22/homelab-gitops"
+                target: "_blank"
+              - name: "IaC Repository"
+                logo: "https://github.com/fluidicon.png"
+                subtitle: "Terraform & Automation"
+                tag: "terraform"
+                url: "https://github.com/mikha-22/homelab-iac"
+                target: "_blank"
+              - name: "Hugo Site Repository"
+                logo: "https://github.com/fluidicon.png"
+                subtitle: "Hugo source code and CI/CD"
+                tag: "hugo"
+                url: "https://github.com/mikha-22/hugo-site"
+                target: "_blank"
+
+        message:
+          style: "is-dark"
+          title: "Welcome to Milenika's Homelab!"
+          icon: "fa fa-grin"
+          content: "This dashboard provides quick access to all your homelab services. Your LGTM observability stack is fully operational with Loki (logs), Grafana (visualization), Tempo (traces), and Prometheus (metrics)."

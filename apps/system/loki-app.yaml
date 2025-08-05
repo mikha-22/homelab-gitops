@@ -30,8 +30,26 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
     retry:
-      limit: 5
+      limit: 3
       backoff:
         duration: 5s
         factor: 2
         maxDuration: 5m
+
+  # ADD THIS - Same pattern as your Tempo app
+  ignoreDifferences:
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /spec/volumeClaimTemplates/0/apiVersion
+        - /spec/volumeClaimTemplates/0/kind
+        - /spec/volumeClaimTemplates/0/metadata/creationTimestamp
+        - /spec/volumeClaimTemplates/0/status
+    # Alternative: Use JQ expressions for more flexible matching
+    - group: apps
+      kind: StatefulSet
+      jqPathExpressions:
+        - '.spec.volumeClaimTemplates[]?.apiVersion'
+        - '.spec.volumeClaimTemplates[]?.kind'
+        - '.spec.volumeClaimTemplates[]?.metadata.creationTimestamp'
+        - '.spec.volumeClaimTemplates[]?.status'

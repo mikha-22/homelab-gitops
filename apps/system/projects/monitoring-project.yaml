@@ -6,23 +6,19 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
-  description: "Homelab LGTM Stack - Loki, Grafana, Tempo, ProMetheus"
-  
+  description: "Homelab LGTM Stack - Loki, Grafana, Tempo, Prometheus"
   # Source repositories
   sourceRepos:
     - 'https://github.com/mikha-22/homelab-gitops'
     - 'https://prometheus-community.github.io/helm-charts'
     - 'https://grafana.github.io/helm-charts'
-    - 'https://open-telemetry.github.io/opentelemetry-helm-charts'  # ADD THIS LINE
-
-  
+    - 'https://open-telemetry.github.io/opentelemetry-helm-charts'
   # Deployment destinations - ADD kube-system for Prometheus components
   destinations:
     - namespace: monitoring
       server: https://kubernetes.default.svc
     - namespace: kube-system  # ADD THIS - Prometheus needs to create services here
       server: https://kubernetes.default.svc
-  
   # Cluster resource permissions
   clusterResourceWhitelist:
     - group: ''
@@ -41,12 +37,10 @@ spec:
       kind: PodSecurityPolicy
     - group: security.openshift.io
       kind: SecurityContextConstraints
-  
   # Namespace resource permissions
   namespaceResourceWhitelist:
     - group: '*'
       kind: '*'
-  
   # RBAC configuration
   roles:
     - name: monitoring-admin

@@ -12,10 +12,6 @@ mcImage:
 
 ## MinIO mode - standalone for homelab
 mode: standalone
-
-## REMOVED: Root credentials (now managed by External Secrets)
-# rootUser and rootPassword are now provided by the minio-secret
-
 ## Use existing secret created by External Secrets
 existingSecret: minio-secret
 
