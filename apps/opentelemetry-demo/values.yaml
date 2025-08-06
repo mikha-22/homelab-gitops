@@ -1,10 +1,10 @@
-# OpenTelemetry Demo Helm values - customized for your homelab LGTM stack
+# apps/opentelemetry-demo/values.yaml - SIMPLIFIED: Direct to LGTM Stack
 
 # Global settings
 global:
   domain: milenika.dev
 
-# Configure OpenTelemetry Collector to send data to your existing stack
+# Configure OpenTelemetry Collector to send data directly to your LGTM stack
 opentelemetry-collector:
   enabled: true
   config:
@@ -15,11 +15,13 @@ opentelemetry-collector:
         tls:
           insecure: true
       
-      # Send metrics to your Prometheus - FIXED: exporter name
+      # Send metrics directly to your Prometheus
       prometheusremotewrite:
         endpoint: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
         remote_write_queue:
           enabled: true
+          queue_size: 10000
+          num_consumers: 5
       
       # Send logs to your Loki
       loki:
@@ -34,11 +36,11 @@ opentelemetry-collector:
         traces:
           receivers: [otlp]
           processors: [batch, memory_limiter]
-          exporters: [otlp/tempo, debug]
+          exporters: [spanmetrics, otlp/tempo, debug]
         metrics:
           receivers: [otlp]
           processors: [batch, memory_limiter]
-          exporters: [prometheusremotewrite, debug]  # FIXED: exporter name
+          exporters: [prometheusremotewrite, debug]
         logs:
           receivers: [otlp]
           processors: [batch, memory_limiter]
