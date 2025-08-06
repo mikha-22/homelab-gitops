@@ -105,7 +105,7 @@ configmap:
                 logo: "https://raw.githubusercontent.com/prometheus/prometheus/main/documentation/images/prometheus-logo.svg"
                 subtitle: "Metrics & Alerting Dashboard"
                 tag: "metrics"
-                url: "https://grafana.milenika.dev/d/ca95702b-91ba-49a9-a780-c353b01a5596/prometheus-overview"
+                url: "grafana.milenika.dev/d/e424e26c-2773-4a35-a924-732c674db50d"
                 target: "_blank"
               - name: "Loki"
                 logo: "https://grafana.com/static/img/logos/logo-loki.svg"
