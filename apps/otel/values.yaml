@@ -1,34 +1,55 @@
-# Configure OpenTelemetry Collector to send data to your existing stack
-opentelemetry-collector:
-  config:
-    exporters:
-      # Send traces to your Tempo instance
-      otlp/tempo:
-        endpoint: http://tempo.monitoring.svc.cluster.local:4317
-        tls:
-          insecure: true
+# apps/otel/values.yaml - FIXED FOR METRICS
+mode: deployment
+
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: "0.131.0"
+
+config:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+  processors:
+    batch:
+      timeout: 1s
+      send_batch_size: 1024
+
+  exporters:
+    debug:
+      verbosity: detailed
+    
+    # Traces to Tempo
+    otlp/tempo:
+      endpoint: http://tempo.monitoring.svc.cluster.local:4317
+      tls:
+        insecure: true
+    
+    # ADDED: Metrics to Prometheus
+    prometheusremotewrite:
+      endpoint: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+      remote_write_queue:
+        enabled: true
+        queue_size: 10000
+        num_consumers: 5
+
+  service:
+    telemetry:
+      logs:
+        level: debug
+    pipelines:
+      # Traces pipeline (existing)
+      traces:
+        receivers: [otlp]
+        processors: [batch]
+        exporters: [debug, otlp/tempo]
       
-      # FIXED: Send ALL telemetry to your main collector
-      otlp/main-collector:
-        endpoint: http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317
-        tls:
-          insecure: true
-      
-      # Keep debug for troubleshooting
-      debug:
-        verbosity: normal
-        
-    service:
-      pipelines:
-        traces:
-          receivers: [otlp]
-          processors: [batch, memory_limiter]
-          exporters: [spanmetrics, otlp/tempo, otlp/main-collector, debug]
-        metrics:
-          receivers: [otlp]
-          processors: [batch, memory_limiter]
-          exporters: [otlp/main-collector, debug]  # Send metrics to your collector
-        logs:
-          receivers: [otlp]
-          processors: [batch, memory_limiter]
-          exporters: [otlp/main-collector, debug]  # Send logs to your collector
+      # ADDED: Metrics pipeline
+      metrics:
+        receivers: [otlp]
+        processors: [batch]
+        exporters: [debug, prometheusremotewrite]
