@@ -8,6 +8,15 @@ global:
 opentelemetry-collector:
   enabled: true
   config:
+    connectors:
+      # Add the spanmetrics connector to generate RED metrics from traces
+      spanmetrics:
+        histogram_buckets: [100us, 1ms, 2ms, 6ms, 10ms, 100ms, 250ms]
+        dimensions:
+          - name: http.method
+          - name: http.status_code
+          - name: service.name
+        
     exporters:
       # Send traces to your Tempo instance
       otlp/tempo:
@@ -36,9 +45,9 @@ opentelemetry-collector:
         traces:
           receivers: [otlp]
           processors: [batch, memory_limiter]
-          exporters: [spanmetrics, otlp/tempo, debug]
+          exporters: [spanmetrics, otlp/tempo, debug]  # spanmetrics generates metrics from traces
         metrics:
-          receivers: [otlp]
+          receivers: [otlp, spanmetrics]  # FIXED: spanmetrics as receiver for generated metrics
           processors: [batch, memory_limiter]
           exporters: [prometheusremotewrite, debug]
         logs:
