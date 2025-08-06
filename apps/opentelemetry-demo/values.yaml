@@ -11,11 +11,18 @@ opentelemetry-collector:
     connectors:
       # Add the spanmetrics connector to generate RED metrics from traces
       spanmetrics:
-        histogram_buckets: [100us, 1ms, 2ms, 6ms, 10ms, 100ms, 250ms]
+        histogram:
+          explicit:
+            buckets: [100us, 1ms, 2ms, 6ms, 10ms, 100ms, 250ms]
         dimensions:
           - name: http.method
+            default: GET
           - name: http.status_code
           - name: service.name
+        exemplars:
+          enabled: true
+        aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
+        metrics_flush_interval: 15s
         
     exporters:
       # Send traces to your Tempo instance
