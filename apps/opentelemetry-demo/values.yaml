@@ -37,7 +37,6 @@ opentelemetry-collector:
           - name: http.method
             default: GET
           - name: http.status_code
-          - name: service.name
         exemplars:
           enabled: true
         aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
