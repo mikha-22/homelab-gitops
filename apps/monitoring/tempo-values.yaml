@@ -29,7 +29,3 @@ tempo:
   metricsGenerator:
     enabled: true
     remoteWriteUrl: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
-
-  # This enables TraceQL search
-  querier:
-    search_enabled: true
