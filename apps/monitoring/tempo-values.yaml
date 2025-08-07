@@ -1,7 +1,7 @@
 # apps/monitoring/tempo-values.yaml
-# This configuration is compatible with tempo chart version 1.23.2
+# CORRECTED AND SIMPLIFIED for Helm chart version 1.23.2
 
-# This block controls the Kubernetes resources
+# This block controls the Kubernetes resources like the Pod, Service, etc.
 resources:
   requests:
     cpu: 500m
@@ -21,11 +21,29 @@ serviceMonitor:
   enabled: true
   interval: 30s
 
-# This block passes configuration values to Tempo
+# This livenessProbe gives the container 60 seconds to start up before
+# Kubernetes begins checking if it's healthy. This prevents the crash loop.
+livenessProbe:
+  httpGet:
+    path: /ready
+    port: 3200
+  initialDelaySeconds: 60
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 6
+
+# This block passes configuration directly to the Tempo application.
+# It is structured to match the official documentation.
 tempo:
-  retention: 168h # Set retention to 7 days
-  
-  # This enables the metrics generator and provides the CORRECT remote write URL
+  retention: 168h # 7 days
+
+  # This section enables and correctly configures the metrics-generator
+  # to send span metrics to your Prometheus instance.
   metricsGenerator:
     enabled: true
-    remoteWriteUrl: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+    config:
+      storage:
+        path: /tmp/tempo/generator/wal
+        remote_write:
+          - url: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+            send_exemplars: true
