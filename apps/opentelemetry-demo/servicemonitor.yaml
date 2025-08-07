@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: otel-demo-collector
     app.kubernetes.io/part-of: homelab-gitops
-    release: prometheus-stack  # Important: This makes Prometheus discover it
+    release: prometheus-stack
 spec:
   selector:
     matchLabels:
@@ -14,7 +14,7 @@ spec:
       app.kubernetes.io/instance: otel-demo
       component: standalone-collector
   endpoints:
-  - port: 8888  # Using port number since I need to verify the port name
+  - port: metrics  # Use the port name from the service
     interval: 30s
     path: /metrics
     scheme: http
