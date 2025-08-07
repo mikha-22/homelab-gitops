@@ -1,3 +1,5 @@
+# apps/monitoring/prometheus-stack-values.yaml
+
 # Global settings
 global:
   imageRegistry: ""
@@ -11,7 +13,7 @@ crds:
 alertmanager:
   enabled: false
 
-# Grafana Configuration - IMPROVED WITH BETTER FAILURE HANDLING
+# Grafana Configuration
 grafana:
   enabled: true
   
@@ -121,7 +123,6 @@ grafana:
     panels:
       disable_sanitize_html: false
 
-  # FIXED: additionalDataSources (uppercase 'S') - NOT additionalDatasources
   additionalDataSources:
     - name: Loki
       type: loki
@@ -146,6 +147,21 @@ grafana:
       version: 1
       editable: true
       jsonData:
+        # ADDED THIS BLOCK to link trace metrics to Prometheus
+        tracesToMetrics:
+          datasourceUid: 'prometheus'
+          tags:
+            - { key: 'service.name' }
+            - { key: 'span.name' }
+            - { key: 'job' }
+          queries:
+            - name: 'traces_spanmetrics_latency'
+              query: 'sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[$$__rate_interval])) by (le)'
+            - name: 'traces_spanmetrics_calls'
+              query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[$$__rate_interval]))'
+            - name: 'traces_spanmetrics_status_code'
+              query: 'sum(rate(traces_spanmetrics_calls_total{$$__tags}[$$__rate_interval])) by (status_code)'
+
         tracesToLogs:
           datasourceUid: loki
           tags: ['job', 'instance', 'pod', 'namespace']
@@ -183,14 +199,13 @@ grafana:
       labelValue: "1"
       defaultDatasourceEnabled: true
 
-# Prometheus Configuration - FIXED: Added remote write support
+# Prometheus Configuration
 prometheus:
   enabled: true
   prometheusSpec:
     retention: 7d
     retentionSize: 9GB
     
-    # FIXED: Only use enableRemoteWriteReceiver (remove additionalArgs)
     enableRemoteWriteReceiver: true
     
     resources:
