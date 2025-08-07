@@ -117,6 +117,7 @@ components:
           paths:
             - path: /
               pathType: Prefix
+              port: 8080
       tls:
         - secretName: otel-demo-tls
           hosts:
