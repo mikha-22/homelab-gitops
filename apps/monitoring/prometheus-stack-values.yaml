@@ -183,12 +183,16 @@ grafana:
       labelValue: "1"
       defaultDatasourceEnabled: true
 
-# Prometheus Configuration
+# Prometheus Configuration - FIXED: Added remote write support
 prometheus:
   enabled: true
   prometheusSpec:
     retention: 7d
     retentionSize: 9GB
+    
+    # FIXED: Only use enableRemoteWriteReceiver (remove additionalArgs)
+    enableRemoteWriteReceiver: true
+    
     resources:
       limits:
         cpu: 2000m
@@ -283,6 +287,7 @@ defaultRules:
 
 # Cleanup settings
 cleanPrometheusOperatorObjectNames: true
+
 # Disable trackTimestampsStaleness globally to fix schema error
 kubeStateMetrics:
   enabled: true
