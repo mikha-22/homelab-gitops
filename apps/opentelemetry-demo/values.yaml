@@ -26,11 +26,11 @@ opentelemetry-collector:
         limit_mib: 512
         spike_limit_mib: 128
 
-      # This processor groups spans belonging to the same trace together
-      # This fixes the "<root span not yet received>" issue.
       groupbytrace:
-        wait_duration: 3s # Wait up to 3 seconds for all spans in a trace
+        wait_duration: 3s
         num_traces: 1000
+
+      # REMOVED the 'transform' processor. It's no longer needed.
 
     connectors:
       spanmetrics:
@@ -47,13 +47,11 @@ opentelemetry-collector:
         metrics_flush_interval: 15s
         
     exporters:
-      # Send traces to your Tempo instance
       otlp/tempo:
         endpoint: http://tempo.monitoring.svc.cluster.local:4317
         tls:
           insecure: true
       
-      # Send metrics directly to your Prometheus
       prometheusremotewrite:
         endpoint: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
         remote_write_queue:
@@ -61,11 +59,9 @@ opentelemetry-collector:
           queue_size: 10000
           num_consumers: 5
       
-      # Send logs to your Loki
       loki:
         endpoint: http://loki-gateway.monitoring.svc.cluster.local:3100/loki/api/v1/push
         
-      # Keep debug for troubleshooting
       debug:
         verbosity: normal
         
@@ -76,7 +72,7 @@ opentelemetry-collector:
       pipelines:
         traces:
           receivers: [otlp]
-          # Added 'groupbytrace' to the processing pipeline before batching.
+          # UPDATED: The 'transform' processor is removed from the pipeline.
           processors: [memory_limiter, groupbytrace, batch]
           exporters: [spanmetrics, otlp/tempo, debug]
         metrics:
@@ -115,7 +111,6 @@ components:
       ingressClassName: traefik
       annotations:
         external-dns.alpha.kubernetes.io/target: "e0995bb5-0641-44ba-9ac6-533e678117a2.cfargotunnel.com"
-        # FIXED: Removed stray quote from the end of the next two keys
         external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
         traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
       hosts:
@@ -225,13 +220,13 @@ components:
       - name: LOCUST_WEB_PORT
         value: "8089"
       - name: LOCUST_USERS
-        value: "5" # Reduced load
+        value: "5"
       - name: LOCUST_SPAWN_RATE
-        value: "1" # Slower spawn rate
+        value: "1"
       - name: LOCUST_HOST
         value: "http://frontend:8080"
 
-# Disable components we don't need (you already have these)
+# Disable components we don't need
 jaeger:
   enabled: false
 

@@ -1,3 +1,5 @@
+# apps/system/opentelemetry-demo-app.yaml
+
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -12,7 +14,8 @@ spec:
   sources:
     # Source 1: OpenTelemetry Demo Helm chart
     - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
-      targetRevision: 0.32.6  # Latest stable version
+      # UPDATED to a newer version
+      targetRevision: 0.42.0
       chart: opentelemetry-demo
       helm:
         releaseName: otel-demo
@@ -22,7 +25,7 @@ spec:
     - repoURL: https://github.com/mikha-22/homelab-gitops
       targetRevision: HEAD
       ref: values
-    
+      
   destination:
     server: https://kubernetes.default.svc
     namespace: otel-demo
