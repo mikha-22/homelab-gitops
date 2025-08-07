@@ -13,7 +13,7 @@ spec:
   sources:
     # Source 1: The Helm chart from the remote repository
     - repoURL: https://djjudas21.github.io/charts/
-      targetRevision: 9.0.4
+      targetRevision: 8.2.4
       chart: homer
       helm:
         releaseName: homer
