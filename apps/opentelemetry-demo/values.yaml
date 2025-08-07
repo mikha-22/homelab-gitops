@@ -152,8 +152,8 @@ components:
   # NOTE: The component is named 'load-generator' in the chart
   load-generator:
     resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
+      limits: { memory: "1000Mi", cpu: "200m" }
+      requests: { memory: "250Mi", cpu: "100m" }
     # Use envOverrides to change specific default environment variables
     envOverrides:
       - name: LOCUST_USERS
