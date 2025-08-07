@@ -1,7 +1,8 @@
 # apps/monitoring/tempo-values.yaml
-# This configuration is compatible with tempo chart version 1.23.2
+# This configuration is compatible with tempo chart version 1.23.2 and validated against official documentation.
 
-# This block controls the Kubernetes resources
+# This top-level block controls the Kubernetes resources (Pods, Services, etc.) deployed by the Helm chart.
+# These are chart-specific settings, not part of the Tempo application config itself.
 resources:
   requests:
     cpu: 500m
@@ -21,16 +22,26 @@ serviceMonitor:
   enabled: true
   interval: 30s
 
-# This block passes configuration values to Tempo
+# This 'tempo:' block contains the configuration that will be passed to the Tempo application itself.
+# The Helm chart templates this section into the final /etc/tempo/config.yaml inside the container.
 tempo:
   retention: 168h # Set retention to 7 days
   
-  # This enables the metrics generator and provides the CORRECT remote write URL
+  # This corresponds to the 'metrics_generator:' block in the documentation.
   metricsGenerator:
     enabled: true
+
+    # The 'config' block is a common Helm pattern. Its contents are used to generate the
+    # final configuration file for the application.
     config:
+      # This 'storage:' block directly maps to the 'metrics_generator.storage' section in the documentation.
       storage:
+        # This defines the Write-Ahead Log path for the metrics generator.
         path: /tmp/tempo/generator/wal
+        
+        # This 'remote_write:' block is a list, as specified in the documentation.
         remote_write:
+          # The URL for the Prometheus remote write endpoint.
           - url: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+            # Sending exemplars links your metrics back to specific traces in Grafana, which is highly recommended.
             send_exemplars: true
