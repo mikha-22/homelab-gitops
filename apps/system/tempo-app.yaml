@@ -1,63 +1,36 @@
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: tempo
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "3"
-spec:
-  project: monitoring
-  sources:
-    # Source 1: The Helm chart from the remote repository
-    - repoURL: https://grafana.github.io/helm-charts
-      targetRevision: 1.23.2
-      chart: tempo
-      helm:
-        releaseName: tempo
-        valueFiles:
-          # This now references the 'values' source below
-          - $values/apps/monitoring/tempo-values.yaml
+# apps/monitoring/tempo-values.yaml
+# This configuration is compatible with tempo chart version 1.23.2
 
-    # Source 2: Your Git repository, providing the values file
-    - repoURL: https://github.com/mikha-22/homelab-gitops
-      targetRevision: HEAD
-      # This 'ref' is a special key ArgoCD uses to identify this source
-      ref: values
+# This block controls the Kubernetes resources
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: 1000m
+    memory: 2Gi
 
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: monitoring
+persistence:
+  enabled: true
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 10Gi
 
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 5m
+serviceMonitor:
+  enabled: true
+  interval: 30s
 
-  # FIXED: Ignore the specific volumeClaimTemplates metadata that Kubernetes auto-adds
-  ignoreDifferences:
-    - group: apps
-      kind: StatefulSet
-      jsonPointers:
-        - /spec/volumeClaimTemplates/0/apiVersion
-        - /spec/volumeClaimTemplates/0/kind
-        - /spec/volumeClaimTemplates/0/metadata/creationTimestamp
-        - /spec/volumeClaimTemplates/0/status
-    # Alternative: Use JQ expressions for more flexible matching
-    - group: apps
-      kind: StatefulSet
-      jqPathExpressions:
-        - '.spec.volumeClaimTemplates[]?.apiVersion'
-        - '.spec.volumeClaimTemplates[]?.kind'
-        - '.spec.volumeClaimTemplates[]?.metadata.creationTimestamp'
-        - '.spec.volumeClaimTemplates[]?.status'
+# This block passes configuration values to Tempo
+tempo:
+  retention: 168h # Set retention to 7 days
+  
+  # This enables the metrics generator and provides the CORRECT remote write URL
+  metricsGenerator:
+    enabled: true
+    config:
+      storage:
+        path: /tmp/tempo/generator/wal
+        remote_write:
+          - url: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+            send_exemplars: true
