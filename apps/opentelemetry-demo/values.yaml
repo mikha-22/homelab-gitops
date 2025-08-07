@@ -66,10 +66,13 @@ opentelemetry-collector:
         verbosity: normal
         
     service:
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888  # ADDED: Expose collector's own metrics
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [memory_limiter, batch]  # Fixed order
+          processors: [memory_limiter, batch]
           exporters: [spanmetrics, otlp/tempo, debug]
         metrics:
           receivers: [otlp, spanmetrics]
