@@ -1,4 +1,4 @@
-# apps/opentelemetry-demo/values.yaml - SIMPLIFIED: Direct to LGTM Stack
+# apps/opentelemetry-demo/values.yaml - FIXED VERSION
 
 # Global settings
 global:
@@ -8,6 +8,25 @@ global:
 opentelemetry-collector:
   enabled: true
   config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      # ADD THESE - they were missing!
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+      
+      memory_limiter:
+        limit_mib: 512
+        spike_limit_mib: 128
+
     connectors:
       # Add the spanmetrics connector to generate RED metrics from traces
       spanmetrics:
@@ -18,6 +37,7 @@ opentelemetry-collector:
           - name: http.method
             default: GET
           - name: http.status_code
+          - name: service.name
         exemplars:
           enabled: true
         aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
@@ -50,20 +70,19 @@ opentelemetry-collector:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [batch, memory_limiter]
-          exporters: [spanmetrics, otlp/tempo, debug]  # spanmetrics generates metrics from traces
+          processors: [memory_limiter, batch]  # Fixed order
+          exporters: [spanmetrics, otlp/tempo, debug]
         metrics:
-          receivers: [otlp, spanmetrics]  # FIXED: spanmetrics as receiver for generated metrics
-          processors: [batch, memory_limiter]
+          receivers: [otlp, spanmetrics]
+          processors: [memory_limiter, batch]
           exporters: [prometheusremotewrite, debug]
         logs:
           receivers: [otlp]
-          processors: [batch, memory_limiter]
+          processors: [memory_limiter, batch]
           exporters: [loki, debug]
 
-# Enable the in-memory cache (valkey-cart)
+# Remove browser telemetry for now - SIMPLIFIED
 components:
-  # Frontend configuration - ADDED: browser telemetry config
   frontend:
     resources:
       limits:
@@ -72,9 +91,7 @@ components:
       requests:
         memory: 100Mi
         cpu: 100m
-    envOverrides:
-      - name: PUBLIC_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-        value: https://otel-demo.milenika.dev/otlp-http/v1/traces
+    # REMOVED: envOverrides for browser telemetry
 
   # Frontend proxy with ingress for external access
   frontendProxy:
@@ -100,7 +117,6 @@ components:
           paths:
             - path: /
               pathType: Prefix
-              port: 8080
       tls:
         - secretName: otel-demo-tls
           hosts:
