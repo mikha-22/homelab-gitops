@@ -1,10 +1,7 @@
 # apps/opentelemetry-demo/values.yaml
 
-# Global settings
 global:
-  domain: milenika.dev
-
-# Configure OpenTelemetry Collector to send data directly to your LGTM stack
+  domain: "milenika.dev"
 opentelemetry-collector:
   enabled: true
   config:
@@ -12,67 +9,57 @@ opentelemetry-collector:
       otlp:
         protocols:
           grpc:
-            endpoint: 0.0.0.0:4317
+            endpoint: "0.0.0.0:4317"
           http:
-            endpoint: 0.0.0.0:4318
-
+            endpoint: "0.0.0.0:4318"
     processors:
       batch:
         timeout: 1s
         send_batch_size: 1024
         send_batch_max_size: 2048
-      
       memory_limiter:
         limit_mib: 512
         spike_limit_mib: 128
-
       groupbytrace:
         wait_duration: 3s
         num_traces: 1000
-
       transform:
         trace_statements:
           - context: resource
             statements:
               - set(attributes["service.name"], attributes["rootServiceName"]) where attributes["rootServiceName"] != nil
-
     connectors:
       spanmetrics:
         histogram:
           explicit:
             buckets: [100us, 1ms, 2ms, 6ms, 10ms, 100ms, 250ms]
         dimensions:
-          - name: http.method
-            default: GET
-          - name: http.status_code
+          - name: "http.method"
+            default: "GET"
+          - name: "http.status_code"
         exemplars:
           enabled: true
         aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
         metrics_flush_interval: 15s
-        
     exporters:
       otlp/tempo:
-        endpoint: http://tempo.monitoring.svc.cluster.local:4317
+        endpoint: "http://tempo.monitoring.svc.cluster.local:4317"
         tls:
           insecure: true
-      
       prometheusremotewrite:
-        endpoint: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+        endpoint: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
         remote_write_queue:
           enabled: true
           queue_size: 10000
           num_consumers: 5
-      
       loki:
-        endpoint: http://loki-gateway.monitoring.svc.cluster.local:3100/loki/api/v1/push
-        
+        endpoint: "http://loki-gateway.monitoring.svc.cluster.local:3100/loki/api/v1/push"
       debug:
         verbosity: normal
-        
     service:
       telemetry:
         metrics:
-          address: 0.0.0.0:8888
+          address: "0.0.0.0:8888"
       pipelines:
         traces:
           receivers: [otlp]
@@ -86,26 +73,23 @@ opentelemetry-collector:
           receivers: [otlp]
           processors: [memory_limiter, batch]
           exporters: [loki, debug]
-
-# CORRECTED STRUCTURE: Each component is now a top-level key.
 frontend:
   resources:
     limits:
-      memory: 200Mi
-      cpu: 200m
+      memory: "200Mi"
+      cpu: "200m"
     requests:
-      memory: 100Mi
-      cpu: 100m
-
+      memory: "100Mi"
+      cpu: "100m"
 frontendProxy:
   enabled: true
   resources:
     limits:
-      memory: 100Mi
-      cpu: 100m
+      memory: "100Mi"
+      cpu: "100m"
     requests:
-      memory: 50Mi
-      cpu: 50m
+      memory: "50Mi"
+      cpu: "50m"
   service:
     type: ClusterIP
   ingress:
@@ -114,4 +98,112 @@ frontendProxy:
     annotations:
       external-dns.alpha.kubernetes.io/target: "e0995bb5-0641-44ba-9ac6-533e678117a2.cfargotunnel.com"
       external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-      traefik.ingress
+      traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
+    hosts:
+      - host: "otel-demo.milenika.dev"
+        paths:
+          - path: /
+            pathType: Prefix
+            port: 8080
+    tls:
+      - secretName: otel-demo-tls
+        hosts:
+          - "otel-demo.milenika.dev"
+adService:
+  resources:
+    limits:
+      memory: "300Mi"
+      cpu: "200m"
+    requests:
+      memory: "180Mi"
+      cpu: "100m"
+cartService:
+  resources:
+    limits:
+      memory: "200Mi"
+      cpu: "200m"
+    requests:
+      memory: "160Mi"
+      cpu: "100m"
+checkoutService:
+  resources:
+    limits:
+      memory: "200Mi"
+      cpu: "200m"
+    requests:
+      memory: "100Mi"
+      cpu: "100m"
+currencyService:
+  resources:
+    limits:
+      memory: "200Mi"
+      cpu: "200m"
+    requests:
+      memory: "100Mi"
+      cpu: "100m"
+emailService:
+  resources:
+    limits:
+      memory: "200Mi"
+      cpu: "200m"
+    requests:
+      memory: "100Mi"
+      cpu: "100m"
+paymentService:
+  resources:
+    limits:
+      memory: "200Mi"
+      cpu: "200m"
+    requests:
+      memory: "100Mi"
+      cpu: "100m"
+productCatalogService:
+  resources:
+    limits:
+      memory: "200Mi"
+      cpu: "200m"
+    requests:
+      memory: "100Mi"
+      cpu: "100m"
+recommendationService:
+  resources:
+    limits:
+      memory: "500Mi"
+      cpu: "200m"
+    requests:
+      memory: "200Mi"
+      cpu: "100m"
+shippingService:
+  resources:
+    limits:
+      memory: "200Mi"
+      cpu: "200m"
+    requests:
+      memory: "100Mi"
+      cpu: "100m"
+loadgenerator:
+  enabled: true
+  resources:
+    limits:
+      memory: "200Mi"
+      cpu: "200m"
+    requests:
+      memory: "100Mi"
+      cpu: "100m"
+  env:
+    - name: LOCUST_WEB_PORT
+      value: "8089"
+    - name: LOCUST_USERS
+      value: "5"
+    - name: LOCUST_SPAWN_RATE
+      value: "1"
+    - name: LOCUST_HOST
+      value: "http://frontend:8080"
+jaeger:
+  enabled: false
+prometheus:
+  enabled: false
+grafana:
+  enabled: false
+opensearch:
+  enabled: false
