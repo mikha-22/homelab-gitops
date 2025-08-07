@@ -1,4 +1,4 @@
-# apps/opentelemetry-demo/values.yaml - FIXED VERSION
+# apps/opentelemetry-demo/values.yaml
 
 # Global settings
 global:
@@ -17,7 +17,6 @@ opentelemetry-collector:
             endpoint: 0.0.0.0:4318
 
     processors:
-      # ADD THESE - they were missing!
       batch:
         timeout: 1s
         send_batch_size: 1024
@@ -27,8 +26,13 @@ opentelemetry-collector:
         limit_mib: 512
         spike_limit_mib: 128
 
+      # ADDED: This processor groups spans belonging to the same trace together
+      # This fixes the "<root span not yet received>" issue.
+      groupbytrace:
+        wait_duration: 3s # Wait up to 3 seconds for all spans in a trace
+        num_traces: 1000
+
     connectors:
-      # Add the spanmetrics connector to generate RED metrics from traces
       spanmetrics:
         histogram:
           explicit:
@@ -68,11 +72,12 @@ opentelemetry-collector:
     service:
       telemetry:
         metrics:
-          address: 0.0.0.0:8888  # ADDED: Expose collector's own metrics
+          address: 0.0.0.0:8888
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [memory_limiter, batch]
+          # UPDATED: Added 'groupbytrace' to the processing pipeline before batching.
+          processors: [memory_limiter, groupbytrace, batch]
           exporters: [spanmetrics, otlp/tempo, debug]
         metrics:
           receivers: [otlp, spanmetrics]
@@ -83,7 +88,7 @@ opentelemetry-collector:
           processors: [memory_limiter, batch]
           exporters: [loki, debug]
 
-# Remove browser telemetry for now - SIMPLIFIED
+# Frontend proxy with ingress for external access
 components:
   frontend:
     resources:
@@ -93,9 +98,7 @@ components:
       requests:
         memory: 100Mi
         cpu: 100m
-    # REMOVED: envOverrides for browser telemetry
 
-  # Frontend proxy with ingress for external access
   frontendProxy:
     enabled: true
     resources:
@@ -112,8 +115,8 @@ components:
       ingressClassName: traefik
       annotations:
         external-dns.alpha.kubernetes.io/target: "e0995bb5-0641-44ba-9ac6-533e678117a2.cfargotunnel.com"
-        external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-        traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
+        external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+        traefik.ingress.kubernetes.io/router.middlewares": "monitoring-security-headers@kubernetescrd"
       hosts:
         - host: otel-demo.milenika.dev
           paths:
@@ -192,7 +195,7 @@ components:
   recommendationService:
     resources:
       limits:
-        memory: 500Mi  # This one needs more memory
+        memory: 500Mi # This one needs more memory
         cpu: 200m
       requests:
         memory: 200Mi
@@ -221,9 +224,9 @@ components:
       - name: LOCUST_WEB_PORT
         value: "8089"
       - name: LOCUST_USERS
-        value: "5"  # Reduced load
+        value: "5" # Reduced load
       - name: LOCUST_SPAWN_RATE
-        value: "1"  # Slower spawn rate
+        value: "1" # Slower spawn rate
       - name: LOCUST_HOST
         value: "http://frontend:8080"
 
