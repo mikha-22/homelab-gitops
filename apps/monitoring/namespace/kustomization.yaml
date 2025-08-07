@@ -5,6 +5,7 @@ resources:
   - namespace.yaml
   - security-headers.yaml
   - loki-servicemonitor.yaml
+  - otel-servicemonitor.yaml  # ADD THIS LINE
 
 labels:
   - includeSelectors: true

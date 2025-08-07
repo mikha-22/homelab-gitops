@@ -2,11 +2,11 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: otel-demo-collector
-  namespace: otel-demo
+  namespace: monitoring
   labels:
     app.kubernetes.io/name: otel-demo-collector
     app.kubernetes.io/part-of: homelab-gitops
-    release: prometheus-stack
+    release: prometheus-stack  # This makes Prometheus discover it
 spec:
   selector:
     matchLabels:
@@ -14,10 +14,10 @@ spec:
       app.kubernetes.io/instance: otel-demo
       component: standalone-collector
   endpoints:
-  - port: metrics  # Use the port name from the service
+  - port: metrics
     interval: 30s
     path: /metrics
     scheme: http
   namespaceSelector:
     matchNames:
-    - otel-demo
+    - otel-demo  # Monitor services in the otel-demo namespace
