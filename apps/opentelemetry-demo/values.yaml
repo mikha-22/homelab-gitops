@@ -26,7 +26,7 @@ opentelemetry-collector:
         limit_mib: 512
         spike_limit_mib: 128
 
-      # ADDED: This processor groups spans belonging to the same trace together
+      # This processor groups spans belonging to the same trace together
       # This fixes the "<root span not yet received>" issue.
       groupbytrace:
         wait_duration: 3s # Wait up to 3 seconds for all spans in a trace
@@ -76,7 +76,7 @@ opentelemetry-collector:
       pipelines:
         traces:
           receivers: [otlp]
-          # UPDATED: Added 'groupbytrace' to the processing pipeline before batching.
+          # Added 'groupbytrace' to the processing pipeline before batching.
           processors: [memory_limiter, groupbytrace, batch]
           exporters: [spanmetrics, otlp/tempo, debug]
         metrics:
@@ -115,8 +115,9 @@ components:
       ingressClassName: traefik
       annotations:
         external-dns.alpha.kubernetes.io/target: "e0995bb5-0641-44ba-9ac6-533e678117a2.cfargotunnel.com"
-        external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-        traefik.ingress.kubernetes.io/router.middlewares": "monitoring-security-headers@kubernetescrd"
+        # FIXED: Removed stray quote from the end of the next two keys
+        external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+        traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
       hosts:
         - host: otel-demo.milenika.dev
           paths:
