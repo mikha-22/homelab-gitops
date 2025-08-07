@@ -87,7 +87,7 @@ opentelemetry-collector:
           processors: [memory_limiter, batch]
           exporters: [loki, debug]
 
-# UPDATED: The top-level key for components was renamed from 'components' to 'apps' in this chart version.
+# The top-level key for components was renamed from 'components' to 'apps' in this chart version.
 apps:
   frontend:
     resources:
@@ -113,4 +113,4 @@ apps:
       enabled: true
       ingressClassName: traefik
       annotations:
-        external-dns.alpha.kubernetes.io/target: "e0995bb5-0641-44ba-9ac6-533e678117a2.cfargotunnel.
+        external-dns.alpha
