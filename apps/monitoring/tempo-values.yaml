@@ -2,208 +2,169 @@
 
 # Global configuration
 global:
-  image:
-    tag: "2.8.0"
+  image:
+    tag: "2.8.0"
 
 # Tempo configuration - CORRECTED
 tempo:
-  repository: grafana/tempo
-  pullPolicy: IfNotPresent
-  
-  # Resource management
-  resources:
-    limits:
-      cpu: 1000m
-      memory: 2Gi
-    requests:
-      cpu: 500m
-      memory: 1Gi
-  
-  multitenancyEnabled: false
-  reportingEnabled: false
-  retention: 168h # 7 days
-  
-  # ADDED: This single flag correctly enables search and configures the querier/query-frontend
-  searchEnabled: true
+  repository: grafana/tempo
+  pullPolicy: IfNotPresent
+  
+  # Resource management
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
+  
+  multitenancyEnabled: false
+  reportingEnabled: false
+  retention: 168h # 7 days
+  
+  # This single flag correctly enables search and configures the querier/query-frontend
+  searchEnabled: true
 
-  # ADDED: This correctly enables the metrics generator for single-binary mode
-  metricsGenerator:
-    enabled: true
-    config:
-      storage:
-        path: /var/tempo/generator-wal # Use a separate WAL path
-        remote_write:
-          - url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
-            send_exemplars: true
-  
-  # Configure receivers
-  receivers:
-    jaeger:
-      protocols:
-        thrift_http:
-          endpoint: 0.0.0.0:14268
-        grpc:
-          endpoint: 0.0.0.0:14250
-        thrift_binary:
-          endpoint: 0.0.0.0:6832
-        thrift_compact:
-          endpoint: 0.0.0.0:6831
-    zipkin:
-      endpoint: 0.0.0.0:9411
-    otlp:
-      protocols:
-        http:
-          endpoint: 0.0.0.0:4318
-        grpc:
-          endpoint: 0.0.0.0:4317
-    opencensus:
-      endpoint: 0.0.0.0:55678
-  
-  # Configure ingester
-  ingester:
-    max_block_duration: 5m
-  
-  # Configure server
-  server:
-    http_listen_port: 3200
-    log_level: info
-  
-  # Configure storage
-  storage:
-    trace:
-      backend: local
-      wal:
-        path: /var/tempo/wal
-      local:
-        path: /var/tempo/blocks
-      pool:
-        max_workers: 100
-        queue_depth: 10000
+  # This correctly enables the metrics generator for single-binary mode
+  metricsGenerator:
+    enabled: true
+    config:
+      storage:
+        path: /var/tempo/generator-wal # Use a separate WAL path
+        remote_write:
+          - url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+            send_exemplars: true
+  
+  # Configure receivers
+  receivers:
+    jaeger:
+      protocols:
+        thrift_http:
+          endpoint: 0.0.0.0:14268
+        grpc:
+          endpoint: 0.0.0.0:14250
+        thrift_binary:
+          endpoint: 0.0.0.0:6832
+        thrift_compact:
+          endpoint: 0.0.0.0:6831
+    zipkin:
+      endpoint: 0.0.0.0:9411
+    otlp:
+      protocols:
+        http:
+          endpoint: 0.0.0.0:4318
+        grpc:
+          endpoint: 0.0.0.0:4317
+    opencensus:
+      endpoint: 0.0.0.0:55678
+  
+  # Configure ingester
+  ingester:
+    max_block_duration: 5m
+  
+  # Configure server
+  server:
+    http_listen_port: 3200
+    log_level: info
+  
+  # Configure storage
+  storage:
+    trace:
+      backend: local
+      wal:
+        path: /var/tempo/wal
+      local:
+        path: /var/tempo/blocks
+      pool:
+        max_workers: 100
+        queue_depth: 10000
 
 # EXPLICIT PERSISTENCE CONFIGURATION - Matches what Kubernetes expects
 persistence:
-  enabled: true
-  storageClassName: local-path
-  accessModes:
-    - ReadWriteOnce
-  size: 10Gi
+  enabled: true
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  size: 10Gi
 
 # EXPLICIT VOLUME CLAIM TEMPLATE - This should match the StatefulSet exactly
 volumeClaimTemplates:
-  - apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
-      name: storage
-      creationTimestamp: null
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 10Gi
-      storageClassName: local-path
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: storage
+      creationTimestamp: null
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      storageClassName: local-path
 
 # Service configuration
 service:
-  type: ClusterIP
-  ports:
-    - name: tempo-prom-metrics
-      port: 3200
-      targetPort: 3200
-    - name: tempo-jaeger-thrift-http
-      port: 14268
-      targetPort: 14268
-    - name: tempo-jaeger-grpc
-      port: 14250
-      targetPort: 14250
-    - name: tempo-jaeger-thrift-binary
-      port: 6832
-      targetPort: 6832
-      protocol: UDP
-    - name: tempo-jaeger-thrift-compact
-      port: 6831
-      targetPort: 6831
-      protocol: UDP
-    - name: tempo-zipkin
-      port: 9411
-      targetPort: 9411
-    - name: tempo-otlp-legacy
-      port: 55680
-      targetPort: 55680
-    - name: tempo-otlp-http
-      port: 4318
-      targetPort: 4318
-    - name: tempo-otlp-grpc
-      port: 4317
-      targetPort: 4317
-    - name: tempo-opencensus
-      port: 55678
-      targetPort: 55678
+  type: ClusterIP
+  ports:
+    - name: tempo-prom-metrics
+      port: 3200
+      targetPort: 3200
+    - name: tempo-jaeger-thrift-http
+      port: 14268
+      targetPort: 14268
+    - name: tempo-jaeger-grpc
+      port: 14250
+      targetPort: 14250
+    - name: tempo-jaeger-thrift-binary
+      port: 6832
+      targetPort: 6832
+      protocol: UDP
+    - name: tempo-jaeger-thrift-compact
+      port: 6831
+      targetPort: 6831
+      protocol: UDP
+    - name: tempo-zipkin
+      port: 9411
+      targetPort: 9411
+    - name: tempo-otlp-legacy
+      port: 55680
+      targetPort: 55680
+    - name: tempo-otlp-http
+      port: 4318
+      targetPort: 4318
+    - name: tempo-otlp-grpc
+      port: 4317
+      targetPort: 4317
+    - name: tempo-opencensus
+      port: 55678
+      targetPort: 55678
 
 # ServiceMonitor for Prometheus integration
 serviceMonitor:
-  enabled: true
-  interval: 30s
-  additionalLabels: {}
-  annotations: {}
+  enabled: true
+  interval: 30s
+  additionalLabels: {}
+  annotations: {}
 
 # Ingress configuration for external access
 ingress:
-  enabled: true
-  ingressClassName: traefik
-  hosts:
-    - host: tempo.milenika.dev
-      paths:
-        - path: /
-          pathType: Prefix
-  annotations:
-    "kubernetes.io/ingress.class": "traefik"
-    "external-dns.alpha.kubernetes.io/target": "e0995bb5-0641-44ba-9ac6-533e678117a2.cfargotunnel.com"
-    "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
-    "traefik.ingress.kubernetes.io/router.middlewares": "monitoring-security-headers@kubernetescrd"
-  tls:
-    - secretName: tempo-tls
-      hosts:
-        - tempo.milenika.dev
+  enabled: true
+  ingressClassName: traefik
+  hosts:
+    - host: tempo.milenika.dev
+      paths:
+        - path: /
+          pathType: Prefix
+  annotations:
+    "kubernetes.io/ingress.class": "traefik"
+    "external-dns.alpha.kubernetes.io/target": "e0995bb5-0641-44ba-9ac6-533e678117a2.cfargotunnel.com"
+    "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+    "traefik.ingress.kubernetes.io/router.middlewares": "monitoring-security-headers@kubernetescrd"
+  tls:
+    - secretName: tempo-tls
+      hosts:
+        - tempo.milenika.dev
 
 # Extra volumes for temporary storage
 extraVolumes:
-  - name: tmp
-    emptyDir: {}
-
-extraVolumeMounts:
-  - name: tmp
-    mountPath: /tmp
-
-# Basic settings
-nodeSelector: {}
-tolerations: []
-affinity: {}
-replicas: 1
-
-# Update strategy
-strategy:
-  type: RollingUpdate
-  rollingUpdate:
-    maxUnavailable: 1
-
-# Health check probes
-readinessProbe:
-  httpGet:
-    path: /ready
-    port: 3200
-  initialDelaySeconds: 30
-  periodSeconds: 10
-
-livenessProbe:
-  httpGet:
-    path: /ready
-    port: 3200
-  initialDelaySeconds: 30
-  periodSeconds: 15
-
-# Pod annotations
-podAnnotations:
-  prometheus.io/scrape: "true"
-  prometheus.io/port: "3200"
-  prometheus.io/path: "/metrics"
