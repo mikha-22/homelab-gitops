@@ -30,7 +30,11 @@ opentelemetry-collector:
         wait_duration: 3s
         num_traces: 1000
 
-      # REMOVED the 'transform' processor. It's no longer needed.
+      transform:
+        trace_statements:
+          - context: resource
+            statements:
+              - set(attributes["service.name"], attributes["rootServiceName"]) where attributes["rootServiceName"] != nil
 
     connectors:
       spanmetrics:
@@ -72,8 +76,7 @@ opentelemetry-collector:
       pipelines:
         traces:
           receivers: [otlp]
-          # UPDATED: The 'transform' processor is removed from the pipeline.
-          processors: [memory_limiter, groupbytrace, batch]
+          processors: [transform, memory_limiter, groupbytrace, batch]
           exporters: [spanmetrics, otlp/tempo, debug]
         metrics:
           receivers: [otlp, spanmetrics]
@@ -84,8 +87,8 @@ opentelemetry-collector:
           processors: [memory_limiter, batch]
           exporters: [loki, debug]
 
-# Frontend proxy with ingress for external access
-components:
+# UPDATED: The top-level key for components was renamed from 'components' to 'apps' in this chart version.
+apps:
   frontend:
     resources:
       limits:
@@ -110,131 +113,4 @@ components:
       enabled: true
       ingressClassName: traefik
       annotations:
-        external-dns.alpha.kubernetes.io/target: "e0995bb5-0641-44ba-9ac6-533e678117a2.cfargotunnel.com"
-        external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
-        traefik.ingress.kubernetes.io/router.middlewares: "monitoring-security-headers@kubernetescrd"
-      hosts:
-        - host: otel-demo.milenika.dev
-          paths:
-            - path: /
-              pathType: Prefix
-              port: 8080
-      tls:
-        - secretName: otel-demo-tls
-          hosts:
-            - otel-demo.milenika.dev
-
-  # Other services - reduce resource usage for homelab
-  adService:
-    resources:
-      limits:
-        memory: 300Mi
-        cpu: 200m
-      requests:
-        memory: 180Mi
-        cpu: 100m
-
-  cartService:
-    resources:
-      limits:
-        memory: 200Mi
-        cpu: 200m
-      requests:
-        memory: 160Mi
-        cpu: 100m
-
-  checkoutService:
-    resources:
-      limits:
-        memory: 200Mi
-        cpu: 200m
-      requests:
-        memory: 100Mi
-        cpu: 100m
-
-  currencyService:
-    resources:
-      limits:
-        memory: 200Mi
-        cpu: 200m
-      requests:
-        memory: 100Mi
-        cpu: 100m
-
-  emailService:
-    resources:
-      limits:
-        memory: 200Mi
-        cpu: 200m
-      requests:
-        memory: 100Mi
-        cpu: 100m
-
-  paymentService:
-    resources:
-      limits:
-        memory: 200Mi
-        cpu: 200m
-      requests:
-        memory: 100Mi
-        cpu: 100m
-
-  productCatalogService:
-    resources:
-      limits:
-        memory: 200Mi
-        cpu: 200m
-      requests:
-        memory: 100Mi
-        cpu: 100m
-
-  recommendationService:
-    resources:
-      limits:
-        memory: 500Mi # This one needs more memory
-        cpu: 200m
-      requests:
-        memory: 200Mi
-        cpu: 100m
-
-  shippingService:
-    resources:
-      limits:
-        memory: 200Mi
-        cpu: 200m
-      requests:
-        memory: 100Mi
-        cpu: 100m
-
-  # Load generator - reduce load for homelab
-  loadgenerator:
-    enabled: true
-    resources:
-      limits:
-        memory: 200Mi
-        cpu: 200m
-      requests:
-        memory: 100Mi
-        cpu: 100m
-    env:
-      - name: LOCUST_WEB_PORT
-        value: "8089"
-      - name: LOCUST_USERS
-        value: "5"
-      - name: LOCUST_SPAWN_RATE
-        value: "1"
-      - name: LOCUST_HOST
-        value: "http://frontend:8080"
-
-# Disable components we don't need
-jaeger:
-  enabled: false
-
-prometheus:
-  enabled: false
-  
-grafana:
-  enabled: false
-  
-opensearch:
-  enabled: false
+        external-dns.alpha.kubernetes.io/target: "e0995bb5-0641-44ba-9ac6-533e678117a2.cfargotunnel.
