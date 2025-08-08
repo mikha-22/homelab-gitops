@@ -30,6 +30,30 @@ tempo:
   reportingEnabled: false
   retention: 168h  # 7 days
   
+  # Server configuration - CRITICAL: Port must match health checks
+  server:
+    http_listen_port: 3200
+  
+  # Health check configuration - MUST match the server port
+  livenessProbe:
+    httpGet:
+      path: /ready
+      port: 3200  # FIXED: Changed from 3100 to 3200
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: 3200  # FIXED: Changed from 3100 to 3200
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+  
   # Enable metrics generator with proper remote write
   metricsGenerator:
     enabled: true
