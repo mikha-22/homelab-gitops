@@ -32,7 +32,7 @@ spec:
     persistentvolumeclaims: "10"
     requests.storage: 100Gi
 ---
-# Add limit range for default resource limits
+# Add limit range for default resource limits - FIXED for Tempo
 apiVersion: v1
 kind: LimitRange
 metadata:
@@ -51,4 +51,7 @@ spec:
     defaultRequest:
       cpu: 100m
       memory: 128Mi
+    max:  # ADDED: Allow higher limits for resource-heavy containers like Tempo
+      cpu: 2000m
+      memory: 8Gi
     type: Container
