@@ -93,9 +93,9 @@ config: |
     trace:
       backend: local
       local:
-        path: /data/tempo/traces
+        path: /var/tempo/traces
       wal:
-        path: /data/tempo/wal
+        path: /var/tempo/wal
       pool:
         max_workers: 100
         queue_depth: 10000
@@ -114,7 +114,7 @@ config: |
         source: tempo
         cluster: homelab-tempo
     storage:
-      path: /data/tempo/generator/wal
+      path: /var/tempo/generator/wal
       remote_write:
         - url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
           send_exemplars: true
@@ -122,6 +122,8 @@ config: |
     defaults:
       metrics_generator:
         processors: [service-graphs, span-metrics]
+
+# Security context removed to fix permission issues
 
 # Additional labels
 extraLabels:
