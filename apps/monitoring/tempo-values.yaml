@@ -4,14 +4,14 @@
 # Basic deployment
 replicas: 1
 
-# Resources for homelab - INCREASED for OOM fix
+# Resources for homelab - FURTHER INCREASED for OOM fix
 resources:
   requests:
     cpu: 500m
-    memory: 2Gi  # Increased from 1Gi
+    memory: 4Gi  # Increased from 2Gi
   limits:
     cpu: 1000m
-    memory: 4Gi  # Increased from 2Gi
+    memory: 8Gi  # Increased from 4Gi
 
 # Persistence
 persistence:
@@ -29,6 +29,7 @@ tempo:
   multitenancyEnabled: false
   reportingEnabled: false
   retention: 168h  # 7 days
+  memBallastSizeMbs: 2048  # Set memory ballast to 2GB for stability
   
   # Server configuration - CRITICAL: Port must match health checks
   server:
