@@ -35,23 +35,23 @@ tempo:
   server:
     http_listen_port: 3200
   
-  # Health check configuration - MUST match the server port
+  # Health check configuration - INCREASED delays for startup
   livenessProbe:
     httpGet:
       path: /ready
       port: 3200
-    initialDelaySeconds: 30
+    initialDelaySeconds: 60  # Increased from 30
     periodSeconds: 10
-    timeoutSeconds: 5
+    timeoutSeconds: 10      # Increased from 5
     failureThreshold: 3
     successThreshold: 1
   readinessProbe:
     httpGet:
       path: /ready
       port: 3200
-    initialDelaySeconds: 20
+    initialDelaySeconds: 45  # Increased from 20
     periodSeconds: 10
-    timeoutSeconds: 5
+    timeoutSeconds: 10      # Increased from 5
     failureThreshold: 3
     successThreshold: 1
   
