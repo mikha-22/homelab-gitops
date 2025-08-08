@@ -1,17 +1,8 @@
 # apps/monitoring/tempo-values.yaml
-# MINIMAL WORKING CONFIGURATION - FIXED resource placement
+# MINIMAL WORKING CONFIGURATION - FIXED resource placement under tempo.resources
 
 # Basic deployment
 replicas: 1
-
-# Resources for homelab - MOVED TO TOP LEVEL
-resources:
-  requests:
-    cpu: 500m
-    memory: 4Gi
-  limits:
-    cpu: 1000m
-    memory: 8Gi
 
 # Persistence
 persistence:
@@ -25,6 +16,15 @@ serviceMonitor:
 
 # Tempo configuration using chart structure
 tempo:
+  # FIXED: Resources go under tempo.resources according to chart defaults
+  resources:
+    requests:
+      cpu: 500m
+      memory: 4Gi
+    limits:
+      cpu: 1000m
+      memory: 8Gi
+
   # Basic settings
   multitenancyEnabled: false
   reportingEnabled: false
