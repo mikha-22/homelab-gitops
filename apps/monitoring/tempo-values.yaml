@@ -1,17 +1,17 @@
 # apps/monitoring/tempo-values.yaml
-# MINIMAL WORKING CONFIGURATION - Based on chart defaults
+# MINIMAL WORKING CONFIGURATION - FIXED resource placement
 
 # Basic deployment
 replicas: 1
 
-# Resources for homelab - FURTHER INCREASED for OOM fix
+# Resources for homelab - MOVED TO TOP LEVEL
 resources:
   requests:
     cpu: 500m
-    memory: 4Gi  # Increased from 2Gi
+    memory: 4Gi
   limits:
     cpu: 1000m
-    memory: 8Gi  # Increased from 4Gi
+    memory: 8Gi
 
 # Persistence
 persistence:
@@ -39,7 +39,7 @@ tempo:
   livenessProbe:
     httpGet:
       path: /ready
-      port: 3200  # FIXED: Changed from 3100 to 3200
+      port: 3200
     initialDelaySeconds: 30
     periodSeconds: 10
     timeoutSeconds: 5
@@ -48,7 +48,7 @@ tempo:
   readinessProbe:
     httpGet:
       path: /ready
-      port: 3200  # FIXED: Changed from 3100 to 3200
+      port: 3200
     initialDelaySeconds: 20
     periodSeconds: 10
     timeoutSeconds: 5
