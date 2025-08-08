@@ -1,7 +1,17 @@
 # apps/monitoring/tempo-values.yaml
-# CORRECTED AND SIMPLIFIED for Helm chart version 1.23.2
+# COMPLETELY REVISED for Tempo Helm chart version 1.23.2
 
-# This block controls the Kubernetes resources like the Pod, Service, etc.
+# Basic deployment configuration
+replicas: 1
+
+# Image configuration
+tempo:
+  # Use official Grafana Tempo image
+  repository: grafana/tempo
+  tag: "2.6.0"  # Compatible with chart version 1.23.2
+  pullPolicy: IfNotPresent
+
+# Resource limits for homelab
 resources:
   requests:
     cpu: 500m
@@ -10,6 +20,7 @@ resources:
     cpu: 1000m
     memory: 2Gi
 
+# Persistence configuration
 persistence:
   enabled: true
   storageClassName: local-path
@@ -17,33 +28,123 @@ persistence:
     - ReadWriteOnce
   size: 10Gi
 
+# Enable ServiceMonitor for Prometheus
 serviceMonitor:
   enabled: true
   interval: 30s
 
-# This livenessProbe gives the container 60 seconds to start up before
-# Kubernetes begins checking if it's healthy. This prevents the crash loop.
+# Configure health probes with longer startup time
 livenessProbe:
   httpGet:
     path: /ready
-    port: 3200
+    port: 3200  # Updated to use port 3200 (new default)
   initialDelaySeconds: 60
   periodSeconds: 15
   timeoutSeconds: 5
   failureThreshold: 6
 
-# This block passes configuration directly to the Tempo application.
-# It is structured to match the official documentation.
-tempo:
-  retention: 168h # 7 days
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 3200  # Updated to use port 3200
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
 
-  # This section enables and correctly configures the metrics-generator
-  # to send span metrics to your Prometheus instance.
-  metricsGenerator:
-    enabled: true
-    config:
-      storage:
-        path: /tmp/tempo/generator/wal
-        remote_write:
-          - url: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
-            send_exemplars: true
+# Tempo application configuration
+config: |
+  multitenancy_enabled: false
+  usage_report:
+    reporting_enabled: false
+  compactor:
+    compaction:
+      block_retention: 1h
+  distributor:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: "0.0.0.0:4317"
+          http:
+            endpoint: "0.0.0.0:4318"
+      jaeger:
+        protocols:
+          thrift_http:
+            endpoint: "0.0.0.0:14268"
+          grpc:
+            endpoint: "0.0.0.0:14250"
+          thrift_binary:
+            endpoint: "0.0.0.0:6832"
+          thrift_compact:
+            endpoint: "0.0.0.0:6831"
+      zipkin:
+        endpoint: "0.0.0.0:9411"
+      opencensus:
+        endpoint: "0.0.0.0:55678"
+  ingester:
+    max_block_duration: 5m
+    trace_idle_period: 10s
+    max_block_bytes: 1000000
+  server:
+    http_listen_port: 3200
+    log_level: info
+  storage:
+    trace:
+      backend: local
+      local:
+        path: /data/tempo/traces
+      wal:
+        path: /data/tempo/wal
+      pool:
+        max_workers: 100
+        queue_depth: 10000
+  querier:
+    frontend_worker:
+      frontend_address: tempo:9095
+  query_frontend:
+    search:
+      duration_slo: 5s
+      throughput_bytes_slo: 1.073741824e+09
+    trace_by_id:
+      duration_slo: 5s
+  metrics_generator:
+    registry:
+      external_labels:
+        source: tempo
+        cluster: homelab-tempo
+    storage:
+      path: /data/tempo/generator/wal
+      remote_write:
+        - url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+          send_exemplars: true
+  overrides:
+    defaults:
+      metrics_generator:
+        processors: [service-graphs, span-metrics]
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+
+# Additional labels
+extraLabels:
+  app.kubernetes.io/part-of: homelab-gitops
+  environment: homelab
+  component: tracing
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "3200"
+  prometheus.io/path: "/metrics"
