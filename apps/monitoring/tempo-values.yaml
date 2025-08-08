@@ -101,7 +101,7 @@ config: |
         queue_depth: 10000
   querier:
     frontend_worker:
-      frontend_address: tempo:9095
+      frontend_address: tempo.monitoring.svc.cluster.local:9095
   query_frontend:
     search:
       duration_slo: 5s
