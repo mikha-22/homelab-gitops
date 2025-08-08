@@ -4,14 +4,14 @@
 # Basic deployment
 replicas: 1
 
-# Resources for homelab
+# Resources for homelab - INCREASED for OOM fix
 resources:
   requests:
     cpu: 500m
-    memory: 1Gi
+    memory: 2Gi  # Increased from 1Gi
   limits:
     cpu: 1000m
-    memory: 2Gi
+    memory: 4Gi  # Increased from 2Gi
 
 # Persistence
 persistence:
