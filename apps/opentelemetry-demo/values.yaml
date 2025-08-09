@@ -1,8 +1,6 @@
-# apps/opentelemetry-demo/values.yaml
-# WARNING: This configuration is redundant and not recommended.
-# The 'default.envOverrides' block will be ignored by most components.
+# apps/opentelemetry-demo/values.yaml (Global Override Only)
 
-# THIS BLOCK IS REDUNDANT
+# Using the global override to set defaults for all components.
 default:
   envOverrides:
     - name: OTEL_EXPORTER_OTLP_PROTOCOL
@@ -20,7 +18,7 @@ grafana:
 opensearch:
   enabled: false
 
-# 2. Configure the demo's built-in collector.
+# 2. Configure the demo's built-in collector to forward data to our LGTM stack.
 opentelemetry-collector:
   enabled: true
   fullnameOverride: otel-collector
@@ -67,14 +65,10 @@ opentelemetry-collector:
           processors: [memory_limiter, batch]
           exporters: [loki]
 
-# 3. THIS IS THE CORRECT AND EFFECTIVE WAY TO OVERRIDE SETTINGS.
+# 3. Define component-specific settings (ingress, resources) without env overrides.
 components:
   frontend:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-demo-otel-collector:4317"
+    # Per-component envOverrides removed.
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -99,77 +93,46 @@ components:
             - "otel-demo.milenika.dev"
 
   ad:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-demo-otel-collector:4317"
     resources:
       limits: { memory: "300Mi", cpu: "200m" }
       requests: { memory: "180Mi", cpu: "100m" }
 
   cart:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "160Mi", cpu: "100m" }
 
   checkout:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   currency:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   email:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-        value: "http://otel-demo-otel-collector:4317"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   payment:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   product-catalog:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   recommendation:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "500Mi", cpu: "200m" }
       requests: { memory: "200Mi", cpu: "100m" }
 
   shipping:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
