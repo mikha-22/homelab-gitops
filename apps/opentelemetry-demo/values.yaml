@@ -1,7 +1,12 @@
-# apps/opentelemetry-demo/values.yaml
-# This file is compatible with opentelemetry-demo chart version 0.37.2
+# apps/opentelemetry-demo/values.yaml (ULTRA-MINIMAL & COMPLETE)
 
-# 1. Configure the OpenTelemetry Collector to send data to your LGTM stack.
+defaultEnvs:
+  value:
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: "grpc"
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: "http://otel-demo-otel-collector:4317"
+
 opentelemetry-collector:
   enabled: true
   fullnameOverride: otel-collector
@@ -10,37 +15,21 @@ opentelemetry-collector:
       otlp:
         protocols:
           grpc: {}
-          http:
-            cors:
-              allowed_origins:
-                - "http://*"
-                - "https://*"
 
     processors:
       batch: {}
       memory_limiter:
         limit_mib: 512
         spike_limit_mib: 128
-      groupbytrace:
-        wait_duration: 3s
-        num_traces: 1000
-      transform:
-        trace_statements:
-          - context: resource
-            statements:
-              - set(attributes["service.name"], attributes["rootServiceName"]) where attributes["rootServiceName"] != nil
-    
-    connectors:
-      spanmetrics: {}
+
+    connectors: {}
 
     exporters:
-      # Exporter for Tempo
       otlp/tempo:
         endpoint: "http://tempo.monitoring.svc.cluster.local:4317"
         tls:
           insecure: true
       
-      # Exporter for Prometheus
       prometheusremotewrite:
         endpoint: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
         remote_write_queue:
@@ -48,7 +37,6 @@ opentelemetry-collector:
           queue_size: 10000
           num_consumers: 5
 
-      # Exporter for Loki
       loki:
         endpoint: "http://loki-gateway.monitoring.svc.cluster.local:3100/loki/api/v1/push"
 
@@ -62,10 +50,10 @@ opentelemetry-collector:
       pipelines:
         traces:
           receivers: [otlp]
-          processors: [transform, memory_limiter, groupbytrace, batch]
-          exporters: [spanmetrics, otlp/tempo, debug]
+          processors: [memory_limiter, batch]
+          exporters: [otlp/tempo, debug]
         metrics:
-          receivers: [otlp, spanmetrics]
+          receivers: [otlp]
           processors: [memory_limiter, batch]
           exporters: [prometheusremotewrite, debug]
         logs:
@@ -73,14 +61,12 @@ opentelemetry-collector:
           processors: [memory_limiter, batch]
           exporters: [loki, debug]
 
-# 2. Configure the demo components with resource limits and ingress.
 components:
   frontend:
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
-  # NOTE: The component is named 'frontend-proxy' in the chart
   frontend-proxy:
     resources:
       limits: { memory: "100Mi", cpu: "100m" }
@@ -103,7 +89,6 @@ components:
           hosts:
             - "otel-demo.milenika.dev"
 
-  # NOTE: Chart uses short names for components
   ad:
     resources:
       limits: { memory: "300Mi", cpu: "200m" }
@@ -149,12 +134,10 @@ components:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
-  # NOTE: The component is named 'load-generator' in the chart
   load-generator:
     resources:
       limits: { memory: "1000Mi", cpu: "200m" }
       requests: { memory: "250Mi", cpu: "100m" }
-    # Use envOverrides to change specific default environment variables
     envOverrides:
       - name: LOCUST_USERS
         value: "5"
@@ -163,7 +146,6 @@ components:
       - name: LOCUST_HOST
         value: "http://frontend-proxy:8080"
 
-# 3. Disable the bundled observability tools since you already have them.
 jaeger:
   enabled: false
 prometheus:
