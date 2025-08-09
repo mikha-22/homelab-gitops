@@ -1,12 +1,12 @@
-# apps/otel-collector/values.yaml - Chart v0.130.1 Compatible
+# apps/otel-collector/values.yaml - FIXED for v0.130.1
 
 # Deploy as DaemonSet to collect logs from all nodes
 mode: daemonset
 
-# Use the CONTRIB distribution (has all exporters)
+# Use the CONTRIB distribution v0.130.1 (stable version)
 image:
   repository: otel/opentelemetry-collector-contrib
-  tag: "0.131.0"
+  tag: "0.130.1"
 
 # Enable useful presets that handle k8s configuration automatically
 presets:
@@ -58,13 +58,11 @@ config:
           action: upsert
 
   exporters:
-    # LOGS: Send to Loki (replacing Promtail)
-    loki:
-      endpoint: "http://loki-gateway.monitoring.svc.cluster.local:3100/loki/api/v1/push"
-      default_labels_enabled:
-        exporter: false
-        job: false
-        instance: false
+    # LOGS: Send to Loki via OTLP (loki exporter deprecated!)
+    otlphttp/loki:
+      endpoint: "http://loki-gateway.monitoring.svc.cluster.local:3100/otlp"
+      tls:
+        insecure: true
 
     # TRACES: Send to Tempo  
     otlp/tempo:
@@ -72,14 +70,14 @@ config:
       tls:
         insecure: true
 
-    # METRICS: Use prometheus exporter to expose metrics
-    prometheus:
-      endpoint: "${env:MY_POD_IP}:8889"
-      const_labels:
+    # METRICS: Use prometheusremotewrite exporter to send to Prometheus
+    prometheusremotewrite:
+      endpoint: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+      tls:
+        insecure: true
+      external_labels:
         cluster: homelab
         environment: homelab
-      send_timestamps: true
-      enable_open_metrics: true
 
   service:
     pipelines:
@@ -87,13 +85,13 @@ config:
       logs:
         receivers: [otlp]  # Preset adds filelog
         processors: [memory_limiter, k8sattributes, resource, batch]
-        exporters: [loki]
+        exporters: [otlphttp/loki]
 
       # METRICS pipeline (preset adds hostmetrics, kubeletstats automatically)  
       metrics:
         receivers: [otlp, prometheus]  # Preset adds hostmetrics, kubeletstats
         processors: [memory_limiter, k8sattributes, resource, batch]
-        exporters: [prometheus]
+        exporters: [prometheusremotewrite]
 
       # TRACES pipeline (keep defaults)
       traces:
