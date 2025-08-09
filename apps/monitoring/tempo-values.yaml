@@ -1,4 +1,4 @@
-# apps/monitoring/tempo-values.yaml (USING CHART'S BUILT-IN METRICS GENERATOR)
+# apps/monitoring/tempo-values.yaml (ADDING LOCAL-BLOCKS PROCESSOR)
 
 replicas: 1
 
@@ -45,13 +45,14 @@ tempo:
       wal:
         path: /var/tempo/wal
 
-  # Enable metrics generation in overrides for all tenants
+  # CRITICAL: Enable metrics generation with ALL required processors
   overrides:
     defaults:
       metrics_generator:
         processors: 
           - "span-metrics"
           - "service-graphs"
+          - "local-blocks"  # ADD THIS - Required for TraceQL metrics drilldown
 
   # Health check configuration
   livenessProbe:
