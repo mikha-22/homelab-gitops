@@ -1,22 +1,22 @@
-# apps/monitoring/tempo-values.yaml
-# MINIMAL WORKING CONFIGURATION - FIXED resource placement under tempo.resources
+# apps/monitoring/tempo-values.yaml (CORRECTED)
 
-# Basic deployment
 replicas: 1
 
-# Persistence
 persistence:
   enabled: true
   storageClassName: local-path
   size: 10Gi
 
-# Enable ServiceMonitor for Prometheus
 serviceMonitor:
   enabled: true
 
-# Tempo configuration using chart structure
+# FIXED: This block was moved out from under the 'tempo:' key.
+# It now sits at the top level where the chart expects it.
+metricsGenerator:
+  enabled: true
+  remoteWriteUrl: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+
 tempo:
-  # FIXED: Resources go under tempo.resources according to chart defaults
   resources:
     requests:
       cpu: 500m
@@ -25,17 +25,14 @@ tempo:
       cpu: 1000m
       memory: 8Gi
 
-  # Basic settings
   multitenancyEnabled: false
   reportingEnabled: false
-  retention: 168h  # 7 days
-  memBallastSizeMbs: 2048  # Set memory ballast to 2GB for stability
+  retention: 168h
+  memBallastSizeMbs: 2048
   
-  # Server configuration - CRITICAL: Port must match health checks
   server:
     http_listen_port: 3200
   
-  # Health check configuration - MUST match the server port
   livenessProbe:
     httpGet:
       path: /ready
@@ -54,8 +51,3 @@ tempo:
     timeoutSeconds: 5
     failureThreshold: 3
     successThreshold: 1
-  
-  # Enable metrics generator with proper remote write
-  metricsGenerator:
-    enabled: true
-    remoteWriteUrl: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"

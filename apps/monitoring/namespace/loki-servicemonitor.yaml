@@ -1,3 +1,5 @@
+# apps/monitoring/namespace/loki-servicemonitor.yaml
+
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -7,15 +9,16 @@ metadata:
     app.kubernetes.io/name: loki
     app.kubernetes.io/instance: loki
     app.kubernetes.io/part-of: homelab-gitops
-    release: prometheus-stack  # Important: matches Prometheus selector
+    release: prometheus-stack
 spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: loki
       app.kubernetes.io/instance: loki
-      app.kubernetes.io/component: single-binary  # FIXED: Added this component label
+      # FIXED: Added this component label to exclude the gateway
+      app.kubernetes.io/component: single-binary
   endpoints:
-  - port: http-metrics  # Port 3100 on Loki service
+  - port: http-metrics
     interval: 30s
     path: /metrics
     scheme: http
