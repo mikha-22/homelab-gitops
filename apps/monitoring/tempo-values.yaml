@@ -1,4 +1,4 @@
-# apps/monitoring/tempo-values.yaml (CORRECTED)
+# apps/monitoring/tempo-values.yaml (FINAL FIX)
 
 replicas: 1
 
@@ -10,11 +10,14 @@ persistence:
 serviceMonitor:
   enabled: true
 
-# FIXED: This block was moved out from under the 'tempo:' key.
-# It now sits at the top level where the chart expects it.
 metricsGenerator:
   enabled: true
   remoteWriteUrl: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+  # ADDED: Explicit ring configuration to solve the "empty ring" error.
+  # This allows the generator to register itself so the querier can find it.
+  ring:
+    kvstore:
+      store: memberlist
 
 tempo:
   resources:
