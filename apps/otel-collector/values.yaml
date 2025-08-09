@@ -23,8 +23,8 @@ presets:
     enabled: true
     extractAllPodLabels: false
     extractAllPodAnnotations: false
-  # Collect cluster-level metrics
-  clusterMetrics:
+  # Collect kubelet metrics (suitable for daemonset)
+  kubeletMetrics:
     enabled: true
 
 # Custom collector configuration (merged with presets)
@@ -91,9 +91,9 @@ config:
         processors: [memory_limiter, k8sattributes, resource, batch]
         exporters: [loki]
 
-      # METRICS pipeline (enhanced by hostMetrics + clusterMetrics presets)  
+      # METRICS pipeline (enhanced by hostMetrics + kubeletMetrics presets)  
       metrics:
-        receivers: [otlp, prometheus]  # Presets add hostmetrics, k8s_cluster automatically
+        receivers: [otlp, prometheus]  # Presets add hostmetrics, kubeletstats automatically
         processors: [memory_limiter, k8sattributes, resource, batch]
         exporters: [prometheus]
 
