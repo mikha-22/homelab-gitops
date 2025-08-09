@@ -1,4 +1,4 @@
-# apps/system/kustomization.yaml - ADD ONE LINE AT THE END
+# apps/system/kustomization.yaml
 resources:
   # Projects (must be first)
   - projects/monitoring-project.yaml
@@ -11,9 +11,11 @@ resources:
   - prometheus-app.yaml          # wave: 1
   - loki-app.yaml               # wave: 2
   - tempo-app.yaml              # wave: 3
-  - promtail-app.yaml           # wave: 4
+  - otel-collector-app.yaml     # wave: 4 (CHANGED FROM promtail-app.yaml)
   - dashboards-app.yaml         # wave: 5
-  - opentelemetry-demo-app.yaml           # ADD THIS LINE
+  
+  # Demo Applications
+  - opentelemetry-demo-app.yaml  # wave: 20
   
   # Applications (10+ sync waves)
   - homer-app.yaml              # wave: 10

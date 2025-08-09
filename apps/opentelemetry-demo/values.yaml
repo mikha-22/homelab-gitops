@@ -1,6 +1,6 @@
-# apps/opentelemetry-demo/values.yaml (FINAL & CORRECT)
+# apps/opentelemetry-demo/values.yaml (UPDATED - No separate collector)
 
-# 1. Disable bundled observability tools.
+# 1. Disable bundled observability tools AND the demo's collector
 jaeger:
   enabled: false
 prometheus:
@@ -10,61 +10,18 @@ grafana:
 opensearch:
   enabled: false
 
-# 2. Configure the demo's built-in collector to forward data to our LGTM stack.
+# 2. DISABLE the demo's built-in collector since we have our unified one
 opentelemetry-collector:
-  enabled: true
-  fullnameOverride: otel-collector
-  config:
-    receivers:
-      otlp:
-        protocols:
-          grpc: {}
+  enabled: false  # CHANGED FROM true TO false
 
-    processors:
-      batch: {}
-      memory_limiter:
-        limit_mib: 512
-        spike_limit_mib: 128
-
-    connectors: {}
-
-    exporters:
-      otlp/tempo:
-        endpoint: "http://tempo.monitoring.svc.cluster.local:4317"
-        tls:
-          insecure: true
-      
-      prometheusremotewrite:
-        endpoint: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
-        remote_write_queue:
-          enabled: true
-      
-      loki:
-        endpoint: "http://loki-gateway.monitoring.svc.cluster.local:3100/loki/api/v1/push"
-
-    service:
-      pipelines:
-        traces:
-          receivers: [otlp]
-          processors: [memory_limiter, batch]
-          exporters: [otlp/tempo]
-        metrics:
-          receivers: [otlp]
-          processors: [memory_limiter, batch]
-          exporters: [prometheusremotewrite]
-        logs:
-          receivers: [otlp]
-          processors: [memory_limiter, batch]
-          exporters: [loki]
-
-# 3. Use per-component overrides to set variables and resources correctly.
+# 3. Point all demo components directly to our unified infrastructure collector
 components:
   frontend:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-demo-otel-collector:4317"
+        value: "http://otel-collector.monitoring.svc.cluster.local:4317"  # CHANGED
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -93,7 +50,7 @@ components:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-demo-otel-collector:4317"
+        value: "http://otel-collector.monitoring.svc.cluster.local:4317"  # CHANGED
     resources:
       limits: { memory: "300Mi", cpu: "200m" }
       requests: { memory: "180Mi", cpu: "100m" }
@@ -102,6 +59,8 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector.monitoring.svc.cluster.local:4317"  # ADDED
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "160Mi", cpu: "100m" }
@@ -110,6 +69,8 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector.monitoring.svc.cluster.local:4317"  # ADDED
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -118,6 +79,8 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector.monitoring.svc.cluster.local:4317"  # ADDED
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -127,7 +90,7 @@ components:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
       - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-        value: "http://otel-demo-otel-collector:4317"
+        value: "http://otel-collector.monitoring.svc.cluster.local:4317"  # CHANGED
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -136,6 +99,8 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector.monitoring.svc.cluster.local:4317"  # ADDED
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -144,6 +109,8 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector.monitoring.svc.cluster.local:4317"  # ADDED
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -152,6 +119,8 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector.monitoring.svc.cluster.local:4317"  # ADDED
     resources:
       limits: { memory: "500Mi", cpu: "200m" }
       requests: { memory: "200Mi", cpu: "100m" }
@@ -160,6 +129,8 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector.monitoring.svc.cluster.local:4317"  # ADDED
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -170,3 +141,5 @@ components:
         value: "5"
       - name: LOCUST_SPAWN_RATE
         value: "1"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector.monitoring.svc.cluster.local:4317"  # ADDED

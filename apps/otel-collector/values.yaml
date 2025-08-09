@@ -1,0 +1,253 @@
+# apps/otel-collector/values.yaml - Unified Infrastructure Collector
+
+# Deploy as DaemonSet to collect logs from all nodes
+mode: daemonset
+
+# Use the Kubernetes distribution for better k8s integration
+image:
+  repository: otel/opentelemetry-collector-k8s
+  tag: "0.115.0"
+
+# Configure the collector to handle ALL infrastructure telemetry
+config:
+  receivers:
+    # LOGS: Replace Promtail functionality
+    filelog:
+      include:
+        - /var/log/pods/*/*/*.log
+      exclude:
+        - /var/log/pods/*/otc-container/*.log
+        - /var/log/pods/kube-system_*/*/*.log  # Reduce noise
+      include_file_path: true
+      include_file_name: false
+      operators:
+        # Parse container runtime format (CRI-O/containerd)
+        - type: regex_parser
+          id: extract_metadata_from_filepath
+          regex: '^.*\/pods\/(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[a-f0-9\-]+)\/(?P<container_name>[^\/_]+)\/(?P<restart_count>\d+)\.log$'
+          parse_from: attributes["log.file.path"]
+        
+        # Parse CRI format logs
+        - type: regex_parser
+          id: parser-cri
+          regex: '^(?P<time>[^\s]+) (?P<stream>stdout|stderr) (?P<logtag>[^\s]*) (?P<message>.*)$'
+          timestamp:
+            parse_from: attributes.time
+            layout: '%Y-%m-%dT%H:%M:%S.%LZ'
+        
+        # Extract trace correlation for LGTM integration
+        - type: regex_parser
+          id: extract_trace_id
+          regex: '.*trace[_-]?id["\s:=]+(?P<trace_id>[a-fA-F0-9]+).*'
+          parse_from: attributes.message
+          if: attributes.message != nil
+          
+        # Extract log level
+        - type: regex_parser
+          id: extract_level
+          regex: '.*level["\s:=]+(?P<level>(DEBUG|INFO|WARN|ERROR|FATAL)).*'
+          parse_from: attributes.message
+          if: attributes.message != nil
+
+    # METRICS: Host and Kubernetes metrics
+    hostmetrics:
+      collection_interval: 30s
+      scrapers:
+        cpu:
+          metrics:
+            system.cpu.utilization:
+              enabled: true
+        disk: {}
+        filesystem:
+          exclude_mount_points:
+            mount_points: ["/dev/*", "/proc/*", "/sys/*", "/var/lib/docker/*", "/var/lib/containerd/*"]
+            match_type: regexp
+        load: {}
+        memory: {}
+        network: {}
+
+    k8s_cluster:
+      auth_type: serviceAccount
+      node_conditions_to_report: [Ready, MemoryPressure, DiskPressure, PIDPressure]
+      allocatable_types_to_report: [cpu, memory, storage, ephemeral-storage]
+
+    # TRACES: Accept traces from applications
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+
+  processors:
+    # Add Kubernetes metadata to all telemetry
+    k8sattributes:
+      auth_type: serviceAccount
+      passthrough: false
+      filter:
+        node_from_env_var: KUBE_NODE_NAME
+      extract:
+        metadata:
+          - k8s.namespace.name
+          - k8s.pod.name
+          - k8s.pod.start_time
+          - k8s.pod.uid
+          - k8s.deployment.name
+          - k8s.node.name
+        labels:
+          - tag_name: app.kubernetes.io/name
+            key: app.kubernetes.io/name
+            from: pod
+          - tag_name: app.kubernetes.io/component  
+            key: app.kubernetes.io/component
+            from: pod
+
+    # Resource processing for consistent labeling
+    resource:
+      attributes:
+        - key: cluster
+          value: homelab
+          action: upsert
+        - key: environment
+          value: homelab  
+          action: upsert
+
+    # Memory limiting
+    memory_limiter:
+      limit_mib: 512
+      spike_limit_mib: 128
+
+    # Efficient batching
+    batch:
+      send_batch_size: 1024
+      timeout: 5s
+      send_batch_max_size: 2048
+
+  exporters:
+    # LOGS: Send to Loki (replacing Promtail)
+    loki:
+      endpoint: "http://loki-gateway.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+      default_labels_enabled:
+        exporter: false
+        job: false
+        instance: false
+
+    # TRACES: Send to Tempo  
+    otlp/tempo:
+      endpoint: "http://tempo.monitoring.svc.cluster.local:4317"
+      tls:
+        insecure: true
+
+    # METRICS: Send to Prometheus
+    prometheusremotewrite:
+      endpoint: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+      remote_write_queue:
+        enabled: true
+        queue_size: 2000
+
+  service:
+    telemetry:
+      logs:
+        level: info
+      metrics:
+        address: 0.0.0.0:8888
+
+    pipelines:
+      # LOGS pipeline (replaces Promtail)
+      logs:
+        receivers: [filelog]
+        processors: [memory_limiter, k8sattributes, resource, batch]
+        exporters: [loki]
+
+      # METRICS pipeline  
+      metrics:
+        receivers: [hostmetrics, k8s_cluster, otlp]
+        processors: [memory_limiter, k8sattributes, resource, batch]
+        exporters: [prometheusremotewrite]
+
+      # TRACES pipeline
+      traces:
+        receivers: [otlp]
+        processors: [memory_limiter, k8sattributes, resource, batch]
+        exporters: [otlp/tempo]
+
+# Resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+# Volumes for log access (critical for log collection)
+extraVolumes:
+  - name: varlogpods
+    hostPath:
+      path: /var/log/pods
+  - name: varlibdockercontainers
+    hostPath:
+      path: /var/lib/docker/containers
+
+extraVolumeMounts:
+  - name: varlogpods
+    mountPath: /var/log/pods
+    readOnly: true
+  - name: varlibdockercontainers
+    mountPath: /var/lib/docker/containers
+    readOnly: true
+
+# Service account with necessary permissions
+serviceAccount:
+  create: true
+  name: otel-collector
+
+# RBAC for Kubernetes metadata access
+clusterRole:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: ["nodes", "nodes/proxy", "nodes/metrics", "services", "endpoints", "pods"]
+      verbs: ["get", "list", "watch"]
+    - apiGroups: ["apps"]
+      resources: ["deployments", "replicasets", "daemonsets", "statefulsets"]
+      verbs: ["get", "list", "watch"]
+    - apiGroups: ["extensions"]
+      resources: ["deployments", "replicasets"]
+      verbs: ["get", "list", "watch"]
+    - nonResourceURLs: ["/metrics"]
+      verbs: ["get"]
+
+# ServiceMonitor for Prometheus to scrape OTel metrics
+serviceMonitor:
+  enabled: true
+  labels:
+    release: prometheus-stack
+
+# Pod security context for log file access
+securityContext:
+  runAsUser: 0  # Required for reading log files
+  runAsGroup: 0
+
+# Node selector and tolerations
+nodeSelector: {}
+
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+    operator: Exists
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8888"
+  prometheus.io/path: "/metrics"
+
+# Additional labels
+additionalLabels:
+  app.kubernetes.io/part-of: homelab-gitops
+  environment: homelab
+  component: telemetry-infrastructure

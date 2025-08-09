@@ -1,25 +1,23 @@
-# apps/system/otel-app.yaml
+# apps/system/otel-collector-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: opentelemetry-collector
+  name: otel-collector
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "3"  # After Tempo (wave 3), before applications
+    argocd.argoproj.io/sync-wave: "4"
 spec:
   project: monitoring
   sources:
-    # Source 1: OpenTelemetry Helm chart
     - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
       targetRevision: 0.129.0
       chart: opentelemetry-collector
       helm:
         releaseName: otel-collector
         valueFiles:
-          - $values/apps/otel/values.yaml
-    # Source 2: Git repository with values
+          - $values/apps/otel-collector/values.yaml  # UPDATED PATH
     - repoURL: https://github.com/mikha-22/homelab-gitops
       targetRevision: HEAD
       ref: values
@@ -33,7 +31,7 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=false  # monitoring namespace already exists
+      - CreateNamespace=false
       - ServerSideApply=true
     retry:
       limit: 5
@@ -42,9 +40,8 @@ spec:
         factor: 2
         maxDuration: 5m
 
-  # Ignore replica differences during autoscaling
   ignoreDifferences:
     - group: apps
-      kind: Deployment
+      kind: DaemonSet
       jsonPointers:
-        - /spec/replicas
+        - /spec/updateStrategy/rollingUpdate/maxUnavailable
