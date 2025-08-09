@@ -1,11 +1,11 @@
-# apps/otel-collector/values.yaml - Unified Infrastructure Collector
+# apps/otel-collector/values.yaml - FIXED Unified Infrastructure Collector
 
 # Deploy as DaemonSet to collect logs from all nodes
 mode: daemonset
 
-# Use the Kubernetes distribution for better k8s integration
+# Use the CONTRIB distribution which includes prometheusremotewrite exporter
 image:
-  repository: otel/opentelemetry-collector-k8s
+  repository: otel/opentelemetry-collector-contrib
   tag: "0.115.0"
 
 # Configure the collector to handle ALL infrastructure telemetry
@@ -138,12 +138,14 @@ config:
       tls:
         insecure: true
 
-    # METRICS: Send to Prometheus
-    prometheusremotewrite:
-      endpoint: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
-      remote_write_queue:
-        enabled: true
-        queue_size: 2000
+    # METRICS: Send to Prometheus - FIXED EXPORTER NAME
+    prometheus:
+      endpoint: "0.0.0.0:8889"
+      const_labels:
+        cluster: homelab
+      send_timestamps: true
+      metric_expiration: 180m
+      enable_open_metrics: true
 
   service:
     telemetry:
@@ -163,7 +165,7 @@ config:
       metrics:
         receivers: [hostmetrics, k8s_cluster, otlp]
         processors: [memory_limiter, k8sattributes, resource, batch]
-        exporters: [prometheusremotewrite]
+        exporters: [prometheus]
 
       # TRACES pipeline
       traces:
