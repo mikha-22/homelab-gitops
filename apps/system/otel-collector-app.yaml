@@ -1,47 +1,158 @@
-# apps/system/otel-collector-app.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: otel-collector
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "4"
-spec:
-  project: monitoring
-  sources:
-    - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
-      targetRevision: 0.129.0
-      chart: opentelemetry-collector
-      helm:
-        releaseName: otel-collector
-        valueFiles:
-          - $values/apps/otel-collector/values.yaml  # UPDATED PATH
-    - repoURL: https://github.com/mikha-22/homelab-gitops
-      targetRevision: HEAD
-      ref: values
-    
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: monitoring
-    
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=false
-      - ServerSideApply=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 5m
+# apps/otel-collector/values.yaml - Chart v0.130.1 Compatible
 
-  ignoreDifferences:
-    - group: apps
-      kind: DaemonSet
-      jsonPointers:
-        - /spec/updateStrategy/rollingUpdate/maxUnavailable
+# Deploy as DaemonSet to collect logs from all nodes
+mode: daemonset
+
+# Use the CONTRIB distribution (has all exporters)
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: "0.131.0"
+
+# Enable useful presets that handle k8s configuration automatically
+presets:
+  # Configures the collector to collect logs (replaces Promtail)
+  logsCollection:
+    enabled: true
+    includeCollectorLogs: false
+    storeCheckpoints: true  # Enable checkpoints for reliability
+  # Configures the collector to collect host metrics
+  hostMetrics:
+    enabled: true
+  # Adds Kubernetes metadata to all telemetry
+  kubernetesAttributes:
+    enabled: true
+    extractAllPodLabels: false
+    extractAllPodAnnotations: false
+  # Collect kubelet metrics (suitable for daemonset)
+  kubeletMetrics:
+    enabled: true
+
+# Enable the metrics port for Prometheus scraping
+ports:
+  metrics:
+    enabled: true
+    containerPort: 8888
+    servicePort: 8888
+    protocol: TCP
+
+# Custom collector configuration (merged with presets)
+config:
+  receivers:
+    # TRACES: Accept traces from applications (keep defaults)
+    otlp:
+      protocols:
+        grpc:
+          endpoint: ${env:MY_POD_IP}:4317
+        http:
+          endpoint: ${env:MY_POD_IP}:4318
+
+  processors:
+    # Add resource attributes for consistent labeling
+    resource:
+      attributes:
+        - key: cluster
+          value: homelab
+          action: upsert
+        - key: environment
+          value: homelab  
+          action: upsert
+
+  exporters:
+    # LOGS: Send to Loki (replacing Promtail)
+    loki:
+      endpoint: "http://loki-gateway.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+      default_labels_enabled:
+        exporter: false
+        job: false
+        instance: false
+
+    # TRACES: Send to Tempo  
+    otlp/tempo:
+      endpoint: "http://tempo.monitoring.svc.cluster.local:4317"
+      tls:
+        insecure: true
+
+    # METRICS: Use prometheus exporter to expose metrics
+    prometheus:
+      endpoint: "${env:MY_POD_IP}:8889"
+      const_labels:
+        cluster: homelab
+        environment: homelab
+      send_timestamps: true
+      enable_open_metrics: true
+
+  service:
+    pipelines:
+      # LOGS pipeline (preset adds filelog receiver automatically)
+      logs:
+        receivers: [otlp]  # Preset adds filelog
+        processors: [memory_limiter, k8sattributes, resource, batch]
+        exporters: [loki]
+
+      # METRICS pipeline (preset adds hostmetrics, kubeletstats automatically)  
+      metrics:
+        receivers: [otlp, prometheus]  # Preset adds hostmetrics, kubeletstats
+        processors: [memory_limiter, k8sattributes, resource, batch]
+        exporters: [prometheus]
+
+      # TRACES pipeline (keep defaults)
+      traces:
+        receivers: [otlp, jaeger, zipkin]
+        processors: [memory_limiter, k8sattributes, resource, batch]
+        exporters: [otlp/tempo]
+
+# Resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+# Use GOMEMLIMIT for better memory management
+useGOMEMLIMIT: true
+
+# Service account with necessary permissions
+serviceAccount:
+  create: true
+
+# RBAC (presets will add necessary rules automatically)
+clusterRole:
+  create: true
+
+# ServiceMonitor for Prometheus to scrape OTel collector's own metrics
+serviceMonitor:
+  enabled: true
+  extraLabels:
+    release: prometheus-stack
+  metricsEndpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+
+# Pod security context for log file access (required by logsCollection preset)
+securityContext:
+  runAsUser: 0  # Required for reading log files
+  runAsGroup: 0
+
+# Node selector and tolerations for DaemonSet
+tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+    operator: Exists
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+    operator: Exists
+
+# Pod annotations for monitoring
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8888"
+  prometheus.io/path: "/metrics"
+
+# Additional labels
+additionalLabels:
+  app.kubernetes.io/part-of: homelab-gitops
+  environment: homelab
+  component: telemetry-infrastructure
