@@ -1,4 +1,4 @@
-# apps/monitoring/tempo-values.yaml (CHART-COMPATIBLE METRICS GENERATOR)
+# apps/monitoring/tempo-values.yaml (USING CHART'S BUILT-IN METRICS GENERATOR)
 
 replicas: 1
 
@@ -10,49 +10,33 @@ persistence:
 serviceMonitor:
   enabled: true
 
-# For Tempo Helm chart 1.23.2, we need to configure metrics generator differently
+# Use the chart's built-in metrics generator support
 tempo:
+  # Enable metrics generator - THIS IS THE KEY!
+  metricsGenerator:
+    enabled: true
+    remoteWriteUrl: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+
   # Server configuration
   server:
     http_listen_port: 3200
 
-  # Memberlist configuration for ring
-  memberlist:
-    cluster_label: "tempo.monitoring"
+  # Resource configuration
+  resources:
+    requests:
+      cpu: 500m
+      memory: 4Gi
+    limits:
+      cpu: 1000m
+      memory: 8Gi
 
-  # Multitenancy disabled
-  multitenancy_enabled: false
-  
-  # Usage reporting disabled
-  usage_report:
-    reporting_enabled: false
+  # Other Tempo settings
+  multitenancyEnabled: false
+  reportingEnabled: false
+  retention: 168h
+  memBallastSizeMbs: 2048
 
-  # Compactor configuration
-  compactor:
-    compaction:
-      block_retention: 168h
-
-  # Distributor configuration (keep existing receivers)
-  distributor:
-    receivers:
-      jaeger:
-        protocols:
-          grpc:
-            endpoint: 0.0.0.0:14250
-          thrift_binary:
-            endpoint: 0.0.0.0:6832
-          thrift_compact:
-            endpoint: 0.0.0.0:6831
-          thrift_http:
-            endpoint: 0.0.0.0:14268
-      otlp:
-        protocols:
-          grpc:
-            endpoint: 0.0.0.0:4317
-          http:
-            endpoint: 0.0.0.0:4318
-
-  # Storage configuration
+  # Storage configuration (keep the defaults working)
   storage:
     trace:
       backend: local
@@ -61,93 +45,31 @@ tempo:
       wal:
         path: /var/tempo/wal
 
-  # CRITICAL: Add the missing metrics_generator configuration block
-  metrics_generator:
-    # Ring configuration for metrics generator
-    ring:
-      kvstore:
-        store: memberlist
-    
-    # Processor configuration
-    processor:
-      # Span metrics processor
-      span_metrics:
-        histogram_buckets: [0.002, 0.004, 0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1.024, 2.048, 4.096, 8.192, 16.384]
-        intrinsic_dimensions:
-          service: true
-          span_name: true
-          span_kind: true
-          status_code: true
-        dimensions:
-          - "service.name"
-          - "service.namespace"
-        enable_target_info: true
-      
-      # Service graphs processor
-      service_graphs:
-        wait: 10s
-        max_items: 10000
-        workers: 10
-        histogram_buckets: [0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8]
-        dimensions:
-          - "service.name"
-          - "service.namespace"
-    
-    # Registry configuration
-    registry:
-      collection_interval: 15s
-      stale_duration: 15m
-      external_labels:
-        cluster: "homelab"
-        environment: "homelab"
-    
-    # Storage configuration for metrics generator
-    storage:
-      path: /var/tempo/generator/wal
-      remote_write:
-        - url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
-          send_exemplars: true
-
-  # Overrides configuration - enable metrics generation
+  # Enable metrics generation in overrides for all tenants
   overrides:
     defaults:
       metrics_generator:
         processors: 
           - "span-metrics"
           - "service-graphs"
-    per_tenant_override_config: /conf/overrides.yaml
 
-  # Ingester, querier, query_frontend - keep defaults but explicit
-  ingester: {}
-  querier: {}
-  query_frontend: {}
-
-# Resource configuration at the root level for the chart
-resources:
-  requests:
-    cpu: 500m
-    memory: 4Gi
-  limits:
-    cpu: 1000m
-    memory: 8Gi
-
-# Health check configuration
-livenessProbe:
-  httpGet:
-    path: /ready
-    port: 3200
-  initialDelaySeconds: 30
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 3
-  successThreshold: 1
-  
-readinessProbe:
-  httpGet:
-    path: /ready
-    port: 3200
-  initialDelaySeconds: 20
-  periodSeconds: 10
-  timeoutSeconds: 5
-  failureThreshold: 3
-  successThreshold: 1
+  # Health check configuration
+  livenessProbe:
+    httpGet:
+      path: /ready
+      port: 3200
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+    
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: 3200
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
