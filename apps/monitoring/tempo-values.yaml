@@ -1,4 +1,4 @@
-# apps/monitoring/tempo-values.yaml (FINAL FIX)
+# apps/monitoring/tempo-values.yaml (FINAL CORRECTED)
 
 replicas: 1
 
@@ -10,16 +10,22 @@ persistence:
 serviceMonitor:
   enabled: true
 
+# This block correctly configures the generator's ring and remote write endpoint.
 metricsGenerator:
   enabled: true
   remoteWriteUrl: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
-  # ADDED: Explicit ring configuration to solve the "empty ring" error.
-  # This allows the generator to register itself so the querier can find it.
   ring:
     kvstore:
       store: memberlist
 
 tempo:
+  # This is the new, critical piece. It tells the Tempo runtime
+  # to actually use the metrics generator processor for the default tenant.
+  overrides:
+    defaults:
+      metrics_generator:
+        processors: [span-metrics] # This activates the span metrics processor.
+
   resources:
     requests:
       cpu: 500m
