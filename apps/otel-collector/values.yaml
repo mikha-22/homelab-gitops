@@ -1,11 +1,11 @@
-# apps/otel-collector/values.yaml - FIXED Unified Infrastructure Collector
+# apps/otel-collector/values.yaml - Homelab-Optimized Unified Infrastructure Collector
 
 # Deploy as DaemonSet to collect logs from all nodes
 mode: daemonset
 
-# Use the CONTRIB distribution which includes prometheusremotewrite exporter
+# Use the CORE distribution - simpler and includes prometheus exporter
 image:
-  repository: otel/opentelemetry-collector-contrib
+  repository: otel/opentelemetry-collector-k8s
   tag: "0.115.0"
 
 # Configure the collector to handle ALL infrastructure telemetry
@@ -138,13 +138,13 @@ config:
       tls:
         insecure: true
 
-    # METRICS: Send to Prometheus - FIXED EXPORTER NAME
+    # METRICS: Expose for Prometheus to scrape (PERFECT for homelab!)
     prometheus:
       endpoint: "0.0.0.0:8889"
       const_labels:
         cluster: homelab
+        environment: homelab
       send_timestamps: true
-      metric_expiration: 180m
       enable_open_metrics: true
 
   service:
@@ -199,6 +199,16 @@ extraVolumeMounts:
     mountPath: /var/lib/docker/containers
     readOnly: true
 
+# Service configuration for Prometheus scraping
+service:
+  enabled: true
+  ports:
+    prometheus-metrics:
+      enabled: true
+      containerPort: 8889
+      servicePort: 8889
+      protocol: TCP
+
 # Service account with necessary permissions
 serviceAccount:
   create: true
@@ -225,6 +235,10 @@ serviceMonitor:
   enabled: true
   labels:
     release: prometheus-stack
+  endpoints:
+    - port: prometheus-metrics
+      interval: 30s
+      path: /metrics
 
 # Pod security context for log file access
 securityContext:
@@ -245,7 +259,7 @@ tolerations:
 # Pod annotations
 podAnnotations:
   prometheus.io/scrape: "true"
-  prometheus.io/port: "8888"
+  prometheus.io/port: "8889"
   prometheus.io/path: "/metrics"
 
 # Additional labels
