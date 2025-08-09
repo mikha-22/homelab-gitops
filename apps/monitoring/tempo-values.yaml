@@ -1,4 +1,4 @@
-# apps/monitoring/tempo-values.yaml (DEFINITIVE FIX)
+# apps/monitoring/tempo-values.yaml (DOCS-COMPLIANT METRICS GENERATOR)
 
 replicas: 1
 
@@ -10,24 +10,90 @@ persistence:
 serviceMonitor:
   enabled: true
 
-# All runtime settings are now correctly nested inside this 'tempo:' block.
+# Enable metrics generator at the chart level
+metricsGenerator:
+  enabled: true
+  remoteWriteUrl: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+
 tempo:
-  # This is the full runtime configuration for the metrics generator.
+  # Server configuration
+  server:
+    http_listen_port: 3200
+
+  # Metrics generator configuration - Following official docs exactly
   metrics_generator:
+    # Ring configuration
     ring:
       kvstore:
         store: memberlist
+    
+    # Processor configuration
+    processor:
+      # Span metrics processor
+      span_metrics:
+        # Histogram buckets for latency (in seconds)
+        histogram_buckets: [0.002, 0.004, 0.008, 0.016, 0.032, 0.064, 0.128, 0.256, 0.512, 1.024, 2.048, 4.096, 8.192, 16.384]
+        # Intrinsic dimensions
+        intrinsic_dimensions:
+          service: true
+          span_name: true
+          span_kind: true
+          status_code: true
+          status_message: false
+        # Additional dimensions from span/resource attributes
+        dimensions:
+          - "service.name"
+          - "service.namespace"
+          - "service.version"
+          - "deployment.environment"
+        # Enable target info metrics
+        enable_target_info: true
+      
+      # Service graphs processor
+      service_graphs:
+        # Wait time for edge completion
+        wait: 10s
+        # Max items in store
+        max_items: 10000
+        # Number of workers
+        workers: 10
+        # Histogram buckets for service graph latency
+        histogram_buckets: [0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8]
+        # Additional dimensions
+        dimensions:
+          - "service.name"
+          - "service.namespace"
+    
+    # Registry configuration
+    registry:
+      # Collection interval
+      collection_interval: 15s
+      # Stale duration
+      stale_duration: 15m
+      # External labels for all metrics
+      external_labels:
+        cluster: "homelab"
+        environment: "homelab"
+    
+    # Storage configuration for metrics generator
     storage:
+      # Path for WAL
+      path: /var/tempo/generator/wal
+      # Remote write configuration
       remote_write:
-        - url: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+        - url: http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write
+          send_exemplars: true
+          # Add headers for tenant identification
+          headers:
+            X-Scope-OrgID: "tempo"
 
-  # This part is also correct and activates the generator's processor.
+  # Enable metrics generation for all tenants
   overrides:
     defaults:
       metrics_generator:
-        processors:
-        - span-metrics
+        processors: ["span-metrics", "service-graphs"]
 
+  # Resource configuration
   resources:
     requests:
       cpu: 500m
@@ -36,14 +102,13 @@ tempo:
       cpu: 1000m
       memory: 8Gi
 
+  # Other Tempo settings
   multitenancyEnabled: false
   reportingEnabled: false
   retention: 168h
   memBallastSizeMbs: 2048
   
-  server:
-    http_listen_port: 3200
-  
+  # Health check configuration
   livenessProbe:
     httpGet:
       path: /ready
@@ -53,6 +118,7 @@ tempo:
     timeoutSeconds: 5
     failureThreshold: 3
     successThreshold: 1
+    
   readinessProbe:
     httpGet:
       path: /ready
