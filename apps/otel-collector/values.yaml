@@ -1,4 +1,4 @@
-# apps/otel-collector/values.yaml
+# apps/otel-collector/values.yaml - WITH DEBUG LOGGING
 
 # 1. Set the deployment mode to daemonset.
 mode: daemonset
@@ -29,8 +29,6 @@ ports:
     protocol: TCP
     servicePort: 8888
 
-# Note: MY_POD_IP is automatically provided by the Helm chart
-
 # 4. Enable presets for Kubernetes log collection and metadata
 presets:
   # Enable log collection from all Kubernetes pods
@@ -43,7 +41,7 @@ presets:
     extractAllPodLabels: true
     extractAllPodAnnotations: true
 
-# 5. Define the collector's pipeline configuration
+# 5. Define the collector's pipeline configuration WITH DEBUG
 config:
   receivers:
     otlp:
@@ -60,6 +58,12 @@ config:
       spike_limit_mib: 128
 
   exporters:
+    # ENABLE DEBUG EXPORTER
+    debug:
+      verbosity: detailed
+      sampling_initial: 5
+      sampling_thereafter: 200
+    
     # Exporter for TRACES -> Tempo
     otlp/tempo:
       endpoint: "tempo.monitoring.svc.cluster.local:4317"
@@ -81,16 +85,16 @@ config:
       traces:
         receivers: [otlp]
         processors: [memory_limiter, k8sattributes, batch]
-        exporters: [otlp/tempo]
+        exporters: [debug, otlp/tempo]  # ADDED DEBUG HERE
       metrics:
         receivers: [otlp]
         processors: [memory_limiter, k8sattributes, batch]
-        exporters: [prometheusremotewrite]
+        exporters: [debug, prometheusremotewrite]  # ADDED DEBUG HERE
       logs:
         # Now includes both OTLP logs (from apps) AND filelog (from Kubernetes)
         receivers: [otlp, filelog]
         processors: [memory_limiter, k8sattributes, batch]
-        exporters: [otlphttp/loki]
+        exporters: [debug, otlphttp/loki]  # ADDED DEBUG HERE
 
 # 6. Resource limits for the collector
 resources:
@@ -109,12 +113,7 @@ securityContext:
   readOnlyRootFilesystem: false
   allowPrivilegeEscalation: false
 
-# 8. Volume mounts (automatically handled by the logsCollection preset)
-# The preset will automatically mount:
-# - /var/log/pods from the host (where Kubernetes writes container logs)
-# - /var/lib/docker/containers (if needed for Docker runtime)
-
-# 9. Node selector and tolerations for DaemonSet deployment
+# 8. Node selector and tolerations for DaemonSet deployment
 nodeSelector: {}
 tolerations:
   # Allow running on control plane nodes if needed
@@ -125,7 +124,7 @@ tolerations:
     operator: Exists
     effect: NoSchedule
 
-# 10. Service monitor for Prometheus scraping
+# 9. Service monitor for Prometheus scraping
 serviceMonitor:
   enabled: true
   labels:
