@@ -1,4 +1,4 @@
-# system/otel-collector-app.yaml
+# apps/system/otel-collector-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -7,35 +7,27 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    # Deploy this in sync-wave 4, replacing Promtail.
     argocd.argoproj.io/sync-wave: "4"
 spec:
   project: monitoring
   sources:
-    # Source 1: The official OpenTelemetry Collector Helm chart.
     - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
-      targetRevision: 0.131.0 # Use a specific, recent version
+      targetRevision: 0.130.1
       chart: opentelemetry-collector
       helm:
         releaseName: otel-collector
         valueFiles:
-          # This tells Helm to get its values from our new file.
-          - $values/monitoring/otel-collector-values.yaml
-
-    # Source 2: Your Git repository, providing the values file.
+          - $values/apps/otel-collector/values.yaml # This line correctly points to the values
     - repoURL: https://github.com/mikha-22/homelab-gitops
       targetRevision: HEAD
       ref: values
-
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
-
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-      # The monitoring namespace is created in wave 0, so we don't need to create it here.
       - CreateNamespace=false
       - ServerSideApply=true

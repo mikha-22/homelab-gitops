@@ -1,22 +1,20 @@
 # apps/monitoring/namespace/otel-servicemonitor.yaml
+# UPDATED to monitor our unified collector instead
 
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: otel-demo-collector
+  name: otel-collector
   namespace: monitoring
   labels:
-    app.kubernetes.io/name: otel-demo-collector
+    app.kubernetes.io/name: otel-collector
     app.kubernetes.io/part-of: homelab-gitops
     release: prometheus-stack
 spec:
   selector:
     matchLabels:
-      # FIXED: Changed from 'otelcol' to 'otel-collector' to match the service
       app.kubernetes.io/name: otel-collector
-      app.kubernetes.io/instance: otel-demo
-      # This component label is also needed to correctly identify the service
-      component: otel-collector
+      app.kubernetes.io/instance: otel-collector
   endpoints:
   - port: metrics
     interval: 30s
@@ -24,4 +22,4 @@ spec:
     scheme: http
   namespaceSelector:
     matchNames:
-    - otel-demo
+    - monitoring

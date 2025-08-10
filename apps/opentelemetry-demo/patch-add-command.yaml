@@ -1,17 +1,20 @@
-# apps/opentelemetry-demo/patch-add-command.yaml
-# This patch will be applied to the 'frontend' Deployment.
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: frontend
-spec:
-  template:
-    spec:
-      containers:
-        - name: frontend
-          # This is the shell wrapper we are injecting.
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              export OTEL_EXPORTER_OTLP_ENDPOINT="${HOST_IP}:4317"
-              /app/server.js
+# apps/opentelemetry-demo/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# This tells Kustomize to render the Helm chart first as its base.
+helmCharts:
+  - name: opentelemetry-demo
+    repo: https://open-telemetry.github.io/opentelemetry-helm-charts
+    version: 0.37.2
+    releaseName: otel-demo
+    namespace: otel-demo
+    # Kustomize will look for this values file in the same directory.
+    valuesFile: values.yaml
+
+# This applies your patch to the rendered output of the Helm chart.
+patches:
+  - path: patch-add-command.yaml
+    target:
+      kind: Deployment
+      name: frontend

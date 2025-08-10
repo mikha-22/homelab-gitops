@@ -1,3 +1,5 @@
+# apps/system/loki-app.yaml - FINAL CORRECTED FILE
+
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -9,14 +11,23 @@ metadata:
     argocd.argoproj.io/sync-wave: "2"
 spec:
   project: monitoring
-  source:
-    repoURL: https://grafana.github.io/helm-charts
-    targetRevision: 6.6.0
-    chart: loki
-    helm:
-      releaseName: loki
-      valueFiles:
-        - https://raw.githubusercontent.com/mikha-22/homelab-gitops/main/apps/monitoring/loki-values.yaml
+  sources:
+    # Source 1: The official Loki Helm chart
+    - repoURL: https://grafana.github.io/helm-charts
+      # THIS IS THE KEY: Use the correct chart version
+      targetRevision: 6.30.1
+      chart: loki
+      helm:
+        releaseName: loki
+        # This tells ArgoCD to get values from the source named 'values'
+        valueFiles:
+          - $values/apps/monitoring/loki-values.yaml
+
+    # Source 2: Your Git repository, providing the local values file
+    - repoURL: https://github.com/mikha-22/homelab-gitops
+      targetRevision: HEAD
+      # This 'ref' creates a named source called 'values' that ArgoCD can reference
+      ref: values
     
   destination:
     server: https://kubernetes.default.svc
@@ -27,29 +38,5 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
+      - CreateNamespace:true
       - ServerSideApply=true
-    retry:
-      limit: 3
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 5m
-
-  # ADD THIS - Same pattern as your Tempo app
-  ignoreDifferences:
-    - group: apps
-      kind: StatefulSet
-      jsonPointers:
-        - /spec/volumeClaimTemplates/0/apiVersion
-        - /spec/volumeClaimTemplates/0/kind
-        - /spec/volumeClaimTemplates/0/metadata/creationTimestamp
-        - /spec/volumeClaimTemplates/0/status
-    # Alternative: Use JQ expressions for more flexible matching
-    - group: apps
-      kind: StatefulSet
-      jqPathExpressions:
-        - '.spec.volumeClaimTemplates[]?.apiVersion'
-        - '.spec.volumeClaimTemplates[]?.kind'
-        - '.spec.volumeClaimTemplates[]?.metadata.creationTimestamp'
-        - '.spec.volumeClaimTemplates[]?.status'

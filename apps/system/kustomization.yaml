@@ -1,4 +1,4 @@
-# system/kustomization.yaml
+# apps/system/kustomization.yaml
 resources:
   # Projects (must be first)
   - projects/monitoring-project.yaml
@@ -11,16 +11,13 @@ resources:
   - prometheus-app.yaml          # wave: 1
   - loki-app.yaml               # wave: 2
   - tempo-app.yaml              # wave: 3
-  - otel-collector-app.yaml     # ADDED: This is our new collector daemonset.
+  - otel-collector-app.yaml     # wave: 4 
   - dashboards-app.yaml         # wave: 5
   
-  # Demo Application
-  - opentelemetry-demo-app.yaml
+  # Demo Applications
+  - opentelemetry-demo-app.yaml  # wave: 20
   
   # Applications (10+ sync waves)
   - homer-app.yaml              # wave: 10
   - minio-app.yaml              # wave: 10
   - nginx-app.yaml              # wave: 15
-
-# REMOVED: promtail-app.yaml
-# REMOVED: otel-app.yaml (the old, unused collector)

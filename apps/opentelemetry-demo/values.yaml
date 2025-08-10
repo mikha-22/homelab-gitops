@@ -11,27 +11,35 @@ opensearch:
   enabled: false
 
 # 2. Disable the demo's built-in collector.
-# We are now fully decoupled and will send telemetry to our node-level collector.
 opentelemetry-collector:
   enabled: false
 
-# 3. Configure each component.
+# 3. Configure components.
 components:
   frontend:
-    # The 'command' and 'args' are now handled by the Kustomize patch.
-    # We only need to provide the HOST_IP variable for the script to use.
+    # We ONLY need to provide the HOST_IP variable for the patch's script to use.
+    # The command, args, and OTEL_EXPORTER_OTLP_ENDPOINT are now handled by the patch.
     envOverrides:
       - name: HOST_IP
         valueFrom:
           fieldRef:
             fieldPath: status.hostIP
-      # NOTE: We no longer define OTEL_EXPORTER_OTLP_ENDPOINT here.
-      # The shell script in the patch will create it.
+    resources:
+      limits: { memory: "200Mi", cpu: "200m" }
+      requests: { memory: "100Mi", cpu: "100m" }
 
-  # --- The components below are unchanged for now ---
-  # They will still fail until the same Kustomize patch pattern is
-  # applied to them, but we are fixing one service at a time.
   frontend-proxy:
+    # This component and all others still need the direct override, as the
+    # patch only targets the 'frontend' deployment.
+    envOverrides:
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "$(HOST_IP):4317"
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
     ingress:
       enabled: true
       ingressClassName: traefik
@@ -55,7 +63,11 @@ components:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-demo-otel-collector:4317"
+        value: "$(HOST_IP):4317"
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
     resources:
       limits: { memory: "300Mi", cpu: "200m" }
       requests: { memory: "180Mi", cpu: "100m" }
@@ -64,6 +76,12 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "$(HOST_IP):4317"
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "160Mi", cpu: "100m" }
@@ -72,6 +90,12 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "$(HOST_IP):4317"
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -80,6 +104,12 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "$(HOST_IP):4317"
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -88,8 +118,12 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-        value: "http://otel-demo-otel-collector:4317"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "$(HOST_IP):4317"
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -98,6 +132,12 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "$(HOST_IP):4317"
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -106,6 +146,12 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "$(HOST_IP):4317"
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -114,6 +160,12 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "$(HOST_IP):4317"
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
     resources:
       limits: { memory: "500Mi", cpu: "200m" }
       requests: { memory: "200Mi", cpu: "100m" }
@@ -122,13 +174,30 @@ components:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "$(HOST_IP):4317"
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   load-generator:
-    envOverrides:
+    # This component has its own specific variables
+    env:
       - name: LOCUST_USERS
         value: "5"
       - name: LOCUST_SPAWN_RATE
         value: "1"
+    # And it also needs our OTLP override
+    envOverrides:
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: "grpc"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "$(HOST_IP):4317"
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP

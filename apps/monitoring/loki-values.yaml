@@ -1,89 +1,110 @@
-# apps/monitoring/loki-values.yaml
+# apps/monitoring/loki-values.yaml - SIMPLIFIED WITHOUT SIDECAR
 
-# This configuration is compatible with Loki Helm chart v6.6.0
+# This tells the chart to deploy a single, persistent pod.
+deploymentMode: SingleBinary
 
+# This is the main configuration block for Loki.
 loki:
-  # This block contains the configuration for the Loki application itself.
-  # It's equivalent to your old `loki:` block.
-  config:
-    auth_enabled: false
-    
-    ingester:
-      chunk_idle_period: 5m
-      chunk_target_size: 1536000
-      max_chunk_age: 1h
-      
-    schema_config:
-      configs:
-        - from: "2024-04-01"
-          store: tsdb
-          object_store: filesystem
-          schema: v13
-          index:
-            prefix: loki_index_
-            period: 24h
+  auth_enabled: false
+  server:
+    http_listen_port: 3100
+    grpc_listen_port: 9096
+  # OTLP is enabled by default in Loki 3.0+, no distributor config needed
+  commonConfig:
+    replication_factor: 1
+  schemaConfig:
+    configs:
+      - from: "2024-04-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+  storage:
+    type: filesystem
+  limits_config:
+    allow_structured_metadata: true
+    retention_period: 7d
+    ingestion_rate_mb: 16
+    ingestion_burst_size_mb: 32
 
-    storage_config:
-      filesystem:
-        directory: /data/loki/chunks
+# This section configures the Kubernetes resources for the pod.
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: true
+    storageClass: local-path
+    size: 30Gi
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+    requests:
+      cpu: 500m
+      memory: 1Gi
 
-    limits_config:
-      allow_structured_metadata: true
-      retention_period: 7d
-      ingestion_rate_mb: 16
-      ingestion_burst_size_mb: 32
-      max_query_length: 12000h
-      reject_old_samples: true
-      reject_old_samples_max_age: 168h
-      
-    ruler:
-      enable_api: true
-      
-# Chart-level configurations
-# These settings control the Kubernetes resources deployed by the chart.
+# DISABLE the sidecar entirely - this eliminates the warning
+sidecar:
+  rules:
+    enabled: false
 
-# Use a StatefulSet for persistence
-deploymentMode: StatefulSet
-
-# Resource limits for the Loki pod
-resources:
-  limits:
-    cpu: 1000m
-    memory: 2Gi
-  requests:
-    cpu: 500m
-    memory: 1Gi
-
-# Persistence configuration
-persistence:
-  enabled: true
-  storageClassName: local-path
-  accessModes:
-    - ReadWriteOnce
-  size: 10Gi
-  
-# Ingress configuration for the Loki gateway
+# Ingress configuration 
 ingress:
   enabled: true
   ingressClassName: traefik
-  hosts:
-    - host: loki.milenika.dev
-      paths:
-        - path: /
-          pathType: Prefix
   annotations:
     "kubernetes.io.ingress.class": "traefik"
     "external-dns.alpha.kubernetes.io/target": "e0995bb5-0641-44ba-9ac6-533e678117a2.cfargotunnel.com"
     "external-dns.alpha.kubernetes.io/cloudflare-proxied": "true"
+  hosts:
+    - loki.milenika.dev
+  paths:
+    distributor:
+      - /api/prom/push
+      - /loki/api/v1/push
+      - /otlp/v1/logs
+    queryFrontend:
+      - /
+      - /api/prom/query
+      - /api/prom/label
+      - /api/prom/series
+      - /api/prom/tail
+      - /loki/api/v1/query
+      - /loki/api/v1/query_range
+      - /loki/api/v1/tail
+      - /loki/api/v1/label
+      - /loki/api/v1/labels
+      - /loki/api/v1/series
+      - /loki/api/v1/index/stats
+    ruler:
+      - /api/prom/rules
+      - /loki/api/v1/rules
+      - /prometheus/api/v1/rules
+      - /prometheus/api/v1/alerts
   tls:
-    - secretName: loki-gateway-tls
-      hosts:
+    - hosts:
         - loki.milenika.dev
+      secretName: loki-tls
 
-# Enable ServiceMonitor for Prometheus to scrape Loki's metrics
-serviceMonitor:
-  enabled: true
+# Disable chunks cache for homelab (saves ~10GB RAM)
+chunksCache:
+  enabled: false
 
-# Disable test pod
+# Also disable results cache if you want to save more memory
+resultsCache:
+  enabled: false
+
+# The separate gateway is NOT used in SingleBinary mode and MUST be disabled.
+gateway:
+  enabled: false
+
+# Explicitly disable all other deployment modes to prevent conflicts.
+write:
+  replicas: 0
+read:
+  replicas: 0
+backend:
+  replicas: 0
 test:
   enabled: false

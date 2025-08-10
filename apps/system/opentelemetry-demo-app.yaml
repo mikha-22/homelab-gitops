@@ -5,12 +5,12 @@ metadata:
   name: opentelemetry-demo
   namespace: argocd
   finalizers:
-    - resources-finalizer.argocd.argoproj.io
+    - resources-finalizer.argocd.argotroj.io
   annotations:
     argocd.argoproj.io/sync-wave: "20"
 spec:
   project: default
-  # This 'source' block is the only part that changes.
+  # This 'source' block is the key change.
   source:
     repoURL: https://github.com/mikha-22/homelab-gitops
     targetRevision: HEAD
