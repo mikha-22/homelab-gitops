@@ -1,4 +1,4 @@
-# apps/otel-collector/values.yaml - WITH DEBUG LOGGING
+# apps/otel-collector/values.yaml - CORRECT OFFICIAL PATTERN
 
 # 1. Set the deployment mode to daemonset.
 mode: daemonset
@@ -22,6 +22,13 @@ ports:
     hostPort: 4317
     protocol: TCP
     servicePort: 4317
+  # Add HTTP port as well for completeness
+  otlp-http-custom:
+    enabled: true
+    containerPort: 4318
+    hostPort: 4318
+    protocol: TCP
+    servicePort: 4318
   # Add metrics port for Prometheus scraping
   metrics:
     enabled: true
@@ -41,14 +48,16 @@ presets:
     extractAllPodLabels: true
     extractAllPodAnnotations: true
 
-# 5. Define the collector's pipeline configuration WITH DEBUG
+# 5. Define the collector's pipeline configuration - OFFICIAL PATTERN
 config:
   receivers:
     otlp:
       protocols:
         grpc:
-          # Use the pod's IP address for security (populated by Downward API)
+          # OFFICIAL PATTERN: Use pod IP with hostPort mapping
           endpoint: ${env:MY_POD_IP}:4317
+        http:
+          endpoint: ${env:MY_POD_IP}:4318
 
   processors:
     batch: {}
@@ -85,16 +94,16 @@ config:
       traces:
         receivers: [otlp]
         processors: [memory_limiter, k8sattributes, batch]
-        exporters: [debug, otlp/tempo]  # ADDED DEBUG HERE
+        exporters: [debug, otlp/tempo]
       metrics:
         receivers: [otlp]
         processors: [memory_limiter, k8sattributes, batch]
-        exporters: [debug, prometheusremotewrite]  # ADDED DEBUG HERE
+        exporters: [debug, prometheusremotewrite]
       logs:
         # Now includes both OTLP logs (from apps) AND filelog (from Kubernetes)
         receivers: [otlp, filelog]
         processors: [memory_limiter, k8sattributes, batch]
-        exporters: [debug, otlphttp/loki]  # ADDED DEBUG HERE
+        exporters: [debug, otlphttp/loki]
 
 # 6. Resource limits for the collector
 resources:
