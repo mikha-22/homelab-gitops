@@ -23,12 +23,6 @@ ports:
     protocol: TCP
     servicePort: 4317
   # Add HTTP port as well for completeness
-  otlp-http-custom:
-    enabled: true
-    containerPort: 4318
-    hostPort: 4318
-    protocol: TCP
-    servicePort: 4318
   # Add metrics port for Prometheus scraping
   metrics:
     enabled: true
