@@ -82,7 +82,7 @@ config:
     # Exporter for LOGS -> Loki  
     # REVERTED: Go back to using the 'otlphttp' exporter as required by documentation.
     # We do NOT define labels here; Loki creates them automatically from OTel attributes.
-    otlphttp/loki:
+    otlphttp:
       endpoint: "http://loki.monitoring.svc.cluster.local:3100/otlp"
 
     # --- END OF CORRECTION ---
@@ -102,7 +102,7 @@ config:
         receivers: [otlp]
         processors: [memory_limiter, k8sattributes, batch]
         # REVERTED: Use the correct 'otlphttp/loki' exporter in the pipeline.
-        exporters: [debug, otlphttp/loki]
+        exporters: [debug, otlphttp]
 
 # 6. Resource limits for the collector
 resources:
