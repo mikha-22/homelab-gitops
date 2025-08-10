@@ -1,4 +1,4 @@
-# apps/otel-collector/values.yaml - CORRECT OFFICIAL PATTERN
+# apps/otel-collector/values.yaml - CORRECTED
 
 # 1. Set the deployment mode to daemonset.
 mode: daemonset
@@ -77,9 +77,20 @@ config:
       tls:
         insecure: true
 
-    # Exporter for LOGS -> Loki  
-    otlphttp/loki:
-      endpoint: "http://loki.monitoring.svc.cluster.local:3100/otlp"
+    # Exporter for LOGS -> Loki (MODIFIED)
+    loki:
+      endpoint: "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+      labels:
+        resource:
+          # OTel Attribute      ->  Loki Label
+          k8s.namespace.name:     namespace
+          k8s.pod.name:           pod
+          k8s.container.name:     container
+          service.name:           service_name
+        record:
+          # OTel Attribute      ->  Loki Label
+          severity_text:          level
+
 
   service:
     pipelines:
@@ -92,10 +103,10 @@ config:
         processors: [memory_limiter, k8sattributes, batch]
         exporters: [debug, prometheusremotewrite]
       logs:
-        # Now includes only OTLP logs (from apps) and not filelog (from Kubernetes)
-        receivers: [otlp] # <-- REMOVED 'filelog' from this list
+        receivers: [otlp]
         processors: [memory_limiter, k8sattributes, batch]
-        exporters: [debug, otlphttp/loki]
+        # Use the specialized 'loki' exporter now
+        exporters: [debug, loki]
 
 # 6. Resource limits for the collector
 resources:
