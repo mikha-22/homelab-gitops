@@ -64,7 +64,6 @@ config:
     # ENABLE DEBUG EXPORTER
     debug:
       verbosity: basic
-      sampling_initial: 10
     
     # Exporter for TRACES -> Tempo
     otlp/tempo:
