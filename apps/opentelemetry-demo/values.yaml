@@ -1,4 +1,4 @@
-# apps/opentelemetry-demo/values.yaml - FIXED ENDPOINT FORMAT
+# apps/opentelemetry-demo/values.yaml - CORRECTED WITH HTTP SCHEME
 
 # 1. Disable bundled observability tools
 jaeger:
@@ -23,12 +23,12 @@ default:
           apiVersion: v1
           fieldPath: status.hostIP
 
-# 4. Configure components with FIXED gRPC endpoint (no http:// scheme)
+# 4. Configure components with CORRECT http:// scheme for gRPC
 components:
   frontend:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "grpc://$(OTEL_K8S_NODE_INTERNAL_IP):4317"  # Added grpc:// scheme
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -38,7 +38,7 @@ components:
   frontend-proxy:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "grpc://$(OTEL_K8S_NODE_INTERNAL_IP):4317"  # Added grpc:// scheme
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     ingress:
@@ -65,7 +65,7 @@ components:
   ad:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "grpc://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -75,7 +75,7 @@ components:
   cart:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "grpc://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -85,7 +85,7 @@ components:
   checkout:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "grpc://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -95,7 +95,7 @@ components:
   currency:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "grpc://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -105,7 +105,7 @@ components:
   email:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "grpc://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -115,7 +115,7 @@ components:
   payment:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "grpc://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -125,7 +125,7 @@ components:
   product-catalog:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "grpc://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -135,7 +135,7 @@ components:
   recommendation:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "grpc://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -145,7 +145,7 @@ components:
   shipping:
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -160,7 +160,7 @@ components:
         value: "1"
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
