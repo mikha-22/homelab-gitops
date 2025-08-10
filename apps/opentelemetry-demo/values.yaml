@@ -1,4 +1,4 @@
-# apps/opentelemetry-demo/values.yaml - WORKING VERSION
+# apps/opentelemetry-demo/values.yaml - CORRECTED VERSION
 
 # 1. Disable bundled observability tools
 jaeger:
@@ -14,36 +14,33 @@ opensearch:
 opentelemetry-collector:
   enabled: false
 
-# 3. Configure components with working HOST_IP expansion
+# 3. Global configuration using the HOST_IP pattern from the GitHub issue
+default:
+  envOverrides:
+    - name: OTEL_K8S_NODE_INTERNAL_IP
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.hostIP
+
+# 4. Configure components with proper HOST_IP usage
 components:
   frontend:
     envOverrides:
-      - name: HOST_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
-      # Use a shell wrapper to expand the variable
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(HOST_IP):4317"
-    # Override the container command to use shell expansion
-    command: ["/bin/sh", "-c"]
-    args: ["export OTEL_EXPORTER_OTLP_ENDPOINT=\"$HOST_IP:4317\" && exec node server.js"]
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+      - name: OTEL_EXPORTER_OTLP_PROTOCOL
+        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   frontend-proxy:
     envOverrides:
-      - name: HOST_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(HOST_IP):4317"
-    command: ["/bin/sh", "-c"]
-    args: ["export OTEL_EXPORTER_OTLP_ENDPOINT=\"$HOST_IP:4317\" && exec /usr/local/bin/envoy -c /etc/envoy/envoy.yaml"]
     ingress:
       enabled: true
       ingressClassName: traefik
@@ -67,144 +64,90 @@ components:
 
   ad:
     envOverrides:
-      - name: HOST_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(HOST_IP):4317"
-    command: ["/bin/sh", "-c"]
-    args: ["export OTEL_EXPORTER_OTLP_ENDPOINT=\"$HOST_IP:4317\" && exec java -jar /app/Ad.jar"]
     resources:
       limits: { memory: "300Mi", cpu: "200m" }
       requests: { memory: "180Mi", cpu: "100m" }
 
   cart:
     envOverrides:
-      - name: HOST_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(HOST_IP):4317"
-    command: ["/bin/sh", "-c"]
-    args: ["export OTEL_EXPORTER_OTLP_ENDPOINT=\"$HOST_IP:4317\" && exec dotnet Cart.dll"]
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "160Mi", cpu: "100m" }
 
   checkout:
     envOverrides:
-      - name: HOST_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(HOST_IP):4317"
-    command: ["/bin/sh", "-c"]
-    args: ["export OTEL_EXPORTER_OTLP_ENDPOINT=\"$HOST_IP:4317\" && exec go run main.go"]
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   currency:
     envOverrides:
-      - name: HOST_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(HOST_IP):4317"
-    command: ["/bin/sh", "-c"]
-    args: ["export OTEL_EXPORTER_OTLP_ENDPOINT=\"$HOST_IP:4317\" && exec node server.js"]
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   email:
     envOverrides:
-      - name: HOST_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(HOST_IP):4317"
-    command: ["/bin/sh", "-c"]
-    args: ["export OTEL_EXPORTER_OTLP_ENDPOINT=\"$HOST_IP:4317\" && exec ruby email_server.rb"]
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   payment:
     envOverrides:
-      - name: HOST_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(HOST_IP):4317"
-    command: ["/bin/sh", "-c"]
-    args: ["export OTEL_EXPORTER_OTLP_ENDPOINT=\"$HOST_IP:4317\" && exec node index.js"]
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   product-catalog:
     envOverrides:
-      - name: HOST_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(HOST_IP):4317"
-    command: ["/bin/sh", "-c"]
-    args: ["export OTEL_EXPORTER_OTLP_ENDPOINT=\"$HOST_IP:4317\" && exec go run main.go"]
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   recommendation:
     envOverrides:
-      - name: HOST_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(HOST_IP):4317"
-    command: ["/bin/sh", "-c"]
-    args: ["export OTEL_EXPORTER_OTLP_ENDPOINT=\"$HOST_IP:4317\" && exec python recommendation_server.py"]
     resources:
       limits: { memory: "500Mi", cpu: "200m" }
       requests: { memory: "200Mi", cpu: "100m" }
 
   shipping:
     envOverrides:
-      - name: HOST_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(HOST_IP):4317"
-    command: ["/bin/sh", "-c"]
-    args: ["export OTEL_EXPORTER_OTLP_ENDPOINT=\"$HOST_IP:4317\" && exec rust-executable"]
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -216,16 +159,10 @@ components:
       - name: LOCUST_SPAWN_RATE
         value: "1"
     envOverrides:
-      - name: HOST_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.hostIP
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "$(HOST_IP):4317"
-    command: ["/bin/sh", "-c"]
-    args: ["export OTEL_EXPORTER_OTLP_ENDPOINT=\"$HOST_IP:4317\" && exec locust --host http://frontend:8080"]
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
