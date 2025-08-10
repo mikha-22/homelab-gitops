@@ -22,13 +22,13 @@ default:
         fieldRef:
           apiVersion: v1
           fieldPath: status.hostIP
-    # ADD GLOBAL DEBUG LOGGING
+    # ADD GLOBAL DEBUG LOGGING - applies to ALL components
     - name: OTEL_LOG_LEVEL
       value: "debug"
     - name: OTEL_SDK_DEBUG
       value: "true"
 
-# 4. Configure components with debug logging
+# 4. Configure components (debug logging comes from global default above)
 components:
   frontend:
     envOverrides:
@@ -36,11 +36,6 @@ components:
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      # ADD DEBUG LOGGING
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
-      - name: OTEL_SDK_DEBUG
-        value: "true"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -51,11 +46,6 @@ components:
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      # ADD DEBUG LOGGING
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
-      - name: OTEL_SDK_DEBUG
-        value: "true"
     ingress:
       enabled: true
       ingressClassName: traefik
@@ -83,9 +73,6 @@ components:
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      # ADD DEBUG LOGGING
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
     resources:
       limits: { memory: "300Mi", cpu: "200m" }
       requests: { memory: "180Mi", cpu: "100m" }
@@ -96,9 +83,6 @@ components:
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      # ADD DEBUG LOGGING
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "160Mi", cpu: "100m" }
@@ -109,9 +93,6 @@ components:
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      # ADD DEBUG LOGGING
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -122,9 +103,6 @@ components:
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      # ADD DEBUG LOGGING
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -135,9 +113,6 @@ components:
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      # ADD DEBUG LOGGING
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -148,9 +123,6 @@ components:
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      # ADD DEBUG LOGGING
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -161,9 +133,6 @@ components:
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      # ADD DEBUG LOGGING
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -174,9 +143,6 @@ components:
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      # ADD DEBUG LOGGING
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
     resources:
       limits: { memory: "500Mi", cpu: "200m" }
       requests: { memory: "200Mi", cpu: "100m" }
@@ -187,9 +153,6 @@ components:
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      # ADD DEBUG LOGGING
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -208,9 +171,6 @@ components:
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
-      # ADD DEBUG LOGGING
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
