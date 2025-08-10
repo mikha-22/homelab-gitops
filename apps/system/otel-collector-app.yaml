@@ -1,50 +1,41 @@
-# apps/system/otel-app.yaml
+# system/otel-collector-app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: opentelemetry-collector
+  name: otel-collector
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "3"  # After Tempo (wave 3), before applications
+    # Deploy this in sync-wave 4, replacing Promtail.
+    argocd.argoproj.io/sync-wave: "4"
 spec:
   project: monitoring
   sources:
-    # Source 1: OpenTelemetry Helm chart
+    # Source 1: The official OpenTelemetry Collector Helm chart.
     - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
-      targetRevision: 0.129.0
+      targetRevision: 0.131.0 # Use a specific, recent version
       chart: opentelemetry-collector
       helm:
         releaseName: otel-collector
         valueFiles:
-          - $values/apps/otel/values.yaml
-    # Source 2: Git repository with values
+          # This tells Helm to get its values from our new file.
+          - $values/monitoring/otel-collector-values.yaml
+
+    # Source 2: Your Git repository, providing the values file.
     - repoURL: https://github.com/mikha-22/homelab-gitops
       targetRevision: HEAD
       ref: values
-    
+
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
-    
+
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=false  # monitoring namespace already exists
+      # The monitoring namespace is created in wave 0, so we don't need to create it here.
+      - CreateNamespace=false
       - ServerSideApply=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 5m
-
-  # Ignore replica differences during autoscaling
-  ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      jsonPointers:
-        - /spec/replicas

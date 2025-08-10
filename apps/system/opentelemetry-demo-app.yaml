@@ -1,5 +1,4 @@
 # apps/system/opentelemetry-demo-app.yaml
-
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -8,28 +7,19 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd.argoproj.io/sync-wave: "20"  # Deploy after all infrastructure
+    argocd.argoproj.io/sync-wave: "20"
 spec:
   project: default
-  sources:
-    # Source 1: OpenTelemetry Demo Helm chart
-    - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
-      # UPDATED to a newer version
-      targetRevision: 0.37.2
-      chart: opentelemetry-demo
-      helm:
-        releaseName: otel-demo
-        valueFiles:
-          - $values/apps/opentelemetry-demo/values.yaml
-    # Source 2: Your Git repository with values
-    - repoURL: https://github.com/mikha-22/homelab-gitops
-      targetRevision: HEAD
-      ref: values
-      
+  # This 'source' block is the only part that changes.
+  source:
+    repoURL: https://github.com/mikha-22/homelab-gitops
+    targetRevision: HEAD
+    # We now point to the directory containing our 'kustomization.yaml'.
+    # ArgoCD will automatically detect it and use Kustomize to render the manifests.
+    path: apps/opentelemetry-demo
   destination:
     server: https://kubernetes.default.svc
     namespace: otel-demo
-    
   syncPolicy:
     automated:
       prune: true
@@ -43,8 +33,6 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 5m
-
-  # Ignore replica differences during autoscaling
   ignoreDifferences:
     - group: apps
       kind: Deployment

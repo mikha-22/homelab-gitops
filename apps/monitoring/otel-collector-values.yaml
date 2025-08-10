@@ -1,0 +1,87 @@
+# monitoring/otel-collector-values.yaml
+
+# This collector will run as an agent (DaemonSet) on every node.
+mode: daemonset
+
+# Use the 'contrib' image which includes all necessary components like the loki exporter.
+image:
+  repository: otel/opentelemetry-collector-contrib
+  tag: 0.131.0 # A recent, stable version
+
+# The agent needs to expose a port on the host for other pods on the same node to connect.
+ports:
+  otlp-grpc:
+    enabled: true
+    containerPort: 4317
+    hostPort: 4317 # This exposes the port on the node's IP address.
+    protocol: TCP
+    servicePort: 4317
+
+# These presets are powerful helpers:
+presets:
+  # This automatically configures the 'filelog' receiver to scrape logs
+  # from /var/log/pods/*/*.log, just like Promtail.
+  logsCollection:
+    enabled: true
+  # This automatically configures the 'k8sattributes' processor
+  # to add pod, namespace, etc., labels to all telemetry.
+  kubernetesAttributes:
+    enabled: true
+
+# This is the main pipeline configuration.
+config:
+  receivers:
+    # This receives traces, metrics, and logs from applications that send via OTLP.
+    otlp:
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4317"
+    # The 'filelog' receiver is automatically configured by the logsCollection preset above.
+
+  processors:
+    batch: {}
+    memory_limiter:
+      check_interval: 1s
+      limit_mib: 256
+
+  exporters:
+    # Exporter for LOGS -> Loki
+    loki:
+      # This is the same endpoint your Promtail was using.
+      endpoint: "http://loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push"
+      
+    # Exporter for TRACES -> Tempo
+    otlp/tempo:
+      endpoint: "http://tempo.monitoring.svc.cluster.local:4317"
+      tls:
+        insecure: true
+
+    # Exporter for METRICS -> Prometheus Remote Write
+    prometheusremotewrite:
+      endpoint: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+      tls:
+        insecure: true
+
+  service:
+    pipelines:
+      logs:
+        # The 'filelog' receiver (for pod logs) is added by the preset.
+        # The 'otlp' receiver is for apps sending logs directly.
+        receivers: [filelog, otlp] 
+        processors: [memory_limiter, k8sattributes, batch]
+        exporters: [loki]
+      traces:
+        receivers: [otlp]
+        processors: [memory_limiter, k8sattributes, batch]
+        exporters: [otlp/tempo]
+      metrics:
+        receivers: [otlp]
+        processors: [memory_limiter, k8sattributes, batch]
+        exporters: [prometheusremotewrite]
+
+# Security context required to read host log files.
+securityContext:
+  runAsUser: 0
+  runAsGroup: 0
+  privileged: false
+  readOnlyRootFilesystem: false

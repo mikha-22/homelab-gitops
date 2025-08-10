@@ -1,0 +1,17 @@
+# apps/opentelemetry-demo/patch-add-command.yaml
+# This patch will be applied to the 'frontend' Deployment.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend
+          # This is the shell wrapper we are injecting.
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              export OTEL_EXPORTER_OTLP_ENDPOINT="${HOST_IP}:4317"
+              /app/server.js

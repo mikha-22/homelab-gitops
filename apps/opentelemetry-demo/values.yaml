@@ -1,6 +1,6 @@
-# apps/opentelemetry-demo/values.yaml (FINAL & CORRECT)
+# apps/opentelemetry-demo/values.yaml
 
-# 1. Disable bundled observability tools.
+# 1. Disable bundled observability tools we already have.
 jaeger:
   enabled: false
 prometheus:
@@ -10,65 +10,27 @@ grafana:
 opensearch:
   enabled: false
 
-# 2. Configure the demo's built-in collector to forward data to our LGTM stack.
+# 2. Disable the demo's built-in collector.
+# We are now fully decoupled and will send telemetry to our node-level collector.
 opentelemetry-collector:
-  enabled: true
-  fullnameOverride: otel-collector
-  config:
-    receivers:
-      otlp:
-        protocols:
-          grpc: {}
+  enabled: false
 
-    processors:
-      batch: {}
-      memory_limiter:
-        limit_mib: 512
-        spike_limit_mib: 128
-
-    connectors: {}
-
-    exporters:
-      otlp/tempo:
-        endpoint: "http://tempo.monitoring.svc.cluster.local:4317"
-        tls:
-          insecure: true
-      
-      prometheusremotewrite:
-        endpoint: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
-        remote_write_queue:
-          enabled: true
-      
-      loki:
-        endpoint: "http://loki-gateway.monitoring.svc.cluster.local:3100/loki/api/v1/push"
-
-    service:
-      pipelines:
-        traces:
-          receivers: [otlp]
-          processors: [memory_limiter, batch]
-          exporters: [otlp/tempo]
-        metrics:
-          receivers: [otlp]
-          processors: [memory_limiter, batch]
-          exporters: [prometheusremotewrite]
-        logs:
-          receivers: [otlp]
-          processors: [memory_limiter, batch]
-          exporters: [loki]
-
-# 3. Use per-component overrides to set variables and resources correctly.
+# 3. Configure each component.
 components:
   frontend:
+    # The 'command' and 'args' are now handled by the Kustomize patch.
+    # We only need to provide the HOST_IP variable for the script to use.
     envOverrides:
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-demo-otel-collector:4317"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
+      - name: HOST_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
+      # NOTE: We no longer define OTEL_EXPORTER_OTLP_ENDPOINT here.
+      # The shell script in the patch will create it.
 
+  # --- The components below are unchanged for now ---
+  # They will still fail until the same Kustomize patch pattern is
+  # applied to them, but we are fixing one service at a time.
   frontend-proxy:
     ingress:
       enabled: true

@@ -1,13 +1,20 @@
+# apps/opentelemetry-demo/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-# Remove the resources section entirely since we don't need it
+# This tells Kustomize to render the Helm chart first.
+helmCharts:
+  - name: opentelemetry-demo
+    repo: https://open-telemetry.github.io/opentelemetry-helm-charts
+    version: 0.37.2
+    releaseName: otel-demo
+    namespace: otel-demo
+    # Kustomize will look for this file in the same directory.
+    valuesFile: values.yaml
 
-labels:
-  - includeSelectors: true
-    pairs:
-      app.kubernetes.io/part-of: homelab-gitops
-      environment: homelab
-      component: opentelemetry-demo
-
-namespace: otel-demo
+# This applies our patch to the rendered output of the Helm chart.
+patches:
+  - path: patch-add-command.yaml
+    target:
+      kind: Deployment
+      name: frontend

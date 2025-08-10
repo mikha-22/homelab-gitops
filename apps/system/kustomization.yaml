@@ -1,4 +1,4 @@
-# apps/system/kustomization.yaml - ADD ONE LINE AT THE END
+# system/kustomization.yaml
 resources:
   # Projects (must be first)
   - projects/monitoring-project.yaml
@@ -11,11 +11,16 @@ resources:
   - prometheus-app.yaml          # wave: 1
   - loki-app.yaml               # wave: 2
   - tempo-app.yaml              # wave: 3
-  - promtail-app.yaml           # wave: 4
+  - otel-collector-app.yaml     # ADDED: This is our new collector daemonset.
   - dashboards-app.yaml         # wave: 5
-  - opentelemetry-demo-app.yaml           # ADD THIS LINE
+  
+  # Demo Application
+  - opentelemetry-demo-app.yaml
   
   # Applications (10+ sync waves)
   - homer-app.yaml              # wave: 10
   - minio-app.yaml              # wave: 10
   - nginx-app.yaml              # wave: 15
+
+# REMOVED: promtail-app.yaml
+# REMOVED: otel-app.yaml (the old, unused collector)
