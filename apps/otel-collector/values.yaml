@@ -77,19 +77,15 @@ config:
       tls:
         insecure: true
 
-    # Exporter for LOGS -> Loki (MODIFIED)
-    loki:
-      endpoint: "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
-      labels:
-        resource:
-          # OTel Attribute      ->  Loki Label
-          k8s.namespace.name:     namespace
-          k8s.pod.name:           pod
-          k8s.container.name:     container
-          service.name:           service_name
-        record:
-          # OTel Attribute      ->  Loki Label
-          severity_text:          level
+    # --- START OF CORRECTION ---
+
+    # Exporter for LOGS -> Loki  
+    # REVERTED: Go back to using the 'otlphttp' exporter as required by documentation.
+    # We do NOT define labels here; Loki creates them automatically from OTel attributes.
+    otlphttp/loki:
+      endpoint: "http://loki.monitoring.svc.cluster.local:3100/otlp"
+
+    # --- END OF CORRECTION ---
 
 
   service:
@@ -105,8 +101,8 @@ config:
       logs:
         receivers: [otlp]
         processors: [memory_limiter, k8sattributes, batch]
-        # Use the specialized 'loki' exporter now
-        exporters: [debug, loki]
+        # REVERTED: Use the correct 'otlphttp/loki' exporter in the pipeline.
+        exporters: [debug, otlphttp/loki]
 
 # 6. Resource limits for the collector
 resources:
