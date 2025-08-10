@@ -1,25 +1,33 @@
-# apps/system/opentelemetry-demo-app.yaml
+# apps/system/opentelemetry-demo-app.yaml - FIXED
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: opentelemetry-demo
   namespace: argocd
   finalizers:
-    - resources-finalizer.argocd.argotroj.io
+    - resources-finalizer.argocd.argoproj.io  # FIXED: was "argotroj.io"
   annotations:
     argocd.argoproj.io/sync-wave: "20"
 spec:
   project: default
-  # This 'source' block is the key change.
-  source:
-    repoURL: https://github.com/mikha-22/homelab-gitops
-    targetRevision: HEAD
-    # We now point to the directory containing our 'kustomization.yaml'.
-    # ArgoCD will automatically detect it and use Kustomize to render the manifests.
-    path: apps/opentelemetry-demo
+  sources:
+    # Source 1: The Helm chart
+    - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+      targetRevision: 0.37.2
+      chart: opentelemetry-demo
+      helm:
+        releaseName: otel-demo
+        valueFiles:
+          - $values/apps/opentelemetry-demo/values.yaml
+    # Source 2: Your Git repository with values
+    - repoURL: https://github.com/mikha-22/homelab-gitops
+      targetRevision: HEAD
+      ref: values
+      
   destination:
     server: https://kubernetes.default.svc
     namespace: otel-demo
+    
   syncPolicy:
     automated:
       prune: true
@@ -33,6 +41,7 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 5m
+        
   ignoreDifferences:
     - group: apps
       kind: Deployment
