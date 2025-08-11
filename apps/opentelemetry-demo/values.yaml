@@ -1,6 +1,6 @@
-# apps/opentelemetry-demo/values.yaml - All components enabled, with per-component overrides
+# apps/opentelemetry-demo/values.yaml - Final Configuration
 
-# 1. Disable bundled observability tools
+# 1. Disable bundled observability tools.
 jaeger:
   enabled: false
 prometheus:
@@ -10,113 +10,45 @@ grafana:
 opensearch:
   enabled: false
 
-# 2. Disable the demo's built-in collector
+# 2. Configure the demo's built-in collector to forward data to our LGTM stack.
 opentelemetry-collector:
-  enabled: false
+  enabled: true
+  config:
+    exporters:
+      otlp/tempo:
+        endpoint: "tempo.monitoring.svc.cluster.local:4317"
+        tls:
+          insecure: true
+      
+      prometheusremotewrite:
+        endpoint: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+        
+      otlphttp:
+        endpoint: "http://loki.monitoring.svc.cluster.local:3100/otlp"
 
-# 3. Global configuration - Set variables that are MISSING from the chart defaults.
-default:
-  envOverrides:
-    - name: OTEL_LOG_LEVEL
-      value: "debug"
-    - name: OTEL_SDK_DEBUG
-      value: "true"
-    - name: OTEL_TRACES_EXPORTER
-      value: "otlp"
-    - name: OTEL_EXPORTER_OTLP_PROTOCOL
-      value: "grpc"
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlp/tempo]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [prometheusremotewrite]
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [otlphttp]
 
-# 4. Configure all components, ensuring each has the correct endpoint override.
+# 3. Global configuration - No overrides needed, components will use their defaults 
+#    to connect to the local collector enabled above.
+default: {}
+
+# 4. Configure components - Only ingress and resource limits are needed.
+#    All OTel env vars are removed to allow services to use their default settings.
 components:
-  # Explicitly enable and configure all default services
-  flagd:
-      enabled: true
-      envOverrides:
-        # Directly set the variable for the 'flagd' container
-        - name: FLAGD_OTEL_COLLECTOR_URI
-          value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-        # Directly set the variable for the 'flagd-ui' container
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4318"
-      resources:
-        limits: { memory: "100Mi", cpu: "100m" }
-        requests: { memory: "50Mi", cpu: "50m" }
-  fraud-detection:
-    enabled: true
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-    resources:
-      limits: { memory: "300Mi", cpu: "200m" }
-      requests: { memory: "150Mi", cpu: "100m" }
-
-  accounting:
-    enabled: true
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
-
-  quote:
-    enabled: true
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
-
-  image-provider:
-    enabled: true
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-    resources:
-      limits: { memory: "100Mi", cpu: "100m" }
-      requests: { memory: "50Mi", cpu: "50m" }
-
-  valkey-cart:
-    enabled: true
-    resources:
-      limits: { memory: "100Mi", cpu: "100m" }
-      requests: { memory: "50Mi", cpu: "50m" }
-
-  kafka:
-    enabled: true
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-    resources:
-      limits: { memory: "600Mi", cpu: "500m" }
-      requests: { memory: "300Mi", cpu: "200m" }
-
-  frontend:
-    envOverrides:
-      - name: OTEL_TRACES_SAMPLER
-        value: "always_on"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_COLLECTOR_HOST
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
-
   frontend-proxy:
-    envOverrides:
-      - name: OTEL_TRACES_SAMPLER
-        value: "always_on"
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_COLLECTOR_HOST
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
-
     ingress:
       enabled: true
       ingressClassName: traefik
@@ -134,120 +66,24 @@ components:
         - secretName: otel-demo-tls
           hosts:
             - "otel-demo.milenika.dev"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
 
+  # Resource limits for stability.
   ad:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_COLLECTOR_HOST
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
-    resources:
-      limits: { memory: "300Mi", cpu: "200m" }
-      requests: { memory: "180Mi", cpu: "100m" }
-
+    resources: { limits: { memory: "300Mi", cpu: "200m" }, requests: { memory: "180Mi", cpu: "100m" } }
   cart:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_COLLECTOR_HOST
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "160Mi", cpu: "100m" }
-
+    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "160Mi", cpu: "100m" } }
   checkout:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_COLLECTOR_HOST
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
-
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
-
+    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
   currency:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_COLLECTOR_HOST
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
-
+    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
   email:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_COLLECTOR_HOST
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
-
-  payment:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_COLLECTOR_HOST
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
-
-  product-catalog:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_COLLECTOR_HOST
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
-
-  recommendation:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_COLLECTOR_HOST
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
-    resources:
-      limits: { memory: "500Mi", cpu: "200m" }
-      requests: { memory: "200Mi", cpu: "100m" }
-
-  shipping:
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_COLLECTOR_HOST
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
-
+    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
+  frontend:
+    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
+  frontend-proxy:
+    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
   load-generator:
+    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
     env:
       - name: LOCUST_USERS
         value: "5"
@@ -255,13 +91,11 @@ components:
         value: "1"
       - name: LOCUST_LOGLEVEL
         value: "INFO"
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_COLLECTOR_HOST
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
+  payment:
+    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
+  product-catalog:
+    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
+  recommendation:
+    resources: { limits: { memory: "500Mi", cpu: "200m" }, requests: { memory: "200Mi", cpu: "100m" } }
+  shipping:
+    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
