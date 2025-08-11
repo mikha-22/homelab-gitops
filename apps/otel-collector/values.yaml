@@ -60,9 +60,9 @@ config:
       protocols:
         grpc:
           # OFFICIAL PATTERN: Use pod IP with hostPort mapping
-          endpoint: ${env:MY_POD_IP}:4317
+          endpoint: 0.0.0.0:4317
         http:
-          endpoint: ${env:MY_POD_IP}:4318
+          endpoint: 0.0.0.0:4318
 
   processors:
     batch:
