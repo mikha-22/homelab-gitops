@@ -43,8 +43,9 @@ data:
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  { "color": "yellow", "value": 40 },
-                  { "color": "orange", "value": 70 },
+                  { "color": "red", "value": 10 },
+                  { "color": "yellow", "value": 30 },
+                  { "color": "orange", "value": 55 },
                   { "color": "green", "value": 100 }
                 ]
               },
@@ -147,7 +148,7 @@ data:
               "format": "table", "instant": true, "refId": "A"
             }
           ],
-          "title": "Top 5 Pods by CPU Usage", "transformations": [ { "id": "sortBy", "options": { "fields": {}, "sort": [{ "desc": true, "field": "Value" }] } }, { "id": "limit", "options": { "limit": 5 } }, { "id": "organize", "options": { "indexByName": { "Time": 0, "pod": 1, "namespace": 2, "Value": 3 } } } ],
+          "title": "Top 5 Pods by CPU Usage", "transformations": [ { "id": "sortBy", "options": { "fields": {}, "sort": [{ "desc": true, "field": "Value" }] } }, { "id": "limit", "options": { "limit": 5 } }, { "id": "organize", "options": { "indexByName": { "Time": 0, "namespace": 1, "pod": 2, "Value": 3 } } } ],
           "type": "table"
         },
         {
@@ -256,7 +257,7 @@ data:
              "defaults": {
                "color": { "mode": "thresholds" },
                "mappings": [],
-               "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0 }] },
+               "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }, { "color": "orange", "value": 1 }] },
                "unit": "short"
              },
              "overrides": []
@@ -282,8 +283,8 @@ data:
       "time": { "from": "now-1h", "to": "now" },
       "timepicker": {},
       "timezone": "browser",
-      "title": "Infrastructure",
+      "title": "Homelab Infrastructure",
       "uid": "homelab-infrastructure-main",
-      "version": 5,
+      "version": 1,
       "weekStart": ""
     }
