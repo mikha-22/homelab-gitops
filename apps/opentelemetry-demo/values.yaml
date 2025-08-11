@@ -46,6 +46,12 @@ components:
       requests: { memory: "100Mi", cpu: "100m" }
 
   frontend-proxy:
+    env:
+      # Override the default collector name
+      - name: OTEL_COLLECTOR_NAME
+        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
+      - name: OTEL_COLLECTOR_HOST
+        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
     envOverrides:
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
@@ -55,10 +61,6 @@ components:
       - name: OTEL_TRACES_SAMPLER
         value: "always_on"
       # OVERRIDE existing collector vars (don't add duplicates)
-      - name: OTEL_COLLECTOR_NAME
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_HOST
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
 
     ingress:
       enabled: true
