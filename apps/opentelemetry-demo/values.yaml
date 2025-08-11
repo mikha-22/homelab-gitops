@@ -28,6 +28,68 @@ default:
 
 # 4. Configure all components, ensuring each has the correct endpoint override.
 components:
+  # Explicitly enable and configure all default services
+  flagd:
+    enabled: true
+    envOverrides:
+      # This component uses OTEL_COLLECTOR_NAME to construct its specific exporter URIs
+      - name: OTEL_COLLECTOR_NAME
+        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
+    resources:
+      limits: { memory: "100Mi", cpu: "100m" }
+      requests: { memory: "50Mi", cpu: "50m" }
+
+  fraud-detection:
+    enabled: true
+    envOverrides:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
+    resources:
+      limits: { memory: "300Mi", cpu: "200m" }
+      requests: { memory: "150Mi", cpu: "100m" }
+
+  accounting:
+    enabled: true
+    envOverrides:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
+    resources:
+      limits: { memory: "200Mi", cpu: "200m" }
+      requests: { memory: "100Mi", cpu: "100m" }
+
+  quote:
+    enabled: true
+    envOverrides:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
+    resources:
+      limits: { memory: "200Mi", cpu: "200m" }
+      requests: { memory: "100Mi", cpu: "100m" }
+
+  image-provider:
+    enabled: true
+    envOverrides:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
+    resources:
+      limits: { memory: "100Mi", cpu: "100m" }
+      requests: { memory: "50Mi", cpu: "50m" }
+
+  valkey-cart:
+    enabled: true
+    resources:
+      limits: { memory: "100Mi", cpu: "100m" }
+      requests: { memory: "50Mi", cpu: "50m" }
+
+  kafka:
+    enabled: true
+    envOverrides:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
+    resources:
+      limits: { memory: "600Mi", cpu: "500m" }
+      requests: { memory: "300Mi", cpu: "200m" }
+
   frontend:
     envOverrides:
       - name: OTEL_TRACES_SAMPLER
@@ -136,59 +198,6 @@ components:
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
-      
-  # Add configurations for the default components you are keeping enabled
-  fraud-detection:
-    enabled: true # This is the default, but we make it explicit
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-    resources:
-      limits: { memory: "300Mi", cpu: "200m" }
-      requests: { memory: "150Mi", cpu: "100m" }
-
-  accounting:
-    enabled: true
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
-
-  quote:
-    enabled: true
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-    resources:
-      limits: { memory: "200Mi", cpu: "200m" }
-      requests: { memory: "100Mi", cpu: "100m" }
-
-  image-provider:
-    enabled: true
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-    resources:
-      limits: { memory: "100Mi", cpu: "100m" }
-      requests: { memory: "50Mi", cpu: "50m" }
-
-  valkey-cart: # This is the new name for the redis-cart service
-    enabled: true
-    # This component is not instrumented, so no OTel variables needed
-    resources:
-      limits: { memory: "100Mi", cpu: "100m" }
-      requests: { memory: "50Mi", cpu: "50m" }
-
-  kafka:
-    enabled: true
-    envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-    resources:
-      limits: { memory: "600Mi", cpu: "500m" }
-      requests: { memory: "300Mi", cpu: "200m" }
 
   load-generator:
     env:
