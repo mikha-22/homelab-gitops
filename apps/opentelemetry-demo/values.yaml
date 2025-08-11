@@ -1,4 +1,4 @@
-# apps/opentelemetry-demo/values.yaml - FIELD REFERENCE FIX
+# apps/opentelemetry-demo/values.yaml - WITH DEBUG LOGGING ENABLED
 
 # 1. Disable bundled observability tools
 jaeger:
@@ -32,12 +32,6 @@ default:
 components:
   frontend:
     envOverrides:
-      # FIX: Use properly formatted field reference to override chart's broken one
-      - name: OTEL_SERVICE_NAME
-        valueFrom:
-          fieldRef:
-            apiVersion: v1
-            fieldPath: metadata.labels['app.kubernetes.io/component']
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
@@ -48,12 +42,6 @@ components:
 
   frontend-proxy:
     envOverrides:
-      # FIX: Use properly formatted field reference to override chart's broken one
-      - name: OTEL_SERVICE_NAME
-        valueFrom:
-          fieldRef:
-            apiVersion: v1
-            fieldPath: metadata.labels['app.kubernetes.io/component']
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
