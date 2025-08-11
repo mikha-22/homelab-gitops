@@ -1,4 +1,4 @@
-# apps/opentelemetry-demo/values.yaml - FIXED ENV VARS
+# apps/opentelemetry-demo/values.yaml - REMOVED GLOBAL ENV OVERRIDES
 
 # 1. Disable all bundled observability tools (use our LGTM stack)
 jaeger:
@@ -63,15 +63,7 @@ opentelemetry-collector:
           processors: [memory_limiter, batch]
           exporters: [otlphttp, debug]
 
-# 3. Override default configuration - Use envOverrides instead of env
-default:
-  envOverrides:
-    - name: OTEL_EXPORTER_OTLP_ENDPOINT
-      value: "http://{{ include \"otel-demo.name\" . }}-otelcol:4317"
-    - name: OTEL_EXPORTER_OTLP_PROTOCOL
-      value: "grpc"
-
-# 4. Component-specific configuration
+# 3. Component-specific configuration
 components:
   # Frontend proxy with ingress
   frontend-proxy:
