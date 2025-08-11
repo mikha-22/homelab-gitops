@@ -282,7 +282,7 @@ data:
       "time": { "from": "now-1h", "to": "now" },
       "timepicker": {},
       "timezone": "browser",
-      "title": "Homelab Infrastructure",
+      "title": "Infrastructure",
       "uid": "homelab-infrastructure-main",
       "version": 5,
       "weekStart": ""
