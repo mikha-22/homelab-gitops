@@ -54,10 +54,11 @@ config:
       resource_to_telemetry_conversion:
         enabled: true
     
-    # Send logs to Loki
-    loki:
-      endpoint: "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
-      tenant_id: "infrastructure"
+    # Send logs to Loki via OTLP HTTP endpoint
+    otlphttp:
+      endpoint: "http://loki.monitoring.svc.cluster.local:3100/otlp"
+      tls:
+        insecure: true
     
     # Keep debug for troubleshooting
     debug:
@@ -92,7 +93,7 @@ config:
       logs:
         receivers: [filelog]  # Added by logsCollection preset
         processors: [k8sattributes, filter/exclude-demo, resource, batch]
-        exporters: [loki, debug]
+        exporters: [otlphttp, debug]
 
 # Service monitor for Prometheus to scrape the collector's own metrics
 serviceMonitor:
