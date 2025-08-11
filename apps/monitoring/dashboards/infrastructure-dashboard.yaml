@@ -91,17 +91,26 @@ data:
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "unit": "cores" }, "overrides": [] },
-          "gridPos": { "h": 4, "w": 8, "x": 16, "y": 1 }, "id": 105,
-          "options": { "showHeader": true },
+          "fieldConfig": {
+              "defaults": {
+                "color": { "mode": "thresholds" },
+                "mappings": [],
+                "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }, { "color": "orange", "value": 1 }] },
+                "unit": "short"
+              },
+              "overrides": []
+            },
+          "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 }, "id": 601,
+          "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
           "pluginVersion": "10.4.1",
           "targets": [
             {
-              "expr": "topk(5, sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\"\", container!=\"POD\"}[5m])))",
-              "format": "table", "instant": true, "refId": "A"
+              "expr": "count(increase(kube_pod_container_status_restarts_total[1h]) > 0) or vector(0)",
+              "refId": "A"
             }
           ],
-          "title": "Top 5 Namespaces by CPU", "type": "table"
+          "title": "Pod Restarts (1h)",
+          "type": "stat"
         },
         {
           "collapsed": false,
@@ -147,7 +156,7 @@ data:
               "format": "table", "instant": true, "refId": "A"
             }
           ],
-          "title": "Top 5 Pods by CPU Usage", "transformations": [ { "id": "sortBy", "options": { "fields": {}, "sort": [{ "desc": true, "field": "Value" }] } }, { "id": "limit", "options": { "limit": 5 } }, { "id": "organize", "options": { "indexByName": { "Time": 0, "namespace": 1, "pod": 2, "Value": 3 } } } ],
+          "title": "Top 5 Pods by CPU Usage", "transformations": [ { "id": "sortBy", "options": { "fields": {}, "sort": [{ "desc": true, "field": "Value" }] } }, { "id": "limit", "options": { "limit": 5 } }, { "id": "organize", "options": { "indexByName": { "Time": 0, "pod": 1, "namespace": 2, "Value": 3 } } } ],
           "type": "table"
         },
         {
@@ -194,96 +203,10 @@ data:
               "format": "table", "instant": true, "refId": "A"
             }
           ],
-          "title": "Top 5 Pods by Memory Usage", "transformations": [ { "id": "sortBy", "options": { "fields": {}, "sort": [{ "desc": true, "field": "Value" }] } }, { "id": "limit", "options": { "limit": 5 } } ],
+          "title": "Top 5 Pods by Memory Usage", "transformations": [ { "id": "sortBy", "options": { "fields": {}, "sort": [{ "desc": true, "field": "Value" }] } }, { "id": "limit", "options": { "limit": 5 } }, { "id": "organize", "options": { "indexByName": { "Time": 0, "pod": 1, "namespace": 2, "Value": 3 } } } ],
           "type": "table"
         },
         {
           "collapsed": false,
           "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
-          "id": 400, "panels": [], "title": "Storage", "type": "row"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, {"color": "yellow", "value": 75}, { "color": "red", "value": 90 }]}, "unit": "percent" }, "overrides": []},
-          "gridPos": { "h": 6, "w": 8, "x": 0, "y": 24 }, "id": 401,
-          "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
-          "pluginVersion": "10.4.1",
-          "targets": [
-            {
-              "expr": "(node_filesystem_size_bytes{mountpoint=\"/\", fstype!=\"tmpfs\"} - node_filesystem_avail_bytes{mountpoint=\"/\", fstype!=\"tmpfs\"}) / node_filesystem_size_bytes{mountpoint=\"/\", fstype!=\"tmpfs\"} * 100",
-              "legendFormat": "{{instance}}", "refId": "A"
-            }
-          ],
-          "title": "Disk Usage (Root FS)", "type": "gauge"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "unit": "Bps" }, "overrides": []},
-          "gridPos": { "h": 6, "w": 16, "x": 8, "y": 24 }, "id": 402,
-          "options": { "legend": { "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" }},
-          "pluginVersion": "10.4.1",
-          "targets": [
-            { "expr": "sum by (instance) (irate(node_disk_read_bytes_total[5m]))", "legendFormat": "Read {{instance}}", "refId": "A" },
-            { "expr": "sum by (instance) (irate(node_disk_written_bytes_total[5m]))", "legendFormat": "Write {{instance}}", "refId": "B" }
-          ],
-          "title": "Disk I/O Throughput", "type": "timeseries"
-        },
-        {
-          "collapsed": false,
-          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
-          "id": 500, "panels": [], "title": "Networking", "type": "row"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "unit": "Bps" }, "overrides": []},
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 31 }, "id": 501,
-          "options": { "legend": { "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" }},
-          "pluginVersion": "10.4.1",
-          "targets": [
-            { "expr": "sum by (instance) (irate(node_network_receive_bytes_total{device!~'lo|veth.*'}[5m]))", "legendFormat": "In {{instance}}", "refId": "A" },
-            { "expr": "sum by (instance) (irate(node_network_transmit_bytes_total{device!~'lo|veth.*'}[5m]))", "legendFormat": "Out {{instance}}", "refId": "B" }
-          ],
-          "title": "Network Traffic In/Out per Node", "type": "timeseries"
-        },
-        {
-          "collapsed": false,
-          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 39 },
-          "id": 600, "panels": [], "title": "Reliability Signals", "type": "row"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "fieldConfig": {
-             "defaults": {
-               "color": { "mode": "thresholds" },
-               "mappings": [],
-               "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": 0 }, { "color": "orange", "value": 1 }] },
-               "unit": "short"
-             },
-             "overrides": []
-           },
-          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 40 }, "id": 601,
-          "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
-          "pluginVersion": "10.4.1",
-          "targets": [
-            {
-              "expr": "count(increase(kube_pod_container_status_restarts_total[1h]) > 0) or vector(0)",
-              "refId": "A"
-            }
-          ],
-          "title": "Pod Restarts (1h)",
-          "type": "stat"
-        }
-      ],
-      "refresh": "30s",
-      "schemaVersion": 38,
-      "style": "dark",
-      "tags": ["homelab", "infrastructure", "gitops"],
-      "templating": { "list": [] },
-      "time": { "from": "now-1h", "to": "now" },
-      "timepicker": {},
-      "timezone": "browser",
-      "title": "Homelab Infrastructure",
-      "uid": "homelab-infrastructure-main",
-      "version": 1,
-      "weekStart": ""
-    }
+          "id":
