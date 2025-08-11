@@ -40,7 +40,14 @@ data:
             "defaults": {
               "color": { "mode": "thresholds" },
               "mappings": [],
-              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 80 }, { "color": "red", "value": 95 }]},
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "orange", "value": 95 },
+                  { "color": "green", "value": 100 }
+                ]
+              },
               "unit": "percent"
             }, "overrides": []
           },
@@ -246,7 +253,12 @@ data:
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "fieldConfig": {
-             "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "unit": "short" },
+             "defaults": {
+               "color": { "mode": "palette-classic" },
+               "mappings": [],
+               "unit": "short",
+               "noValue": "No pod restarts in the last hour"
+             },
              "overrides": [ { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "displayName", "value": "Restarts (1h)" }] } ]
            },
           "gridPos": { "h": 8, "w": 24, "x": 0, "y": 40 }, "id": 601,
@@ -272,6 +284,6 @@ data:
       "timezone": "browser",
       "title": "Homelab Infrastructure",
       "uid": "homelab-infrastructure-main",
-      "version": 2,
+      "version": 4,
       "weekStart": ""
     }
