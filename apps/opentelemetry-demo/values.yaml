@@ -80,27 +80,27 @@ components:
             - path: /
               pathType: Prefix
               port: 8080
-      tls:
-        - secretName: otel-demo-tls
-          hosts:
-            - "otel-demo.milenika.dev"
+      # tls:
+      #   - secretName: otel-demo-tls
+      #     hosts:
+      #       - "otel-demo.milenika.dev"
 
-  # Load generator with reduced load for homelab
+  # Load generator with proper resource allocation (Python/Locust can be memory intensive)
   load-generator:
     envOverrides:
       - name: LOCUST_USERS
-        value: "2"
+        value: "10"  # Increased from 2 for better demo traffic
       - name: LOCUST_SPAWN_RATE
-        value: "1"
+        value: "2"
       - name: LOCUST_HOST
         value: "http://frontend-proxy:8080"
     resources:
       limits:
-        memory: "128Mi"
-        cpu: "100m"
+        memory: "1Gi"     # Load generators typically need 500MB-1GB
+        cpu: "500m"
       requests:
-        memory: "64Mi"
-        cpu: "50m"
+        memory: "512Mi"   # Start with 512MB 
+        cpu: "250m"
 
   # Resource limits for all services
   ad:
