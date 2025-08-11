@@ -1,4 +1,4 @@
-# apps/opentelemetry-demo/values.yaml - WITH DEBUG LOGGING ENABLED
+# apps/opentelemetry-demo/values.yaml - USE SERVICE INSTEAD OF NODE IP
 
 # 1. Disable bundled observability tools
 jaeger:
@@ -14,26 +14,28 @@ opensearch:
 opentelemetry-collector:
   enabled: false
 
-# 3. Global configuration using the HOST_IP pattern
+# 3. Global configuration - REMOVE HOST_IP, NOT NEEDED ANYMORE
 default:
   envOverrides:
-    - name: OTEL_K8S_NODE_INTERNAL_IP
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: status.hostIP
+    # REMOVE the node IP reference since we're using service now
+    # - name: OTEL_K8S_NODE_INTERNAL_IP
+    #   valueFrom:
+    #     fieldRef:
+    #       apiVersion: v1
+    #       fieldPath: status.hostIP
     # ADD GLOBAL DEBUG LOGGING - applies to ALL components
     - name: OTEL_LOG_LEVEL
       value: "debug"
     - name: OTEL_SDK_DEBUG
       value: "true"
 
-# 4. Configure components (debug logging comes from global default above)
+# 4. Configure components - USE SERVICE ENDPOINT
 components:
   frontend:
     envOverrides:
+      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -42,8 +44,9 @@ components:
 
   frontend-proxy:
     envOverrides:
+      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     ingress:
@@ -69,8 +72,9 @@ components:
 
   ad:
     envOverrides:
+      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -79,8 +83,9 @@ components:
 
   cart:
     envOverrides:
+      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -89,8 +94,9 @@ components:
 
   checkout:
     envOverrides:
+      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -99,8 +105,9 @@ components:
 
   currency:
     envOverrides:
+      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -109,8 +116,9 @@ components:
 
   email:
     envOverrides:
+      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -119,8 +127,9 @@ components:
 
   payment:
     envOverrides:
+      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -129,8 +138,9 @@ components:
 
   product-catalog:
     envOverrides:
+      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -139,8 +149,9 @@ components:
 
   recommendation:
     envOverrides:
+      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -149,8 +160,9 @@ components:
 
   shipping:
     envOverrides:
+      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
@@ -167,8 +179,9 @@ components:
       - name: LOCUST_LOGLEVEL
         value: "INFO"
     envOverrides:
+      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://$(OTEL_K8S_NODE_INTERNAL_IP):4317"
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
         value: "grpc"
     resources:
