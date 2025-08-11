@@ -7,8 +7,8 @@ resources:
   - loki-singlebinary-dashboard.yaml
   - prometheus-dashboard.yaml
   - opentelemetry-demo-dashboard.yaml
-  - infra-overview-dashboard.yaml
-  - infrastructure-dashboard.yaml # ADD THIS LINE
+  # - infra-overview-dashboard.yaml # DELETE THIS LINE
+  - infrastructure-dashboard.yaml # KEEP THIS LINE
 
 labels:
   - includeSelectors: true
