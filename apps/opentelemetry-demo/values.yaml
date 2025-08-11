@@ -1,4 +1,4 @@
-# apps/opentelemetry-demo/values.yaml - USE SERVICE INSTEAD OF NODE IP
+# apps/opentelemetry-demo/values.yaml - All components enabled, with per-component overrides
 
 # 1. Disable bundled observability tools
 jaeger:
@@ -14,41 +14,36 @@ opensearch:
 opentelemetry-collector:
   enabled: false
 
-# 3. Global configuration - REMOVE HOST_IP, NOT NEEDED ANYMORE
+# 3. Global configuration - Set variables that are MISSING from the chart defaults.
 default:
   envOverrides:
-    - name: OTEL_COLLECTOR_NAME
-      value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
     - name: OTEL_LOG_LEVEL
       value: "debug"
     - name: OTEL_SDK_DEBUG
       value: "true"
+    - name: OTEL_TRACES_EXPORTER
+      value: "otlp"
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: "grpc"
 
-# 4. Configure components - USE SERVICE ENDPOINT
+# 4. Configure all components, ensuring each has the correct endpoint override.
 components:
   frontend:
     envOverrides:
-      # CHANGE: Use service instead of node IP
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
-      # ADD sampler and debug env vars here
       - name: OTEL_TRACES_SAMPLER
         value: "always_on"
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   frontend-proxy:
     envOverrides:
-      - name: OTEL_EXPORTER_OTLP_ENDPOINT
-        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
       - name: OTEL_TRACES_SAMPLER
         value: "always_on"
-
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
     ingress:
       enabled: true
       ingressClassName: traefik
@@ -72,102 +67,128 @@ components:
 
   ad:
     envOverrides:
-      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "300Mi", cpu: "200m" }
       requests: { memory: "180Mi", cpu: "100m" }
 
   cart:
     envOverrides:
-      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "160Mi", cpu: "100m" }
 
   checkout:
     envOverrides:
-      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   currency:
     envOverrides:
-      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   email:
     envOverrides:
-      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   payment:
     envOverrides:
-      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   product-catalog:
     envOverrides:
-      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
 
   recommendation:
     envOverrides:
-      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "500Mi", cpu: "200m" }
       requests: { memory: "200Mi", cpu: "100m" }
 
   shipping:
     envOverrides:
-      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
+      
+  # Add configurations for the default components you are keeping enabled
+  fraud-detection:
+    enabled: true # This is the default, but we make it explicit
+    envOverrides:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
+    resources:
+      limits: { memory: "300Mi", cpu: "200m" }
+      requests: { memory: "150Mi", cpu: "100m" }
+
+  accounting:
+    enabled: true
+    envOverrides:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
+    resources:
+      limits: { memory: "200Mi", cpu: "200m" }
+      requests: { memory: "100Mi", cpu: "100m" }
+
+  quote:
+    enabled: true
+    envOverrides:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
+    resources:
+      limits: { memory: "200Mi", cpu: "200m" }
+      requests: { memory: "100Mi", cpu: "100m" }
+
+  image-provider:
+    enabled: true
+    envOverrides:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
+    resources:
+      limits: { memory: "100Mi", cpu: "100m" }
+      requests: { memory: "50Mi", cpu: "50m" }
+
+  valkey-cart: # This is the new name for the redis-cart service
+    enabled: true
+    # This component is not instrumented, so no OTel variables needed
+    resources:
+      limits: { memory: "100Mi", cpu: "100m" }
+      requests: { memory: "50Mi", cpu: "50m" }
+
+  kafka:
+    enabled: true
+    envOverrides:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
+    resources:
+      limits: { memory: "600Mi", cpu: "500m" }
+      requests: { memory: "300Mi", cpu: "200m" }
 
   load-generator:
     env:
@@ -175,16 +196,11 @@ components:
         value: "5"
       - name: LOCUST_SPAWN_RATE
         value: "1"
-      # ADD LOGGING TO LOAD GENERATOR TOO
       - name: LOCUST_LOGLEVEL
         value: "INFO"
     envOverrides:
-      - name: OTEL_TRACES_EXPORTER
-        value: "otlp"
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
-      - name: OTEL_EXPORTER_OTLP_PROTOCOL
-        value: "grpc"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
