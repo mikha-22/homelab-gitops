@@ -43,7 +43,7 @@ data:
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  { "color": "red", "value": null },
+                  { "color": "dark-gray", "value": null },
                   { "color": "orange", "value": 95 },
                   { "color": "green", "value": 100 }
                 ]
@@ -147,7 +147,7 @@ data:
               "format": "table", "instant": true, "refId": "A"
             }
           ],
-          "title": "Top 5 Pods by CPU Usage", "transformations": [ { "id": "sortBy", "options": { "fields": {}, "sort": [{ "desc": true, "field": "Value" }] } }, { "id": "limit", "options": { "limit": 5 } } ],
+          "title": "Top 5 Pods by CPU Usage", "transformations": [ { "id": "sortBy", "options": { "fields": {}, "sort": [{ "desc": true, "field": "Value" }] } }, { "id": "limit", "options": { "limit": 5 } }, { "id": "organize", "options": { "indexByName": { "Time": 0, "pod": 1, "namespace": 2, "Value": 3 } } } ],
           "type": "table"
         },
         {
@@ -254,24 +254,24 @@ data:
           "datasource": { "type": "prometheus", "uid": "prometheus" },
           "fieldConfig": {
              "defaults": {
-               "color": { "mode": "palette-classic" },
+               "color": { "mode": "thresholds" },
                "mappings": [],
-               "unit": "short",
-               "noValue": "No pod restarts in the last hour"
+               "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0 }] },
+               "unit": "short"
              },
-             "overrides": [ { "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "displayName", "value": "Restarts (1h)" }] } ]
+             "overrides": []
            },
-          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 40 }, "id": 601,
-          "options": { "showHeader": true },
+          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 40 }, "id": 601,
+          "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
           "pluginVersion": "10.4.1",
           "targets": [
             {
-              "expr": "sum by (pod, namespace) (increase(kube_pod_container_status_restarts_total[1h])) > 0",
-              "format": "table", "instant": true, "refId": "A"
+              "expr": "count(increase(kube_pod_container_status_restarts_total[1h]) > 0) or vector(0)",
+              "refId": "A"
             }
           ],
-          "title": "Pod Restarts (Past 1h)", "transformations": [ { "id": "sortBy", "options": { "fields": {}, "sort": [{ "desc": true, "field": "Value" }] } } ],
-          "type": "table"
+          "title": "Pod Restarts (1h)",
+          "type": "stat"
         }
       ],
       "refresh": "30s",
@@ -284,6 +284,6 @@ data:
       "timezone": "browser",
       "title": "Homelab Infrastructure",
       "uid": "homelab-infrastructure-main",
-      "version": 4,
+      "version": 5,
       "weekStart": ""
     }
