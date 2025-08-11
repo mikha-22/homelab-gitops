@@ -63,7 +63,7 @@ config:
   exporters:
     # ENABLE DEBUG EXPORTER
     debug:
-      verbosity: basic
+      verbosity: detailed
     
     # Exporter for TRACES -> Tempo
     otlp/tempo:
