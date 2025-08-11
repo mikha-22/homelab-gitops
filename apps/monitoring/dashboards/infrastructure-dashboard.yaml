@@ -43,8 +43,8 @@ data:
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  { "color": "dark-gray", "value": null },
-                  { "color": "orange", "value": 95 },
+                  { "color": "yellow", "value": 40 },
+                  { "color": "orange", "value": 70 },
                   { "color": "green", "value": 100 }
                 ]
               },
