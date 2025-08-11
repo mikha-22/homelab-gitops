@@ -98,15 +98,15 @@ config:
     pipelines:
       traces:
         receivers: [otlp]
-        processors: [memory_limiter, k8sattributes, batch]
+        processors: [memory_limiter, batch]
         exporters: [debug, otlp/tempo]
       metrics:
         receivers: [otlp]
-        processors: [memory_limiter, k8sattributes, batch]
+        processors: [memory_limiter, batch]
         exporters: [debug, prometheusremotewrite]
       logs:
         receivers: [otlp]
-        processors: [memory_limiter, k8sattributes, batch]
+        processors: [memory_limiter, batch]
         exporters: [debug, otlphttp]
 
 # 7. Resource limits for the collector
