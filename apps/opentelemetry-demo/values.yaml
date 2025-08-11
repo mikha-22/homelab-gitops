@@ -1,4 +1,4 @@
-# apps/opentelemetry-demo/values.yaml - CLEAN FROM SCRATCH
+# apps/opentelemetry-demo/values.yaml - FIXED ENV VARS
 
 # 1. Disable all bundled observability tools (use our LGTM stack)
 jaeger:
@@ -63,22 +63,13 @@ opentelemetry-collector:
           processors: [memory_limiter, batch]
           exporters: [otlphttp, debug]
 
-# 3. Default configuration for all demo services
+# 3. Override default configuration - Use envOverrides instead of env
 default:
-  env:
-    - name: OTEL_SERVICE_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: "metadata.labels['app.kubernetes.io/component']"
-    - name: OTEL_COLLECTOR_NAME
-      value: "{{ include \"otel-demo.name\" . }}-otelcol"
+  envOverrides:
     - name: OTEL_EXPORTER_OTLP_ENDPOINT
       value: "http://{{ include \"otel-demo.name\" . }}-otelcol:4317"
     - name: OTEL_EXPORTER_OTLP_PROTOCOL
       value: "grpc"
-    - name: OTEL_RESOURCE_ATTRIBUTES
-      value: "service.namespace=otel-demo,service.version={{ .Chart.AppVersion }}"
 
 # 4. Component-specific configuration
 components:
@@ -104,7 +95,7 @@ components:
 
   # Load generator with reduced load for homelab
   load-generator:
-    env:
+    envOverrides:
       - name: LOCUST_USERS
         value: "2"
       - name: LOCUST_SPAWN_RATE
