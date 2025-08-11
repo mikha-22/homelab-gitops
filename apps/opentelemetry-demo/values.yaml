@@ -47,7 +47,6 @@ components:
 
   frontend-proxy:
     envOverrides:
-      # CHANGE: Use service instead of node IP
       - name: OTEL_EXPORTER_OTLP_ENDPOINT
         value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
       - name: OTEL_EXPORTER_OTLP_PROTOCOL
@@ -55,13 +54,11 @@ components:
       # ADD sampler and debug env vars here
       - name: OTEL_TRACES_SAMPLER
         value: "always_on"
-      # ADD THESE: Fix Envoy collector configuration
+      # OVERRIDE existing collector vars (don't add duplicates)
       - name: OTEL_COLLECTOR_NAME
         value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
       - name: OTEL_COLLECTOR_HOST
         value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-      - name: OTEL_COLLECTOR_PORT_GRPC
-        value: "4317"
 
     ingress:
       enabled: true
