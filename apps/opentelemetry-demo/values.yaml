@@ -1,6 +1,6 @@
-# apps/opentelemetry-demo/values.yaml - Final Configuration
+# apps/opentelemetry-demo/values.yaml - CLEAN FROM SCRATCH
 
-# 1. Disable bundled observability tools.
+# 1. Disable all bundled observability tools (use our LGTM stack)
 jaeger:
   enabled: false
 prometheus:
@@ -10,44 +10,79 @@ grafana:
 opensearch:
   enabled: false
 
-# 2. Configure the demo's built-in collector to forward data to our LGTM stack.
+# 2. Configure the demo's built-in OpenTelemetry Collector 
 opentelemetry-collector:
   enabled: true
+  
   config:
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+
+    processors:
+      batch: {}
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 256
+
     exporters:
+      # Traces to Tempo via gRPC
       otlp/tempo:
         endpoint: "tempo.monitoring.svc.cluster.local:4317"
         tls:
           insecure: true
       
+      # Metrics to Prometheus via remote write
       prometheusremotewrite:
         endpoint: "http://prometheus-stack-kube-prom-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
         
+      # Logs to Loki via OTLP HTTP
       otlphttp:
         endpoint: "http://loki.monitoring.svc.cluster.local:3100/otlp"
+        
+      # Keep debug for troubleshooting
+      debug:
+        verbosity: detailed
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [otlp/tempo]
+          exporters: [otlp/tempo, debug]
         metrics:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [prometheusremotewrite]
+          exporters: [prometheusremotewrite, debug]
         logs:
           receivers: [otlp]
           processors: [memory_limiter, batch]
-          exporters: [otlphttp]
+          exporters: [otlphttp, debug]
 
-# 3. Global configuration - No overrides needed, components will use their defaults 
-#    to connect to the local collector enabled above.
-default: {}
+# 3. Default configuration for all demo services
+default:
+  env:
+    - name: OTEL_SERVICE_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: "metadata.labels['app.kubernetes.io/component']"
+    - name: OTEL_COLLECTOR_NAME
+      value: "{{ include \"otel-demo.name\" . }}-otelcol"
+    - name: OTEL_EXPORTER_OTLP_ENDPOINT
+      value: "http://{{ include \"otel-demo.name\" . }}-otelcol:4317"
+    - name: OTEL_EXPORTER_OTLP_PROTOCOL
+      value: "grpc"
+    - name: OTEL_RESOURCE_ATTRIBUTES
+      value: "service.namespace=otel-demo,service.version={{ .Chart.AppVersion }}"
 
-# 4. Configure components - Only ingress and resource limits are needed.
-#    All OTel env vars are removed to allow services to use their default settings.
+# 4. Component-specific configuration
 components:
+  # Frontend proxy with ingress
   frontend-proxy:
     ingress:
       enabled: true
@@ -67,35 +102,70 @@ components:
           hosts:
             - "otel-demo.milenika.dev"
 
-  # Resource limits for stability.
-  ad:
-    resources: { limits: { memory: "300Mi", cpu: "200m" }, requests: { memory: "180Mi", cpu: "100m" } }
-  cart:
-    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "160Mi", cpu: "100m" } }
-  checkout:
-    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
-  currency:
-    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
-  email:
-    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
-  frontend:
-    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
-  frontend-proxy:
-    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
+  # Load generator with reduced load for homelab
   load-generator:
-    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
     env:
       - name: LOCUST_USERS
-        value: "5"
+        value: "2"
       - name: LOCUST_SPAWN_RATE
         value: "1"
-      - name: LOCUST_LOGLEVEL
-        value: "INFO"
+      - name: LOCUST_HOST
+        value: "http://frontend-proxy:8080"
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+
+  # Resource limits for all services
+  ad:
+    resources:
+      limits: { memory: "200Mi", cpu: "150m" }
+      requests: { memory: "100Mi", cpu: "50m" }
+      
+  cart:
+    resources:
+      limits: { memory: "160Mi", cpu: "150m" }
+      requests: { memory: "80Mi", cpu: "50m" }
+      
+  checkout:
+    resources:
+      limits: { memory: "160Mi", cpu: "150m" }
+      requests: { memory: "80Mi", cpu: "50m" }
+      
+  currency:
+    resources:
+      limits: { memory: "160Mi", cpu: "150m" }
+      requests: { memory: "80Mi", cpu: "50m" }
+      
+  email:
+    resources:
+      limits: { memory: "160Mi", cpu: "150m" }
+      requests: { memory: "80Mi", cpu: "50m" }
+      
+  frontend:
+    resources:
+      limits: { memory: "160Mi", cpu: "150m" }
+      requests: { memory: "80Mi", cpu: "50m" }
+      
   payment:
-    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
+    resources:
+      limits: { memory: "160Mi", cpu: "150m" }
+      requests: { memory: "80Mi", cpu: "50m" }
+      
   product-catalog:
-    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
+    resources:
+      limits: { memory: "160Mi", cpu: "150m" }
+      requests: { memory: "80Mi", cpu: "50m" }
+      
   recommendation:
-    resources: { limits: { memory: "500Mi", cpu: "200m" }, requests: { memory: "200Mi", cpu: "100m" } }
+    resources:
+      limits: { memory: "300Mi", cpu: "200m" }
+      requests: { memory: "150Mi", cpu: "100m" }
+      
   shipping:
-    resources: { limits: { memory: "200Mi", cpu: "200m" }, requests: { memory: "100Mi", cpu: "100m" } }
+    resources:
+      limits: { memory: "160Mi", cpu: "150m" }
+      requests: { memory: "80Mi", cpu: "50m" }
