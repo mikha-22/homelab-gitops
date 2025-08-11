@@ -1,4 +1,4 @@
-# apps/monitoring/dashboards/kustomization.yaml - UPDATED
+# apps/monitoring/dashboards/kustomization.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -7,6 +7,8 @@ resources:
   - loki-singlebinary-dashboard.yaml
   - prometheus-dashboard.yaml
   - opentelemetry-demo-dashboard.yaml
+  - infra-overview-dashboard.yaml
+  - infrastructure-dashboard.yaml # ADD THIS LINE
 
 labels:
   - includeSelectors: true

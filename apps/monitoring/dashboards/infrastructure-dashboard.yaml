@@ -1,0 +1,260 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: infrastructure-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: infrastructure-dashboard
+    app.kubernetes.io/part-of: homelab-gitops
+data:
+  infrastructure-dashboard.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+            "enable": true, "hide": true, "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts", "type": "dashboard"
+          }
+        ]
+      },
+      "editable": false,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 0,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "id": 100,
+          "panels": [],
+          "title": "Cluster / Node Overview",
+          "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 99 }]},
+              "unit": "percent"
+            }, "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 }, "id": 101,
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "expr": "sum(kube_node_status_condition{condition=\"Ready\", status=\"true\"}) / count(kube_node_info) * 100",
+              "refId": "A"
+            }
+          ],
+          "title": "Cluster Health (Ready Nodes)", "type": "gauge"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "unit": "short" }, "overrides": [] },
+          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 }, "id": 102,
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom" },
+            "pieType": "donut", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "tooltip": { "mode": "single", "sort": "none" }
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "expr": "count by (phase) (kube_pod_status_phase)",
+              "legendFormat": "{{phase}}", "refId": "A"
+            }
+          ],
+          "title": "Pod Status", "type": "piechart"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "unit": "short" }, "overrides": [] },
+          "gridPos": { "h": 4, "w": 12, "x": 12, "y": 1 }, "id": 103,
+          "options": {
+            "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "expr": "topk(5, sum by (namespace) (rate(container_cpu_usage_seconds_total{container!=\"\", container!=\"POD\"}[5m])))",
+              "legendFormat": "{{namespace}}", "refId": "A"
+            }
+          ],
+          "title": "Top 5 Namespaces by CPU", "type": "barchart"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+          "id": 200, "panels": [], "title": "CPU", "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "fillOpacity": 10, "lineWidth": 2 },
+              "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+              "unit": "percent"
+            }, "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 16, "x": 0, "y": 6 }, "id": 201,
+          "options": {
+            "legend": { "displayMode": "table", "placement": "right", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "expr": "(sum by (instance) (rate(node_cpu_seconds_total{mode!=\"idle\"}[5m]))) / on(instance) group_left() (count by (instance) (node_cpu_seconds_total{mode=\"system\"})) * 100",
+              "legendFormat": "{{instance}}", "refId": "A"
+            }
+          ],
+          "title": "CPU Usage % by Node", "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "unit": "cores" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 6 }, "id": 202,
+          "options": { "showHeader": true },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "expr": "topk(5, sum by (pod, namespace) (rate(container_cpu_usage_seconds_total{container!=\"\", container!=\"POD\"}[5m])))",
+              "format": "table", "instant": true, "refId": "A"
+            }
+          ],
+          "title": "Top 5 Pods by CPU Usage", "type": "table"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+          "id": 300, "panels": [], "title": "Memory", "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "palette-classic" },
+              "custom": { "fillOpacity": 10, "lineWidth": 2 },
+              "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+              "unit": "percent"
+            }, "overrides": []
+          },
+          "gridPos": { "h": 8, "w": 16, "x": 0, "y": 15 }, "id": 301,
+          "options": {
+            "legend": { "displayMode": "table", "placement": "right", "showLegend": true },
+            "tooltip": { "mode": "multi", "sort": "none" }
+          },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+              "legendFormat": "{{instance}}", "refId": "A"
+            }
+          ],
+          "title": "Memory Usage % by Node", "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "unit": "bytes" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 15 }, "id": 302,
+          "options": { "showHeader": true },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "expr": "topk(5, sum by (pod, namespace) (container_memory_working_set_bytes{container!=\"\", container!=\"POD\"}))",
+              "format": "table", "instant": true, "refId": "A"
+            }
+          ],
+          "title": "Top 5 Pods by Memory Usage", "type": "table"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
+          "id": 400, "panels": [], "title": "Storage", "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, {"color": "yellow", "value": 75}, { "color": "red", "value": 90 }]}, "unit": "percent" }, "overrides": []},
+          "gridPos": { "h": 6, "w": 8, "x": 0, "y": 24 }, "id": 401,
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "expr": "(node_filesystem_size_bytes{mountpoint=\"/\", fstype!=\"tmpfs\"} - node_filesystem_avail_bytes{mountpoint=\"/\", fstype!=\"tmpfs\"}) / node_filesystem_size_bytes{mountpoint=\"/\", fstype!=\"tmpfs\"} * 100",
+              "legendFormat": "{{instance}}", "refId": "A"
+            }
+          ],
+          "title": "Disk Usage (Root FS)", "type": "gauge"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "unit": "Bps" }, "overrides": []},
+          "gridPos": { "h": 6, "w": 16, "x": 8, "y": 24 }, "id": 402,
+          "options": { "legend": { "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" }},
+          "pluginVersion": "10.4.1",
+          "targets": [
+            { "expr": "sum by (instance) (irate(node_disk_read_bytes_total[5m]))", "legendFormat": "Read {{instance}}", "refId": "A" },
+            { "expr": "sum by (instance) (irate(node_disk_written_bytes_total[5m]))", "legendFormat": "Write {{instance}}", "refId": "B" }
+          ],
+          "title": "Disk I/O Throughput", "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+          "id": 500, "panels": [], "title": "Networking", "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "unit": "Bps" }, "overrides": []},
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 31 }, "id": 501,
+          "options": { "legend": { "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" }},
+          "pluginVersion": "10.4.1",
+          "targets": [
+            { "expr": "sum by (instance) (irate(node_network_receive_bytes_total{device!~'lo|veth.*'}[5m]))", "legendFormat": "In {{instance}}", "refId": "A" },
+            { "expr": "sum by (instance) (irate(node_network_transmit_bytes_total{device!~'lo|veth.*'}[5m]))", "legendFormat": "Out {{instance}}", "refId": "B" }
+          ],
+          "title": "Network Traffic In/Out per Node", "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 39 },
+          "id": 600, "panels": [], "title": "Reliability Signals", "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "unit": "short" }, "overrides": []},
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 40 }, "id": 601,
+          "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" }},
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "expr": "sum by (namespace) (increase(kube_pod_container_status_restarts_total[1h]))",
+              "legendFormat": "{{namespace}}", "refId": "A"
+            }
+          ],
+          "title": "Pod Restarts (Past 1h)", "type": "barchart"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["homelab", "infrastructure", "gitops"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Homelab Infrastructure",
+      "uid": "homelab-infrastructure-main",
+      "version": 1,
+      "weekStart": ""
+    }
+
