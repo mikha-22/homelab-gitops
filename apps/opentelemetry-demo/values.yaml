@@ -41,10 +41,6 @@ components:
       # ADD sampler and debug env vars here
       - name: OTEL_TRACES_SAMPLER
         value: "always_on"
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
-      - name: OTEL_SDK_DEBUG
-        value: "true"
     resources:
       limits: { memory: "200Mi", cpu: "200m" }
       requests: { memory: "100Mi", cpu: "100m" }
@@ -59,10 +55,6 @@ components:
       # ADD sampler and debug env vars here
       - name: OTEL_TRACES_SAMPLER
         value: "always_on"
-      - name: OTEL_LOG_LEVEL
-        value: "debug"
-      - name: OTEL_SDK_DEBUG
-        value: "true"
     ingress:
       enabled: true
       ingressClassName: traefik
