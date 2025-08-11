@@ -1,4 +1,4 @@
-# apps/otel-collector/values.yaml - CORRECTED
+# apps/otel-collector/values.yaml - ADD SERVICE TO EXISTING CONFIG
 
 # 1. Set the deployment mode to daemonset.
 mode: daemonset
@@ -22,19 +22,30 @@ ports:
     hostPort: 4317
     protocol: TCP
     servicePort: 4317
+  # Add HTTP port for completeness
+  otlp-http-port:
+    enabled: true
+    containerPort: 4318
+    hostPort: 4318
+    protocol: TCP
+    servicePort: 4318
   # Add metrics port for Prometheus scraping
-  # metrics:
-  #   enabled: true
-  #   containerPort: 8888
-  #   protocol: TCP
-  #   servicePort: 8888
+  metrics:
+    enabled: true
+    containerPort: 8888
+    protocol: TCP
+    servicePort: 8888
 
-# 4. Enable presets for Kubernetes log collection and metadata
+# 4. CRITICAL: Add service configuration for ClusterIP access
+service:
+  enabled: true
+  type: ClusterIP
+
+# 5. Enable presets for Kubernetes log collection and metadata
 presets:
   # Enable log collection from all Kubernetes pods
   logsCollection:
-    # enabled: true # <-- COMMENTED OUT to disable the filelog preset.
-    enabled: false  # <-- ADDED to explicitly disable.
+    enabled: false  # Explicitly disable
   # Enable Kubernetes metadata enrichment for all telemetry
   kubernetesAttributes:
     enabled: true
@@ -42,7 +53,7 @@ presets:
     extractAllPodLabels: true
     extractAllPodAnnotations: true
 
-# 5. Define the collector's pipeline configuration - OFFICIAL PATTERN
+# 6. Define the collector's pipeline configuration - OFFICIAL PATTERN
 config:
   receivers:
     otlp:
@@ -79,16 +90,9 @@ config:
       tls:
         insecure: true
 
-    # --- START OF CORRECTION ---
-
     # Exporter for LOGS -> Loki  
-    # REVERTED: Go back to using the 'otlphttp' exporter as required by documentation.
-    # We do NOT define labels here; Loki creates them automatically from OTel attributes.
     otlphttp:
       endpoint: "http://loki.monitoring.svc.cluster.local:3100/otlp"
-
-    # --- END OF CORRECTION ---
-
 
   service:
     pipelines:
@@ -103,10 +107,9 @@ config:
       logs:
         receivers: [otlp]
         processors: [memory_limiter, k8sattributes, batch]
-        # REVERTED: Use the correct 'otlphttp/loki' exporter in the pipeline.
         exporters: [debug, otlphttp]
 
-# 6. Resource limits for the collector
+# 7. Resource limits for the collector
 resources:
   limits:
     cpu: 1000m
@@ -115,7 +118,7 @@ resources:
     cpu: 500m
     memory: 512Mi
 
-# 7. Security context
+# 8. Security context
 securityContext:
   runAsUser: 0  # Required to read host log files
   runAsGroup: 0
@@ -123,7 +126,7 @@ securityContext:
   readOnlyRootFilesystem: false
   allowPrivilegeEscalation: false
 
-# 8. Node selector and tolerations for DaemonSet deployment
+# 9. Node selector and tolerations for DaemonSet deployment
 nodeSelector: {}
 tolerations:
   # Allow running on control plane nodes if needed
@@ -134,8 +137,8 @@ tolerations:
     operator: Exists
     effect: NoSchedule
 
-# 9. Service monitor for Prometheus scraping
-# serviceMonitor:
-#   enabled: true
-#   labels:
-#     release: prometheus-stack
+# 10. Service monitor for Prometheus scraping
+serviceMonitor:
+  enabled: true
+  labels:
+    release: prometheus-stack
