@@ -24,7 +24,9 @@ opentelemetry-collector:
             endpoint: 0.0.0.0:4318
 
     processors:
-      batch: {}
+      batch:
+        timeout: 1s
+        send_batch_size: 512
       memory_limiter:
         check_interval: 1s
         limit_mib: 256
