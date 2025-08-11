@@ -209,4 +209,62 @@ data:
         {
           "collapsed": false,
           "gridPos": { "h": 1, "w": 24, "x": 0, "y": 23 },
-          "id":
+          "id": 400, "panels": [], "title": "Storage", "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, {"color": "yellow", "value": 75}, { "color": "red", "value": 90 }]}, "unit": "percent" }, "overrides": []},
+          "gridPos": { "h": 6, "w": 8, "x": 0, "y": 24 }, "id": 401,
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "showThresholdLabels": false, "showThresholdMarkers": true },
+          "pluginVersion": "10.4.1",
+          "targets": [
+            {
+              "expr": "(node_filesystem_size_bytes{mountpoint=\"/\", fstype!=\"tmpfs\"} - node_filesystem_avail_bytes{mountpoint=\"/\", fstype!=\"tmpfs\"}) / node_filesystem_size_bytes{mountpoint=\"/\", fstype!=\"tmpfs\"} * 100",
+              "legendFormat": "{{instance}}", "refId": "A"
+            }
+          ],
+          "title": "Disk Usage (Root FS)", "type": "gauge"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "unit": "Bps" }, "overrides": []},
+          "gridPos": { "h": 6, "w": 16, "x": 8, "y": 24 }, "id": 402,
+          "options": { "legend": { "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" }},
+          "pluginVersion": "10.4.1",
+          "targets": [
+            { "expr": "sum by (instance) (irate(node_disk_read_bytes_total[5m]))", "legendFormat": "Read {{instance}}", "refId": "A" },
+            { "expr": "sum by (instance) (irate(node_disk_written_bytes_total[5m]))", "legendFormat": "Write {{instance}}", "refId": "B" }
+          ],
+          "title": "Disk I/O Throughput", "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+          "id": 500, "panels": [], "title": "Networking", "type": "row"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "mappings": [], "unit": "Bps" }, "overrides": []},
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 31 }, "id": 501,
+          "options": { "legend": { "displayMode": "table", "placement": "right", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" }},
+          "pluginVersion": "10.4.1",
+          "targets": [
+            { "expr": "sum by (instance) (irate(node_network_receive_bytes_total{device!~'lo|veth.*'}[5m]))", "legendFormat": "In {{instance}}", "refId": "A" },
+            { "expr": "sum by (instance) (irate(node_network_transmit_bytes_total{device!~'lo|veth.*'}[5m]))", "legendFormat": "Out {{instance}}", "refId": "B" }
+          ],
+          "title": "Network Traffic In/Out per Node", "type": "timeseries"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 38,
+      "style": "dark",
+      "tags": ["homelab", "infrastructure", "gitops"],
+      "templating": { "list": [] },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Homelab Infrastructure",
+      "uid": "homelab-infrastructure-main",
+      "version": 2,
+      "weekStart": ""
+    }
