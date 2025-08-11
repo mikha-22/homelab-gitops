@@ -30,15 +30,17 @@ default:
 components:
   # Explicitly enable and configure all default services
   flagd:
-    enabled: true
-    envOverrides:
-      # This component uses OTEL_COLLECTOR_NAME to construct its specific exporter URIs
-      - name: OTEL_COLLECTOR_NAME
-        value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local"
-    resources:
-      limits: { memory: "100Mi", cpu: "100m" }
-      requests: { memory: "50Mi", cpu: "50m" }
-
+      enabled: true
+      envOverrides:
+        # Directly set the variable for the 'flagd' container
+        - name: FLAGD_OTEL_COLLECTOR_URI
+          value: "otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4317"
+        # Directly set the variable for the 'flagd-ui' container
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otel-collector-opentelemetry-collector.monitoring.svc.cluster.local:4318"
+      resources:
+        limits: { memory: "100Mi", cpu: "100m" }
+        requests: { memory: "50Mi", cpu: "50m" }
   fraud-detection:
     enabled: true
     envOverrides:
