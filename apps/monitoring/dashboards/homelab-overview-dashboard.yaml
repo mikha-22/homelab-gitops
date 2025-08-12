@@ -274,7 +274,7 @@ data:
               },
               {
                 "matcher": {"id": "byName", "options": "{namespace=\"argocd\"}"},
-                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]
+                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "purple"}}]
               },
               {
                 "matcher": {"id": "byName", "options": "{namespace=\"minio\"}"},
@@ -282,11 +282,23 @@ data:
               },
               {
                 "matcher": {"id": "byName", "options": "{namespace=\"nginx\"}"},
-                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "purple"}}]
+                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]
               },
               {
                 "matcher": {"id": "byName", "options": "{namespace=\"homer\"}"},
                 "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "yellow"}}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "{namespace=\"otel-demo\"}"},
+                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "cyan"}}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "{namespace=\"external-secrets\"}"},
+                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "pink"}}]
+              },
+              {
+                "matcher": {"id": "byName", "options": "{namespace=\"cloudfared\"}"},
+                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "brown"}}]
               }
             ]
           },
