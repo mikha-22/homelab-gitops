@@ -8,6 +8,7 @@ resources:
   - prometheus-dashboard.yaml
   - opentelemetry-demo-dashboard.yaml
   - infrastructure-dashboard.yaml
+  - tempo-dashboard.yaml
 
 labels:
   - includeSelectors: true
