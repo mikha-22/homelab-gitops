@@ -224,7 +224,7 @@ data:
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "fieldConfig": {
             "defaults": {
-              "color": {"mode": "continuous-GrYlRd"},
+              "color": {"mode": "palette-classic"},
               "custom": {
                 "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line",
                 "fillOpacity": 20, "gradientMode": "scheme",
@@ -237,7 +237,16 @@ data:
               "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 70}, {"color": "red", "value": 90}]},
               "unit": "percent"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {"id": "byRegexp", "options": "/.*CPU.*/"},
+                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}]
+              },
+              {
+                "matcher": {"id": "byRegexp", "options": "/.*Memory.*/"},
+                "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}]
+              }
+            ]
           },
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
           "id": 8,
@@ -246,10 +255,20 @@ data:
             "tooltip": {"mode": "multi", "sort": "none"}
           },
           "targets": [
-            {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "100 - (avg(irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", "legendFormat": "CPU Usage", "refId": "A"},
-            {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100", "legendFormat": "Memory Usage", "refId": "B"}
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"}, 
+              "expr": "(100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)) * on(instance) group_left(internal_ip, hostname) kube_node_info", 
+              "legendFormat": "CPU {{hostname}} ({{internal_ip}})", 
+              "refId": "A"
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"}, 
+              "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 * on(instance) group_left(internal_ip, hostname) kube_node_info", 
+              "legendFormat": "Memory {{hostname}} ({{internal_ip}})", 
+              "refId": "B"
+            }
           ],
-          "title": "System Resources", "type": "timeseries"
+          "title": "System Resources per Node", "type": "timeseries"
         },
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -266,7 +285,7 @@ data:
               },
               "mappings": [],
               "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
-              "unit": "short"
+              "unit": "lps"
             },
             "overrides": []
           },
@@ -276,8 +295,15 @@ data:
             "legend": {"calcs": ["sum"], "displayMode": "table", "placement": "bottom"},
             "tooltip": {"mode": "multi", "sort": "none"}
           },
-          "targets": [{"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum by (namespace) (rate(otelcol_receiver_accepted_log_records_total[5m]))", "legendFormat": "{{namespace}} logs/sec", "refId": "A"}],
-          "title": "Log Ingestion Rate (OpenTelemetry)", "type": "timeseries"
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"}, 
+              "expr": "sum by (namespace) (rate(loki_distributor_lines_received_total{job=\"loki\"}[5m]))", 
+              "legendFormat": "{{namespace}} logs/sec", 
+              "refId": "A"
+            }
+          ],
+          "title": "Log Ingestion Rate (Loki)", "type": "timeseries"
         },
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
