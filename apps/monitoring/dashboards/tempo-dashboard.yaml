@@ -56,20 +56,13 @@ data:
           "fieldConfig": {
             "defaults": {
               "color": {"mode": "thresholds"},
-              "mappings": [
-                {
-                  "options": {
-                    "0": {"color": "red", "index": 0, "text": "DOWN"},
-                    "1": {"color": "green", "index": 1, "text": "UP"}
-                  },
-                  "type": "value"
-                }
-              ],
+              "mappings": [],
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
-                  {"color": "red", "value": null},
-                  {"color": "green", "value": 1}
+                  {"color": "green", "value": null},
+                  {"color": "yellow", "value": 50},
+                  {"color": "red", "value": 100}
                 ]
               },
               "unit": "short"
@@ -79,26 +72,26 @@ data:
           "gridPos": {"h": 4, "w": 6, "x": 0, "y": 1},
           "id": 1,
           "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "justifyMode": "center",
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
             "orientation": "auto",
             "reduceOptions": {
               "values": false,
               "calcs": ["lastNotNull"],
               "fields": ""
             },
-            "textMode": "value"
+            "textMode": "auto"
           },
           "pluginVersion": "10.0.0",
           "targets": [
             {
               "datasource": {"type": "prometheus", "uid": "prometheus"},
-              "expr": "up{job=\"tempo\"}",
+              "expr": "sum(tempo_ingester_live_traces)",
               "refId": "A"
             }
           ],
-          "title": "Tempo Status",
+          "title": "Live Traces",
           "type": "stat"
         },
         {
@@ -223,7 +216,7 @@ data:
           "targets": [
             {
               "datasource": {"type": "prometheus", "uid": "prometheus"},
-              "expr": "sum(rate(tempo_query_frontend_queries_total[5m]))",
+              "expr": "sum(rate(tempo_request_duration_seconds_count[5m]))",
               "refId": "A"
             }
           ],
@@ -391,12 +384,12 @@ data:
           "targets": [
             {
               "datasource": {"type": "prometheus", "uid": "prometheus"},
-              "expr": "sum by (operation) (rate(tempo_query_frontend_queries_total[5m]))",
-              "legendFormat": "{{operation}}",
+              "expr": "sum by (method, route) (rate(tempo_request_duration_seconds_count[5m]))",
+              "legendFormat": "{{method}} {{route}}",
               "refId": "A"
             }
           ],
-          "title": "Query Rate by Operation",
+          "title": "Request Rate by Endpoint",
           "type": "timeseries"
         },
         {
@@ -436,24 +429,24 @@ data:
           "targets": [
             {
               "datasource": {"type": "prometheus", "uid": "prometheus"},
-              "expr": "histogram_quantile(0.50, sum(rate(tempo_query_frontend_query_duration_seconds_bucket[5m])) by (le))",
-              "legendFormat": "Query p50",
+              "expr": "histogram_quantile(0.50, sum(rate(tempo_request_duration_seconds_bucket[5m])) by (le))",
+              "legendFormat": "Request p50",
               "refId": "A"
             },
             {
               "datasource": {"type": "prometheus", "uid": "prometheus"},
-              "expr": "histogram_quantile(0.95, sum(rate(tempo_query_frontend_query_duration_seconds_bucket[5m])) by (le))",
-              "legendFormat": "Query p95",
+              "expr": "histogram_quantile(0.95, sum(rate(tempo_request_duration_seconds_bucket[5m])) by (le))",
+              "legendFormat": "Request p95",
               "refId": "B"
             },
             {
               "datasource": {"type": "prometheus", "uid": "prometheus"},
-              "expr": "histogram_quantile(0.99, sum(rate(tempo_query_frontend_query_duration_seconds_bucket[5m])) by (le))",
-              "legendFormat": "Query p99",
+              "expr": "histogram_quantile(0.99, sum(rate(tempo_request_duration_seconds_bucket[5m])) by (le))",
+              "legendFormat": "Request p99",
               "refId": "C"
             }
           ],
-          "title": "Query Latency Percentiles",
+          "title": "Request Latency Percentiles",
           "type": "timeseries"
         },
         {
