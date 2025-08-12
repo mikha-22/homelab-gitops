@@ -115,9 +115,10 @@ configmap:
                 target: "_blank"
               - name: "Tempo"
                 logo: "https://grafana.com/static/assets/img/blog/tempo.png"
-                subtitle: "No dashboard available"
+                subtitle: "Distributed Tracing Dashboard"
                 tag: "traces"
-                class: "unclickable"
+                url: "https://grafana.milenika.dev/d/tempo-tracing-homelab/tempo-distributed-tracing"
+                target: "_blank"
           
           - name: "Demo Applications"
             icon: "fas fa-flask"
