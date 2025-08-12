@@ -168,7 +168,7 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "up{job=~\"prometheus-stack-kube-prom-prometheus|prometheus-stack-grafana|loki|tempo.*|promtail-metrics|minio|nginx-static\"}",
+              "expr": "up{job=~\"prometheus-stack-kube-prom-prometheus|prometheus-stack-grafana|loki|tempo|minio|nginx-static\"}",
               "format": "table",
               "instant": true,
               "refId": "A"
@@ -182,7 +182,11 @@ data:
                 "excludeByName": {
                   "Time": true,
                   "__name__": true,
-                  "instance": true
+                  "instance": true,
+                  "container": true,
+                  "endpoint": true,
+                  "pod": true,
+                  "service": true
                 },
                 "indexByName": {
                   "Value": 0,
@@ -837,12 +841,12 @@ data:
                 "type": "prometheus",
                 "uid": "prometheus"
               },
-              "expr": "sum by (job) (rate(promtail_read_lines_total[5m]))",
-              "legendFormat": "{{job}} logs/sec",
+              "expr": "sum by (namespace) (rate(otelcol_receiver_accepted_log_records_total[5m]))",
+              "legendFormat": "{{namespace}} logs/sec",
               "refId": "A"
             }
           ],
-          "title": "Log Ingestion Rate (Promtail)",
+          "title": "Log Ingestion Rate (OpenTelemetry Collector)",
           "type": "timeseries"
         },
         {
