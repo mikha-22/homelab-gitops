@@ -257,14 +257,14 @@ data:
           "targets": [
             {
               "datasource": {"type": "prometheus", "uid": "prometheus"}, 
-              "expr": "(100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)) * on(instance) group_left(internal_ip, hostname) kube_node_info", 
-              "legendFormat": "CPU {{hostname}} ({{internal_ip}})", 
+              "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)", 
+              "legendFormat": "CPU {{instance}}", 
               "refId": "A"
             },
             {
               "datasource": {"type": "prometheus", "uid": "prometheus"}, 
-              "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 * on(instance) group_left(internal_ip, hostname) kube_node_info", 
-              "legendFormat": "Memory {{hostname}} ({{internal_ip}})", 
+              "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100", 
+              "legendFormat": "Memory {{instance}}", 
               "refId": "B"
             }
           ],
