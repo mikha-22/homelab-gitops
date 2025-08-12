@@ -1,4 +1,4 @@
-# apps/homer/values.yaml - Updated with Infrastructure Dashboard
+# apps/homer/values.yaml - Complete file with Demo Applications section
 env:
   TZ: "Asia/Jakarta"
 
@@ -118,6 +118,16 @@ configmap:
                 subtitle: "No dashboard available"
                 tag: "traces"
                 class: "unclickable"
+          
+          - name: "Demo Applications"
+            icon: "fas fa-flask"
+            items:
+              - name: "OpenTelemetry Demo"
+                logo: "https://opentelemetry.io/img/logos/opentelemetry-logo-nav.png"
+                subtitle: "Astronomy Shop - Generates traces, metrics & logs for testing"
+                tag: "microservices"
+                url: "https://otel-demo.milenika.dev"
+                target: "_blank"
           
           - name: "Infrastructure"
             icon: "fas fa-server"
