@@ -1,4 +1,4 @@
-# apps/otel-collector/values.yaml - Conservative filtering approach
+# apps/otel-collector/values.yaml - PROPER INFRASTRUCTURE AGENT USING PRESETS
 
 # Deployment mode - DaemonSet for node-level collection
 mode: daemonset
@@ -32,10 +32,8 @@ presets:
 # Resource limits appropriate for infrastructure agent
 resources:
   limits:
-    # REDUCED: From 500m to 400m (conservative)
-    cpu: 400m
-    # REDUCED: From 512Mi to 384Mi (conservative)
-    memory: 384Mi
+    cpu: 500m
+    memory: 512Mi
   requests:
     cpu: 200m
     memory: 256Mi
@@ -67,21 +65,6 @@ config:
       verbosity: basic
 
   processors:
-    # CONSERVATIVE: Moderate trace sampling (keep 25% instead of 10%)
-    probabilistic_sampler:
-      hash_seed: 22
-      sampling_percentage: 25  # Keep 25% of traces
-    
-    # CONSERVATIVE: Minimal log filtering (only filter the noisiest stuff)
-    filter/exclude-minimal:
-      logs:
-        log_record:
-          # Only filter the most repetitive/useless logs
-          - 'body matches "GET /health 200"'           # Health check success only
-          - 'body matches "GET /metrics 200"'          # Metrics endpoint success only
-          - 'attributes["level"] == "debug" and body matches ".*processing.*"'  # Processing debug only
-          - 'body matches ".*ping.*successful.*"'      # Successful ping logs
-    
     # Add resource attributes to identify this as infrastructure data
     resource:
       attributes:
@@ -92,25 +75,11 @@ config:
           value: infrastructure-agent
           action: upsert
     
-    # CONSERVATIVE: Keep most attributes (only remove the highest cardinality ones)
-    attributes/strip-minimal:
-      actions:
-        - key: k8s.pod.uid          # Still remove pod UIDs
-          action: delete
-        - key: process.pid          # Still remove process IDs
-          action: delete
-        # Keep container restart count and other useful attributes
-
-    # CONSERVATIVE: Larger batch sizes to reduce processing overhead
-    batch:
-      timeout: 5s        # Moderate timeout
-      send_batch_size: 1024  # Moderate batch size
-      send_batch_max_size: 2048
-    
-    # Memory limiter to prevent OOM
-    memory_limiter:
-      check_interval: 1s
-      limit_mib: 300  # Match container memory limit
+    # Filter out demo namespace logs to avoid duplication
+    filter/exclude-demo:
+      logs:
+        log_record:
+          - 'attributes["k8s.namespace.name"] == "otel-demo"'
 
   service:
     pipelines:
@@ -123,22 +92,14 @@ config:
       # Logs pipeline - preset adds filelog receiver for container logs
       logs:
         receivers: [filelog]  # Added by logsCollection preset
-        processors: [k8sattributes, filter/exclude-minimal, attributes/strip-minimal, resource, batch]
+        processors: [k8sattributes, filter/exclude-demo, resource, batch]
         exporters: [otlphttp, debug]
-        
-      # Traces pipeline with conservative sampling
-      traces:
-        receivers: [otlp]
-        processors: [memory_limiter, probabilistic_sampler, k8sattributes, resource, batch]
-        exporters: [debug]  # Only debug for now, can add tempo later
 
 # Service monitor for Prometheus to scrape the collector's own metrics
 serviceMonitor:
   enabled: true
   labels:
     release: prometheus-stack
-  # INCREASED: From 30s to 45s (reduce scraping frequency)
-  interval: 45s
 
 # Tolerations to run on all nodes including control plane
 tolerations:

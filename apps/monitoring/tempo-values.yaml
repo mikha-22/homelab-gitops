@@ -1,25 +1,21 @@
-# apps/monitoring/tempo-values.yaml - Conservative retention settings
+# apps/monitoring/tempo-values.yaml (ADDING LOCAL-BLOCKS PROCESSOR)
 
 replicas: 1
 
 persistence:
   enabled: true
   storageClassName: local-path
-  # REDUCED: From 10Gi to 7Gi (conservative)
-  size: 7Gi
+  size: 10Gi
 
 serviceMonitor:
   enabled: true
-  labels:
-    release: prometheus-stack
 
 # Use the chart's built-in metrics generator support
 tempo:
   ingester:
     trace_idle_period: 60s
     flush_check_period: 60s
-    # REDUCED: From 15m to 10m (conservative)
-    max_block_duration: 10m
+    max_block_duration: 15m
   # Enable metrics generator - THIS IS THE KEY!
   metricsGenerator:
     enabled: true
@@ -33,20 +29,16 @@ tempo:
   resources:
     requests:
       cpu: 500m
-      # REDUCED: From 4Gi to 3Gi (conservative)
-      memory: 3Gi
+      memory: 4Gi
     limits:
       cpu: 1000m
-      # REDUCED: From 8Gi to 5Gi (conservative)
-      memory: 5Gi
+      memory: 8Gi
 
   # Other Tempo settings
   multitenancyEnabled: false
   reportingEnabled: false
-  # REDUCED: From 168h (7 days) to 48h (2 days) - conservative
-  retention: 48h
-  # REDUCED: From 2048 to 1536 (conservative)
-  memBallastSizeMbs: 1536
+  retention: 168h
+  memBallastSizeMbs: 2048
 
   # Storage configuration (keep the defaults working)
   storage:
