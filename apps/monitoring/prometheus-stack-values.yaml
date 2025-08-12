@@ -203,8 +203,8 @@ grafana:
 prometheus:
   enabled: true
   prometheusSpec:
-    retention: 7d
-    retentionSize: 9GB
+    retention: 2d
+    retentionSize: 5GB
     
     enableRemoteWriteReceiver: true
     

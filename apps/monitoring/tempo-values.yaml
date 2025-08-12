@@ -37,7 +37,7 @@ tempo:
   # Other Tempo settings
   multitenancyEnabled: false
   reportingEnabled: false
-  retention: 168h
+  retention: 48h
   memBallastSizeMbs: 2048
 
   # Storage configuration (keep the defaults working)
