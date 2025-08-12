@@ -270,40 +270,7 @@ data:
           ],
           "title": "System Resources per Node", "type": "timeseries"
         },
-        {
-          "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "fieldConfig": {
-            "defaults": {
-              "color": {"mode": "palette-classic"},
-              "custom": {
-                "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "bars",
-                "fillOpacity": 100, "gradientMode": "none",
-                "hideFrom": {"legend": false, "tooltip": false, "viz": false},
-                "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5,
-                "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false,
-                "stacking": {"group": "A", "mode": "normal"}, "thresholdsStyle": {"mode": "off"}
-              },
-              "mappings": [],
-              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
-              "unit": "lps"
-            },
-            "overrides": []
-          },
-          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 14},
-          "id": 9,
-          "options": {
-            "legend": {"calcs": ["sum"], "displayMode": "table", "placement": "bottom"},
-            "tooltip": {"mode": "multi", "sort": "none"}
-          },
-          "targets": [
-            {
-              "datasource": {"type": "prometheus", "uid": "prometheus"}, 
-              "expr": "sum by (namespace) (rate(loki_distributor_lines_received_total{job=\"loki\"}[5m]))", 
-              "legendFormat": "{{namespace}} logs/sec", 
-              "refId": "A"
-            }
-          ],
-          "title": "Log Ingestion Rate (Loki)", "type": "timeseries"
+type": "timeseries"
         },
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -335,6 +302,96 @@ data:
             {"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "sum(rate(node_network_transmit_bytes_total{device!~\"lo|veth.*\"}[5m]))", "legendFormat": "Network Out", "refId": "B"}
           ],
           "title": "Network Traffic", "type": "timeseries"
+        },
+        {
+          "collapsed": false,
+          "gridPos": {"h": 1, "w": 24, "x": 0, "y": 22},
+          "id": 300,
+          "panels": [],
+          "title": "Telemetry Ingestion Rates",
+          "type": "row"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line",
+                "fillOpacity": 20, "gradientMode": "none",
+                "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+                "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5,
+                "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false,
+                "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+              "unit": "sps"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 23},
+          "id": 11,
+          "options": {
+            "legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi", "sort": "none"}
+          },
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"}, 
+              "expr": "sum(rate(prometheus_tsdb_head_samples_appended_total[5m]))", 
+              "legendFormat": "Prometheus Samples", 
+              "refId": "A"
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"}, 
+              "expr": "sum(rate(otelcol_receiver_accepted_metric_points_total[5m]))", 
+              "legendFormat": "OTel Collector Metrics", 
+              "refId": "B"
+            }
+          ],
+          "title": "Metrics Ingestion Rate", "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "fieldConfig": {
+            "defaults": {
+              "color": {"mode": "palette-classic"},
+              "custom": {
+                "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line",
+                "fillOpacity": 20, "gradientMode": "none",
+                "hideFrom": {"legend": false, "tooltip": false, "viz": false},
+                "lineInterpolation": "smooth", "lineWidth": 2, "pointSize": 5,
+                "scaleDistribution": {"type": "linear"}, "showPoints": "never", "spanNulls": false,
+                "stacking": {"group": "A", "mode": "none"}, "thresholdsStyle": {"mode": "off"}
+              },
+              "mappings": [],
+              "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}]},
+              "unit": "tps"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 23},
+          "id": 12,
+          "options": {
+            "legend": {"calcs": ["lastNotNull"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi", "sort": "none"}
+          },
+          "targets": [
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"}, 
+              "expr": "sum(rate(tempo_ingester_traces_created_total[5m]))", 
+              "legendFormat": "Tempo Traces", 
+              "refId": "A"
+            },
+            {
+              "datasource": {"type": "prometheus", "uid": "prometheus"}, 
+              "expr": "sum(rate(otelcol_receiver_accepted_spans_total[5m]))", 
+              "legendFormat": "OTel Collector Spans", 
+              "refId": "B"
+            }
+          ],
+          "title": "Trace Ingestion Rate", "type": "timeseries"
         }
       ],
       "refresh": "30s",
