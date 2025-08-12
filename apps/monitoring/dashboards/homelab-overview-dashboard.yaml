@@ -88,7 +88,7 @@ data:
               "calcs": ["lastNotNull"],
               "fields": ""
             },
-            "textMode": "value_and_name"
+            "textMode": "value"
           },
           "pluginVersion": "10.0.0",
           "targets": [
@@ -138,7 +138,7 @@ data:
               "calcs": ["lastNotNull"],
               "fields": ""
             },
-            "textMode": "value_and_name"
+            "textMode": "value"
           },
           "pluginVersion": "10.0.0",
           "targets": [
@@ -188,7 +188,7 @@ data:
               "calcs": ["lastNotNull"],
               "fields": ""
             },
-            "textMode": "value_and_name"
+            "textMode": "value"
           },
           "pluginVersion": "10.0.0",
           "targets": [
@@ -238,13 +238,13 @@ data:
               "calcs": ["lastNotNull"],
               "fields": ""
             },
-            "textMode": "value_and_name"
+            "textMode": "value"
           },
           "pluginVersion": "10.0.0",
           "targets": [
             {
               "datasource": {"type": "prometheus", "uid": "prometheus"},
-              "expr": "up{job=\"prometheus-stack-kube-prom-prometheus\"}",
+              "expr": "max(up{job=\"prometheus-stack-kube-prom-prometheus\"})",
               "refId": "A"
             }
           ],
