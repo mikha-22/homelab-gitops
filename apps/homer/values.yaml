@@ -1,4 +1,4 @@
-# apps/homer/values.yaml - Reorganized with Hugo moved to Demo Applications
+# apps/homer/values.yaml - Updated with Prometheus Mixin link
 env:
   TZ: "Asia/Jakarta"
 
@@ -105,7 +105,7 @@ configmap:
                 logo: "https://raw.githubusercontent.com/prometheus/prometheus/main/documentation/images/prometheus-logo.svg"
                 subtitle: "Metrics & Alerting Dashboard"
                 tag: "metrics"
-                url: "https://grafana.milenika.dev/d/e424e26c-2773-4a35-a924-732c674db50d"
+                url: "https://grafana.milenika.dev/d/b37726e1-9c41-4e66-9a18-a74e28571878/prometheus-overview"
                 target: "_blank"
               - name: "Loki"
                 logo: "https://grafana.com/static/img/logos/logo-loki.svg"
