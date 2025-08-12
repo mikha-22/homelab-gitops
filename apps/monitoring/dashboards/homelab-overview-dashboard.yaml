@@ -76,7 +76,7 @@ data:
             },
             "overrides": []
           },
-          "gridPos": {"h": 4, "w": 4, "x": 0, "y": 1},
+          "gridPos": {"h": 4, "w": 6, "x": 0, "y": 1},
           "id": 1,
           "options": {
             "colorMode": "background",
@@ -94,11 +94,11 @@ data:
           "targets": [
             {
               "datasource": {"type": "prometheus", "uid": "prometheus"},
-              "expr": "up{job=\"prometheus-stack-kube-prom-prometheus\"}",
+              "expr": "up{job=\"loki\"}",
               "refId": "A"
             }
           ],
-          "title": "Prometheus",
+          "title": "Loki",
           "type": "stat"
         },
         {
@@ -126,7 +126,7 @@ data:
             },
             "overrides": []
           },
-          "gridPos": {"h": 4, "w": 4, "x": 4, "y": 1},
+          "gridPos": {"h": 4, "w": 6, "x": 6, "y": 1},
           "id": 2,
           "options": {
             "colorMode": "background",
@@ -176,58 +176,8 @@ data:
             },
             "overrides": []
           },
-          "gridPos": {"h": 4, "w": 4, "x": 8, "y": 1},
+          "gridPos": {"h": 4, "w": 6, "x": 12, "y": 1},
           "id": 3,
-          "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "justifyMode": "center",
-            "orientation": "auto",
-            "reduceOptions": {
-              "values": false,
-              "calcs": ["lastNotNull"],
-              "fields": ""
-            },
-            "textMode": "value_and_name"
-          },
-          "pluginVersion": "10.0.0",
-          "targets": [
-            {
-              "datasource": {"type": "prometheus", "uid": "prometheus"},
-              "expr": "up{job=\"loki\"}",
-              "refId": "A"
-            }
-          ],
-          "title": "Loki",
-          "type": "stat"
-        },
-        {
-          "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "fieldConfig": {
-            "defaults": {
-              "color": {"mode": "thresholds"},
-              "mappings": [
-                {
-                  "options": {
-                    "0": {"color": "red", "index": 0, "text": "DOWN"},
-                    "1": {"color": "green", "index": 1, "text": "UP"}
-                  },
-                  "type": "value"
-                }
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {"color": "red", "value": null},
-                  {"color": "green", "value": 1}
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {"h": 4, "w": 4, "x": 12, "y": 1},
-          "id": 4,
           "options": {
             "colorMode": "background",
             "graphMode": "none",
@@ -276,8 +226,8 @@ data:
             },
             "overrides": []
           },
-          "gridPos": {"h": 4, "w": 4, "x": 16, "y": 1},
-          "id": 5,
+          "gridPos": {"h": 4, "w": 6, "x": 18, "y": 1},
+          "id": 4,
           "options": {
             "colorMode": "background",
             "graphMode": "none",
@@ -294,61 +244,11 @@ data:
           "targets": [
             {
               "datasource": {"type": "prometheus", "uid": "prometheus"},
-              "expr": "up{job=\"minio\"}",
+              "expr": "up{job=\"prometheus-stack-kube-prom-prometheus\"}",
               "refId": "A"
             }
           ],
-          "title": "MinIO",
-          "type": "stat"
-        },
-        {
-          "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "fieldConfig": {
-            "defaults": {
-              "color": {"mode": "thresholds"},
-              "mappings": [
-                {
-                  "options": {
-                    "0": {"color": "red", "index": 0, "text": "DOWN"},
-                    "1": {"color": "green", "index": 1, "text": "UP"}
-                  },
-                  "type": "value"
-                }
-              ],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {"color": "red", "value": null},
-                  {"color": "green", "value": 1}
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {"h": 4, "w": 4, "x": 20, "y": 1},
-          "id": 6,
-          "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "justifyMode": "center",
-            "orientation": "auto",
-            "reduceOptions": {
-              "values": false,
-              "calcs": ["lastNotNull"],
-              "fields": ""
-            },
-            "textMode": "value_and_name"
-          },
-          "pluginVersion": "10.0.0",
-          "targets": [
-            {
-              "datasource": {"type": "prometheus", "uid": "prometheus"},
-              "expr": "up{job=\"nginx-static\"}",
-              "refId": "A"
-            }
-          ],
-          "title": "NGINX",
+          "title": "Prometheus",
           "type": "stat"
         },
         {
