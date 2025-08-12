@@ -1,4 +1,4 @@
-# apps/monitoring/loki-values.yaml - SIMPLIFIED WITHOUT SIDECAR
+# apps/monitoring/loki-values.yaml - Conservative retention settings
 
 # This tells the chart to deploy a single, persistent pod.
 deploymentMode: SingleBinary
@@ -23,12 +23,16 @@ loki:
           period: 24h
   storage:
     type: filesystem
+  # CONSERVATIVE retention and limits
   limits_config:
     allow_structured_metadata: true
     volume_enabled: true
-    retention_period: 7d
-    ingestion_rate_mb: 16
-    ingestion_burst_size_mb: 32
+    # REDUCED: From 7d to 4d (conservative)
+    retention_period: 4d
+    # REDUCED: From 16MB to 12MB (conservative)
+    ingestion_rate_mb: 12
+    # REDUCED: From 32MB to 24MB (conservative)
+    ingestion_burst_size_mb: 24
 
 # This section configures the Kubernetes resources for the pod.
 singleBinary:
@@ -36,11 +40,13 @@ singleBinary:
   persistence:
     enabled: true
     storageClass: local-path
-    size: 30Gi
+    # REDUCED: From 30Gi to 20Gi (conservative)
+    size: 20Gi
   resources:
     limits:
       cpu: 1000m
-      memory: 2Gi
+      # REDUCED: From 2Gi to 1.5Gi (conservative)
+      memory: 1.5Gi
     requests:
       cpu: 500m
       memory: 1Gi

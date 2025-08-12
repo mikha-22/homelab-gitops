@@ -1,4 +1,4 @@
-# apps/monitoring/prometheus-stack-values.yaml
+# apps/monitoring/prometheus-stack-values.yaml - Conservative retention settings
 
 # Global settings
 global:
@@ -199,12 +199,14 @@ grafana:
       labelValue: "1"
       defaultDatasourceEnabled: true
 
-# Prometheus Configuration
+# Prometheus Configuration (CONSERVATIVE RETENTION)
 prometheus:
   enabled: true
   prometheusSpec:
-    retention: 7d
-    retentionSize: 9GB
+    # REDUCED: From 7d to 4d (conservative reduction)
+    retention: 4d
+    # REDUCED: From 9GB to 6GB (conservative reduction)
+    retentionSize: 6GB
     
     enableRemoteWriteReceiver: true
     
@@ -226,15 +228,17 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 10Gi
+              # REDUCED: From 10Gi to 8Gi
+              storage: 8Gi
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
     serviceMonitorNamespaceSelector: {}
     podMonitorNamespaceSelector: {}
     ruleNamespaceSelector: {}
-    scrapeInterval: 30s
-    evaluationInterval: 30s
+    # INCREASED: From 30s to 45s (moderate reduction in scrape frequency)
+    scrapeInterval: 45s
+    evaluationInterval: 45s
 
 # Prometheus Operator
 prometheusOperator:
@@ -250,7 +254,7 @@ prometheusOperator:
     runAsNonRoot: true
     runAsUser: 65534
 
-# Node Exporter
+# Node Exporter (CONSERVATIVE: Keep most collectors)
 nodeExporter:
   enabled: true
   resources:
@@ -260,6 +264,20 @@ nodeExporter:
     requests:
       cpu: 100m
       memory: 50Mi
+  # CONSERVATIVE: Only disable the most exotic collectors
+  disabledCollectors:
+    - arp
+    - bcache
+    - bonding
+    - infiniband
+    - ipvs
+    - nfsd
+    - powersupplyclass
+    - rapl
+    - tapestats
+    - textfile
+    - timex
+    - udp_queues
 
 # Kube State Metrics  
 kubeStateMetrics:
