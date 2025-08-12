@@ -1,4 +1,4 @@
-# apps/monitoring/namespace/loki-servicemonitor.yaml
+# apps/monitoring/namespace/loki-servicemonitor.yaml - FIXED
 
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
@@ -15,8 +15,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: loki
       app.kubernetes.io/instance: loki
-      # FIXED: Added this component label to exclude the gateway
-      app.kubernetes.io/component: single-binary
+      # REMOVED: app.kubernetes.io/component: single-binary  # This label doesn't exist on the service
   endpoints:
   - port: http-metrics
     interval: 30s
