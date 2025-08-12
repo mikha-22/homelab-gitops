@@ -1,4 +1,4 @@
-# apps/homer/values.yaml
+# apps/homer/values.yaml - Updated with Infrastructure Dashboard
 env:
   TZ: "Asia/Jakarta"
 
@@ -134,11 +134,11 @@ configmap:
                 tag: "website"
                 url: "https://hugo.milenika.dev"
                 target: "_blank"
-              - name: "Homer Dashboard"
-                logo: "https://github.com/bastienwirtz/homer/raw/main/public/logo.png"
-                subtitle: "This Homepage"
-                tag: "dashboard"
-                url: "https://homer.milenika.dev"
+              - name: "Infrastructure Dashboard"
+                logo: "https://grafana.com/static/img/menu/grafana2.svg"
+                subtitle: "Cluster health, resource usage & performance metrics"
+                tag: "monitoring"
+                url: "https://grafana.milenika.dev/d/homelab-infrastructure-main/homelab-infrastructure"
                 target: "_blank"
           
           - name: "Source Code"
