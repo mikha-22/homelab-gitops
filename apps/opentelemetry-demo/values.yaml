@@ -91,9 +91,9 @@ components:
   load-generator:
     envOverrides:
       - name: LOCUST_USERS
-        value: "1"  # Increased from 2 for better demo traffic
+        value: "0"  # Increased from 2 for better demo traffic
       - name: LOCUST_SPAWN_RATE
-        value: "1"
+        value: "0"
       - name: LOCUST_HOST
         value: "http://frontend-proxy:8080"
     resources:
